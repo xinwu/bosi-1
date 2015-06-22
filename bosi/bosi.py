@@ -126,8 +126,7 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
                      {'log' : const.LOG_FILE})
 
 
-if __name__=='__main__':
-
+def main():
     # Check if network is working properly
     code = subprocess.call("ping www.bigswitch.com -c1", shell=True)
     if code != 0:
@@ -149,5 +148,8 @@ if __name__=='__main__':
         config = yaml.load(config_file)
     deploy_bcf(config, args.fuel_cluster_id, args.tag, args.cleanup)
 
+
+if __name__=='__main__':
+    main()
 
 

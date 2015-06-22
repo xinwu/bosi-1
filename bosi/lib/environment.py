@@ -26,7 +26,11 @@ class Environment(object):
 
         # setup node ip and directory
         self.setup_node_ip  = Helper.get_setup_node_ip()
-        self.setup_node_dir = os.getcwd()
+        example_yamls = ["/usr/local/etc/bosi/config.yaml", "/usr/etc/bosi/config.yaml"]
+        for example_yaml in example_yamls:
+            if os.path.isfile(example_yaml):
+                self.setup_node_dir = os.path.dirname(example_yaml)
+                break
 
         # t5 or t6 mode
         self.deploy_mode = config.get('default_deploy_mode')
