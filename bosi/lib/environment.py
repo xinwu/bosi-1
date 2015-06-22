@@ -6,9 +6,15 @@ from helper import Helper
 from rest import RestLib
 
 class Environment(object):
-    def __init__(self, config, fuel_cluster_id):
+    def __init__(self, config, fuel_cluster_id, tag, cleanup):
         # fuel cluster id
         self.fuel_cluster_id = fuel_cluster_id
+
+        # tag, only deploy nodes with this tag
+        self.tag = tag
+
+        # clean up flag
+        self.cleanup = cleanup
 
         # flags for upgrade
         self.install_ivs = config.get('default_install_ivs')
@@ -63,16 +69,17 @@ class Environment(object):
             self.bcf_controller_ips.append(ip)
         self.bcf_controller_user = config['bcf_controller_user']
         self.bcf_controller_passwd = config['bcf_controller_passwd']
+        self.bcf_openstack_management_tenant = config.get('bcf_openstack_management_tenant')
 
         # ivs pkg and debug pkg
         self.ivs_pkg_map = {}
         self.ivs_url_map = {}
         for ivs_url in config['ivs_packages']:
             ivs_pkg = os.path.basename(ivs_url)
-            if '.rpm' in ivs_pkg and '-debuginfo-' not in ivs_pkg:
+            if '.rpm' in ivs_pkg and 'debuginfo' not in ivs_pkg:
                 self.ivs_url_map['rpm'] = ivs_url
                 self.ivs_pkg_map['rpm'] = ivs_pkg
-            elif '.rpm' in ivs_pkg and '-debuginfo-' in ivs_pkg:
+            elif '.rpm' in ivs_pkg and 'debuginfo' in ivs_pkg:
                 self.ivs_url_map['debug_rpm'] = ivs_url
                 self.ivs_pkg_map['debug_rpm'] = ivs_pkg
             elif '.deb' in ivs_pkg and 'dbg' not in ivs_pkg:

@@ -13,6 +13,7 @@ deploy_dhcp_agent=%(deploy_dhcp_agent)s
 ivs_version=%(ivs_version)s
 is_controller=%(is_controller)s
 deploy_horizon_patch=%(deploy_horizon_patch)s
+fuel_cluster_id=%(fuel_cluster_id)s
 
 # prepare dependencies
 set +e
@@ -28,7 +29,7 @@ echo "deb http://ubuntu-cloud.archive.canonical.com/ubuntu" \
 apt-get update -y
 apt-get install -y linux-headers-$(uname -r) build-essential
 apt-get install -y python-dev python-setuptools
-apt-get install -y libssl-dev libffi6 libffi-dev puppet dpkg libnl-genl-3-200 vlan
+apt-get install -y libssl-dev libffi6 libffi-dev puppet dpkg libnl-genl-3-200 vlan ethtool
 apt-get -f install -y
 apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y neutron-common
 if [[ $deploy_dhcp_agent == true ]]; then
@@ -65,6 +66,8 @@ if [[ $install_ivs == true ]]; then
     if [[ $pass == true ]]; then
         dpkg --force-all -i %(dst_dir)s/%(ivs_pkg)s
         if [[ -f %(dst_dir)s/%(ivs_debug_pkg)s ]]; then
+            apt-get install -y libnl-genl-3-200
+            apt-get -f install -y
             dpkg --force-all -i %(dst_dir)s/%(ivs_debug_pkg)s
         fi
     else
@@ -76,8 +79,18 @@ fi
 if [[ $install_all == true ]]; then
     puppet module install --force puppetlabs-inifile
     puppet module install --force puppetlabs-stdlib
-    cp /etc/init/neutron-plugin-openvswitch-agent.override /etc/init/neutron-bsn-agent.override
-    cp /etc/init/neutron-plugin-openvswitch-agent.override /etc/init/ivs.override
+    if [[ -f /etc/init/neutron-plugin-openvswitch-agent.override ]]; then
+        cp /etc/init/neutron-plugin-openvswitch-agent.override /etc/init/neutron-bsn-agent.override
+    fi
+    service neutron-plugin-openvswitch-agent stop
+    service neutron-bsn-agent stop
+    rm -f /etc/init/neutron-bsn-agent.conf
+    pkill neutron-openvswitch-agent
+    rm -f /usr/bin/neutron-openvswitch-agent
+
+    # stop ovs agent, otherwise, ovs bridges cannot be removed
+    service neutron-plugin-openvswitch-agent stop
+    update-rc.d neutron-plugin-openvswitch-agent disable
 
     # remove ovs, example ("br-storage" "br-prv" "br-ex")
     declare -a ovs_br=(%(ovs_br)s)
@@ -85,19 +98,80 @@ if [[ $install_all == true ]]; then
     for (( i=0; i<$len; i++ )); do
         ovs-vsctl del-br ${ovs_br[$i]}
     done
+    for (( i=0; i<$len; i++ )); do
+        ifconfig ${ovs_br[$i]} down
+        brctl delbr ${ovs_br[$i]}
+    done
 
     # delete ovs br-int
     while true; do
         ovs-vsctl del-br %(br-int)s
+        sleep 1
         ovs-vsctl show | grep %(br-int)s
         if [[ $? != 0 ]]; then
             break
         fi
-        sleep 1
+        service neutron-plugin-openvswitch-agent stop
+        update-rc.d neutron-plugin-openvswitch-agent disable
+    done
+
+    #bring down tagged bonds
+    apt-get install -y ethtool
+    apt-get -f install -y
+    declare -a bonds=(%(bonds)s)
+    len=${#bonds[@]}
+    for (( i=0; i<$len; i++ )); do
+        ifconfig ${bonds[$i]} down
+        ip link set ${bonds[$i]} down
+        ifdown ${bonds[$i]} --force
     done
 
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
+
+    # /etc/network/interfaces
+    if [[ ${fuel_cluster_id} != 'None' ]]; then
+        echo '' > /etc/network/interfaces
+        declare -a interfaces=(%(interfaces)s)
+        len=${#interfaces[@]}
+        for (( i=0; i<$len; i++ )); do
+            echo -e 'auto' ${interfaces[$i]} >>/etc/network/interfaces 
+            echo -e 'iface' ${interfaces[$i]} 'inet manual' >>/etc/network/interfaces
+            echo ${interfaces[$i]} | grep '\.'
+            if [[ $? == 0 ]]; then
+                intf=$(echo ${interfaces[$i]} | cut -d \. -f 1)
+                echo -e 'vlan-raw-device ' $intf >> /etc/network/interfaces
+            fi
+            echo -e '\n' >> /etc/network/interfaces
+        done
+        echo -e 'auto' %(br_fw_admin)s >>/etc/network/interfaces
+        echo -e 'iface' %(br_fw_admin)s 'inet static' >>/etc/network/interfaces
+        echo -e 'bridge_ports' %(pxe_interface)s >>/etc/network/interfaces
+        echo -e 'address' %(br_fw_admin_address)s >>/etc/network/interfaces
+        echo -e 'up ip route add default via' %(br_fw_admin_gw)s >>/etc/network/interfaces
+    fi
+
+    #reset uplinks to move them out of bond
+    declare -a uplinks=(%(uplinks)s)
+    len=${#uplinks[@]}
+    for (( i=0; i<$len; i++ )); do
+        ifconfig ${uplinks[$i]} down
+        ip link set ${uplinks[$i]} down
+        ifdown ${uplinks[$i]} --force
+        sleep 2
+        ifconfig ${uplinks[$i]} down
+        ip link set ${uplinks[$i]} down
+        ifdown ${uplinks[$i]} --force
+        sleep 2
+        ifconfig ${uplinks[$i]} down
+        ip link set ${uplinks[$i]} down
+        ifdown ${uplinks[$i]} --force
+    done
+    for (( i=0; i<$len; i++ )); do
+        ifconfig ${uplinks[$i]} up
+        ifup ${uplinks[$i]} --force
+        ip link set ${uplinks[$i]} up
+    done
 
     # assign ip to ivs internal ports
     bash /etc/rc.local
@@ -123,8 +197,17 @@ if [[ $install_all == true ]]; then
                     yes | cp -rfp %(dst_dir)s/%(horizon_patch_dir)s/$f/* %(horizon_base_dir)s/$f
                 fi
             done
-            find "%(horizon_base_dir)s" -name "*.pyc" -exec rm -rf {} \;
-            find "%(horizon_base_dir)s" -name "*.pyo" -exec rm -rf {} \;
+            find "%(horizon_base_dir)s" -name "*.pyc" | xargs rm
+            find "%(horizon_base_dir)s" -name "*.pyo" | xargs rm
+
+            # patch neutron api.py to work around oslo bug
+            # https://bugs.launchpad.net/oslo-incubator/+bug/1328247
+            # https://review.openstack.org/#/c/130892/1/openstack/common/fileutils.py
+            neutron_api_py=$(find /usr -name api.py | grep neutron | grep db | grep -v plugins)
+            neutron_api_dir=$(dirname "${neutron_api_py}")
+            sed -i 's/from neutron.openstack.common import log as logging/import logging/g' $neutron_api_py
+            find $neutron_api_dir -name "*.pyc" | xargs rm
+            find $neutron_api_dir -name "*.pyo" | xargs rm
             service apache2 restart
         fi
     fi
@@ -133,8 +216,8 @@ if [[ $install_all == true ]]; then
     dhcp_py=$(find /usr -name dhcp.py | grep linux)
     dhcp_dir=$(dirname "${dhcp_py}")
     sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
-    find $dhcp_dir -name "*.pyc" -exec rm -rf {} \;
-    find $dhcp_dir -name "*.pyo" -exec rm -rf {} \;
+    find $dhcp_dir -name "*.pyc" | xargs rm
+    find $dhcp_dir -name "*.pyo" | xargs rm
     if [[ $deploy_dhcp_agent == true ]]; then
         echo 'Restart neutron-metadata-agent and neutron-dhcp-agent'
         service neutron-metadata-agent restart
@@ -164,6 +247,17 @@ if [[ $is_controller == true ]]; then
     echo 'Restart neutron-server'
     rm -rf /etc/neutron/plugins/ml2/host_certs/*
     service neutron-server restart
+fi
+
+# restart bsn-agent
+service neutron-bsn-agent restart
+
+# patch nova rootwrap for fuel
+if [[ ${fuel_cluster_id} != 'None' ]]; then
+    mkdir -p /usr/share/nova
+    rm -rf /usr/share/nova/rootwrap
+    cp -r /tmp/rootwrap /usr/share/nova/
+    chmod -R 777 /usr/share/nova/rootwrap
 fi
 
 set -e

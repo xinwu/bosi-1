@@ -66,20 +66,38 @@ if [[ $install_all == true ]]; then
     cp %(dst_dir)s/%(hostname)s.te /etc/puppet/modules/selinux/files/centos.te
     cp /usr/lib/systemd/system/neutron-openvswitch-agent.service /usr/lib/systemd/system/neutron-bsn-agent.service
 
+    # stop ovs agent, otherwise, ovs bridges cannot be removed
+    systemctl stop neutron-openvswitch-agent
+    systemctl disable neutron-openvswitch-agent
+
     # remove ovs, example ("br-storage" "br-prv" "br-ex")
     declare -a ovs_br=(%(ovs_br)s)
     len=${#ovs_br[@]}
     for (( i=0; i<$len; i++ )); do
         ovs-vsctl del-br ${ovs_br[$i]}
     done
+    for (( i=0; i<$len; i++ )); do
+        ifconfig ${ovs_br[$i]} down
+        brctl delbr ${ovs_br[$i]}
+    done
 
     # delete ovs br-int
     while true; do
         ovs-vsctl del-br %(br-int)s
+        sleep 1
         ovs-vsctl show | grep %(br-int)s
         if [[ $? != 0 ]]; then
             break
         fi
+        systemctl stop neutron-openvswitch-agent
+        systemctl disable neutron-openvswitch-agent
+    done
+
+    #bring down tagged bonds
+    declare -a bonds=(%(bonds)s)
+    len=${#bonds[@]}
+    for (( i=0; i<$len; i++ )); do
+        ifconfig ${bonds[$i]} down
     done
 
     # deploy bcf
@@ -150,6 +168,9 @@ if [[ $is_controller == true ]]; then
     rm -rf /etc/neutron/plugins/ml2/host_certs/*
     systemctl restart neutron-server
 fi
+
+# restart bsn-agent
+systemctl restart neutron-bsn-agent
 
 set -e
 
