@@ -2,6 +2,7 @@ include AUTHORS
 include README.rst
 include ChangeLog
 include LICENSE
+include requirements.txt 
 recursive-include etc *
 
 exclude .gitignore
