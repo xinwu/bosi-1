@@ -119,6 +119,13 @@ class RestLib(object):
 
     @staticmethod
     def program_segment_and_membership_rule(server, cookie, rule, tenant, port=const.BCF_CONTROLLER_PORT):
+        existing_segments = get_os_mgmt_segments(server, cookie, tenant, port)
+        if rule.br_key not in existing_segments:
+            with open(const.LOG_FILE, "a") as log_file:
+                log_file.write(r'''BCF controller does not have tenant %(tenant)s segment %(segment)s''' %
+                              {'tenant' : tenant, 'segment' : rule.br_key})
+            return
+
         segment_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/segment[name="%(segment)s"]''' %
                       {'tenant' : tenant, 'segment' : rule.br_key})
         segment_data = {"name": rule.br_key}
