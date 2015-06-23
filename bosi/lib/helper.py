@@ -742,7 +742,10 @@ class Helper(object):
     @staticmethod
     def common_setup_node_preparation(env):
         # clean up from previous installation
-        setup_node_dir = os.getcwd()
+        setup_node_dir = env.setup_node_dir
+        subprocess.call("mkdir -p %(setup_node_dir)s/%(generated_script)s" %
+                       {'setup_node_dir'   : setup_node_dir,
+                        'generated_script' : const.GENERATED_SCRIPT_DIR}, shell=True)
         subprocess.call("rm -rf ~/.ssh/known_hosts", shell=True)
         subprocess.call("rm -rf %(log)s" %
                        {'log' : const.LOG_FILE}, shell=True)
@@ -752,9 +755,6 @@ class Helper(object):
                        {'setup_node_dir' : setup_node_dir}, shell=True)
         subprocess.call("rm -rf %(setup_node_dir)s/*.tar.gz" %
                        {'setup_node_dir' : setup_node_dir}, shell=True)
-        subprocess.call("mkdir -p %(setup_node_dir)s/%(generated_script)s" %
-                       {'setup_node_dir'   : setup_node_dir,
-                        'generated_script' : const.GENERATED_SCRIPT_DIR}, shell=True)
         subprocess.call("rm -rf %(setup_node_dir)s/%(generated_script)s/*" %
                        {'setup_node_dir'   : setup_node_dir,
                         'generated_script' : const.GENERATED_SCRIPT_DIR}, shell=True)
