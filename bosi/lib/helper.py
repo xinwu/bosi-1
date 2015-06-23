@@ -259,6 +259,7 @@ class Helper(object):
                     'deploy_horizon_patch': str(node.deploy_horizon_patch).lower(),
                     'ivs_version'         : node.ivs_version,
                     'bsnstacklib_version' : node.bsnstacklib_version,
+                    'openstack_release'   : node.openstack_release,
                     'dst_dir'             : node.dst_dir,
                     'hostname'            : node.hostname,
                     'ivs_pkg'             : node.ivs_pkg,
@@ -303,7 +304,7 @@ class Helper(object):
                       'bcf_controller_user'   : node.bcf_controller_user,
                       'bcf_controller_passwd' : node.bcf_controller_passwd,
                       'port_ips'              : node.get_ivs_internal_port_ips(),
-                      'setup_node_ip'         : node.setup_node_ip})
+                      'default_gw'            : node.get_default_gw()})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -662,6 +663,11 @@ class Helper(object):
             bridge = Bridge(br_key, br_name, ip, vlan)
             bridges.append(bridge)
             bridge_names.append(br_name)
+
+            # get default gw, most likely on br-ex
+            gw = endpoints[br_name].get('gateway')
+            if gw:
+                node_config['ex_gw'] = gw
         node_config['bridges'] = bridges
 
         # get non-bond, non-pxe interfaces,
@@ -682,6 +688,7 @@ class Helper(object):
     @staticmethod
     def load_nodes_from_fuel(node_yaml_config_map, env):
         fuel_settings = Helper.__load_fuel_evn_setting__(env.fuel_cluster_id)
+
         Helper.safe_print("Retrieving list of Fuel nodes\n")
         cmd = (r'''fuel nodes --env %(fuel_cluster_id)s''' %
               {'fuel_cluster_id' : str(env.fuel_cluster_id)})

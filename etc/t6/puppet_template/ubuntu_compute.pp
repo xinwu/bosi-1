@@ -13,7 +13,7 @@ define ivs_internal_port_ip {
 # example ['storage,192.168.1.1/24', 'ex,192.168.2.1/24', 'management,192.168.3.1/24']
 class ivs_internal_port_ips {
     $port_ips = [%(port_ips)s]
-    $setup_node_ip = "%(setup_node_ip)s"
+    $default_gw = "%(default_gw)s"
     file { "/etc/rc.local":
         ensure  => file,
         mode    => 0777,
@@ -42,8 +42,8 @@ class ivs_internal_port_ips {
     }->
     file_line { "add default gw":
         path    => '/etc/rc.local',
-        line    => "ip route add default via ${setup_node_ip}",
-        match   => "^ip route add default via ${setup_node_ip}$",
+        line    => "ip route add default via ${default_gw}",
+        match   => "^ip route add default via ${default_gw}$",
     }->
     file_line { "add exit 0":
         path    => '/etc/rc.local',
