@@ -133,6 +133,17 @@ exec { "load 8021q":
     require => Package['vlan'],
 }
 
+# load bonding module
+file_line {'load bonding on boot':
+    path    => '/etc/modules',
+    line    => 'bonding',
+    match   => '^bonding$',
+}
+exec { "load bonding":
+    command => "modprobe bonding",
+    path    => $binpath,
+}
+
 # install and enable ntp
 package { "ntp":
     ensure  => installed,

@@ -20,12 +20,16 @@ controller() {
         declare -a bonds=(%(bonds)s)
         len=${#bonds[@]}
         for (( i=0; i<$len; i++ )); do
-            sed -i 's/bond-mode active-backup/bond-mode active-active/g' /etc/network/interfaces.d/ifcfg-${bonds[$i]}
-            ip link set dev ${bonds[$i]} down
+            sed -i 's/bond-mode active-backup/bond-mode 2/g' /etc/network/interfaces.d/ifcfg-${bonds[$i]}
         done
-        sleep 1
+        declare -a uplinks=(%(uplinks)s)
+        len=${#uplinks[@]}
         for (( i=0; i<$len; i++ )); do
-            ip link set dev ${bonds[$i]} up
+            ifdown ${uplinks[$i]}
+        done
+        rmmod bonding
+        for (( i=0; i<$len; i++ )); do
+            ifup ${uplinks[$i]}
         done
     fi
 

@@ -1,4 +1,6 @@
+import re
 import yaml
+import sets
 import Queue
 import argparse
 import threading
@@ -64,7 +66,7 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
     Helper.safe_print("Start to prepare setup node\n")
     env = Environment(config, fuel_cluster_id, tag, cleanup)
     Helper.common_setup_node_preparation(env)
-    controller_node = None
+    controller_nodes = []
 
     # Generate detailed node information
     Helper.safe_print("Start to setup Big Cloud Fabric\n")
@@ -93,15 +95,12 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
         node_q.put(node)
 
         if node.role == const.ROLE_NEUTRON_SERVER:
-            controller_node = node
+            controller_nodes.append(node)
         elif node.deploy_dhcp_agent:
             dhcp_node_q.put(node)
 
-    if controller_node:
-        Helper.safe_print("Copy neutron.conf from openstack controller %(controller_node)s\n" %
-                         {'controller_node' : controller_node.hostname})
-        Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'neutron.conf',
-                                     controller_node.setup_node_dir)
+    if len(controller_nodes) and controller_nodes[0]:
+        controller_node = controller_nodes[0]
         Helper.safe_print("Copy dhcp_agent.ini from openstack controller %(controller_node)s\n" %
                          {'controller_node' : controller_node.hostname})
         Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'dhcp_agent.ini',
@@ -110,6 +109,24 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
                          {'controller_node' : controller_node.hostname})
         Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'metadata_agent.ini',
                                      controller_node.setup_node_dir)
+
+    rabbit_hosts = sets.Set()
+    for controller_node in controller_nodes:
+        Helper.safe_print("Copy neutron.conf from openstack controller %(controller_node)s\n" %
+                         {'controller_node' : controller_node.hostname})
+        Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'neutron.conf',
+                                     controller_node.setup_node_dir)
+        # put all controllers to rabbit hosts
+        neutron_conf = open("%s/neutron.conf" % controller_node.setup_node_dir, 'r')
+        for line in neutron_conf:
+            if line.startswith("rabbit_hosts"):
+                hosts_str = line.split("=")[1].strip()
+                hosts = hosts_str.split(',')
+                for host in hosts:
+                    if "127.0" in host:
+                        continue
+                    rabbit_hosts.add(host.strip())
+                break
         Helper.safe_print("Copy send_lldp to %(hostname)s\n" %
                          {'hostname' : controller_node.hostname})
         Helper.copy_file_to_remote(controller_node,
@@ -118,6 +135,20 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
                                    'deploy_mode'         : controller_node.deploy_mode,
                                    'python_template_dir' : const.PYTHON_TEMPLATE_DIR},
                                    '/bin', 'send_lldp')
+    if len(controller_nodes):
+        rabbit_hosts_str = ','.join(rabbit_hosts)
+        neutron_conf_new = open("%s/neutron.conf.new" % controller_node.setup_node_dir, 'w')
+        neutron_conf = open("%s/neutron.conf" % controller_node.setup_node_dir, 'r')
+        for line in neutron_conf:
+            if line.startswith("rabbit_hosts"):
+                neutron_conf_new.write("rabbit_hosts=%s" % rabbit_hosts_str)
+            else:
+                neutron_conf_new.write(line)
+        neutron_conf.close()
+        neutron_conf_new.close()
+        Helper.run_command_on_local_without_timeout(r'''mv %(setup_node_dir)s/neutron.conf.new %(setup_node_dir)s/neutron.conf''' %
+                                                   {'setup_node_dir' : env.setup_node_dir})
+        
     # Use multiple threads to copy dhcp and metedata agent config to compute nodes
     for i in range(const.MAX_WORKERS):
         t = threading.Thread(target=worker_setup_dhcp_agent)
