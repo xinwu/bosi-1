@@ -33,14 +33,18 @@ controller() {
     if [[ ${fuel_cluster_id} != 'None' ]]; then
         crm resource stop p_neutron-dhcp-agent
         crm resource stop p_neutron-metadata-agent
+        crm resource stop p_neutron-l3-agent
         sleep 10
         crm configure delete p_neutron-dhcp-agent
         crm configure delete p_neutron-metadata-agent
+        crm configure delete p_neutron-l3-agent
     fi
     service neutron-metadata-agent stop
     update-rc.d neutron-metadata-agent disable
     service neutron-dhcp-agent stop
     update-rc.d neutron-dhcp-agent disable
+    service p_neutron-l3-agent stop
+    update-rc.d p_neutron-l3-agent disable
 
     if [[ $deploy_horizon_patch == true ]]; then
         # chmod neutron config since bigswitch horizon patch reads neutron config as well

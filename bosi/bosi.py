@@ -44,6 +44,10 @@ def worker_setup_node():
 def worker_setup_dhcp_agent():
     while True:
         node = dhcp_node_q.get()
+        Helper.safe_print("Copy neutron.conf to %(hostname)s\n" %
+                         {'hostname' : node.hostname})
+        Helper.copy_file_to_remote(node, r'''%(dir)s/neutron.conf''' % {'dir' : node.setup_node_dir},
+                                   '/etc/neutron', 'neutron.conf')
         Helper.safe_print("Copy dhcp_agent.ini to %(hostname)s\n" %
                          {'hostname' : node.hostname})
         Helper.copy_file_to_remote(node, r'''%(dir)s/dhcp_agent.ini''' % {'dir' : node.setup_node_dir},
@@ -94,6 +98,10 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
             dhcp_node_q.put(node)
 
     if controller_node:
+        Helper.safe_print("Copy neutron.conf from openstack controller %(controller_node)s\n" %
+                         {'controller_node' : controller_node.hostname})
+        Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'neutron.conf',
+                                     controller_node.setup_node_dir)
         Helper.safe_print("Copy dhcp_agent.ini from openstack controller %(controller_node)s\n" %
                          {'controller_node' : controller_node.hostname})
         Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'dhcp_agent.ini',
