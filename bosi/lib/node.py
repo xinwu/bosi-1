@@ -160,7 +160,7 @@ class Node(object):
         if not self.bridges:
             return ' '.join(port_ips)
         for br in self.bridges:
-            if (not br.br_vlan) or (br.br_key == const.BR_KEY_PRIVATE):
+            if (not br.br_vlan) or (not br.br_ip) or (br.br_key == const.BR_KEY_PRIVATE):
                 continue
             prefixes = br.br_key.split('/')
             port = (r'''%(tenant)s-%(segment)s''' %

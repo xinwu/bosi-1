@@ -141,15 +141,13 @@ compute() {
         service neutron-plugin-openvswitch-agent stop
         update-rc.d neutron-plugin-openvswitch-agent disable
 
-        # remove ovs, example ("br-storage" "br-prv" "br-ex")
+        # remove ovs and linux bridge, example ("br-storage" "br-prv" "br-ex")
         declare -a ovs_br=(%(ovs_br)s)
         len=${#ovs_br[@]}
         for (( i=0; i<$len; i++ )); do
             ovs-vsctl del-br ${ovs_br[$i]}
-        done
-        for (( i=0; i<$len; i++ )); do
-            ip link del dev ${ovs_br[$i]}
             brctl delbr ${ovs_br[$i]}
+            ip link del dev ${ovs_br[$i]}
         done
 
         # delete ovs br-int
@@ -248,7 +246,7 @@ apt-get install ubuntu-cloud-keyring
 if [[ $openstack_release == 'juno' ]]; then
     echo "deb http://ubuntu-cloud.archive.canonical.com/ubuntu" \
     "trusty-updates/juno main" > /etc/apt/sources.list.d/cloudarchive-juno.list
-then
+fi
 apt-get update -y
 apt-get install -y linux-headers-$(uname -r) build-essential
 apt-get install -y python-dev python-setuptools

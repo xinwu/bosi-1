@@ -646,19 +646,19 @@ class Helper(object):
             vendor_specific = endpoints[br_name].get('vendor_specific')
             if vendor_specific:
                 vlan = vendor_specific.get('vlans')
-            else:
-                # we don't touch bridge without vendor_specific,
-                # for example: br-floating
-                continue
 
             phy_interfaces = vendor_specific.get('phy_interfaces')
-            if not (set(node_config['uplink_interfaces']).issuperset(set(phy_interfaces)) and
-                    set(phy_interfaces).issuperset(set(node_config['uplink_interfaces']))):
-                # we don't touch the bridge which doesn't use bond
-                continue
+            if phy_interfaces:
+                set1 = set(node_config['uplink_interfaces'])
+                set2 = set(phy_interfaces)
+                issuperset = set1.issuperset(set2)
+                issubset = set2.issubset(set1)
+                if not (issuperset and issubset):
+                    # we don't touch the bridge which doesn't use bond
+                    continue
 
-            ip = endpoints[br_name]['IP']
-            if ip == const.NONE_IP:
+            ip = endpoints[br_name].get('IP')
+            if (not ip) or (ip == const.NONE_IP):
                 ip = None
             else:
                 ip = ip[0]
@@ -741,7 +741,7 @@ class Helper(object):
             return Helper.load_nodes_from_yaml(node_yaml_config_map, env)
         else:
             node_dic, membership_rules = Helper.load_nodes_from_fuel(node_yaml_config_map, env)
-            # TODO: program membership rules to controller
+            # TODO XXX: program membership rules to controller
             #for br_key, rule in membership_rules.iteritems():
             #    RestLib.program_segment_and_membership_rule(env.bcf_master, env.bcf_cookie, rule,
             #                                                env.bcf_openstack_management_tenant)
