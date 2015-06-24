@@ -141,7 +141,7 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
         neutron_conf = open("%s/neutron.conf" % controller_node.setup_node_dir, 'r')
         for line in neutron_conf:
             if line.startswith("rabbit_hosts"):
-                neutron_conf_new.write("rabbit_hosts=%s" % rabbit_hosts_str)
+                neutron_conf_new.write("rabbit_hosts=%s\n" % rabbit_hosts_str)
             else:
                 neutron_conf_new.write(line)
         neutron_conf.close()
