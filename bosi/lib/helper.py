@@ -275,7 +275,7 @@ class Helper(object):
                     'br_fw_admin'         : node.br_fw_admin,
                     'pxe_interface'       : node.pxe_interface,
                     'br_fw_admin_address' : node.br_fw_admin_address,
-                    'br_fw_admin_gw'      : node.setup_node_ip,
+                    'default_gw'          : node.get_default_gw(),
                     'uplinks'             : node.get_all_uplinks()})
         bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh''' %
                            {'setup_node_dir'       : node.setup_node_dir,
@@ -305,7 +305,8 @@ class Helper(object):
                       'bcf_controller_passwd' : node.bcf_controller_passwd,
                       'port_ips'              : node.get_ivs_internal_port_ips(),
                       'default_gw'            : node.get_default_gw(),
-                      'uplinks'               : node.get_comma_separated_uplinks()})
+                      'uplinks'               : node.get_comma_separated_uplinks(),
+                      'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower()})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -740,10 +741,10 @@ class Helper(object):
             return Helper.load_nodes_from_yaml(node_yaml_config_map, env)
         else:
             node_dic, membership_rules = Helper.load_nodes_from_fuel(node_yaml_config_map, env)
-            # program membership rules to controller
-            for br_key, rule in membership_rules.iteritems():
-                RestLib.program_segment_and_membership_rule(env.bcf_master, env.bcf_cookie, rule,
-                                                            env.bcf_openstack_management_tenant)
+            # TODO: program membership rules to controller
+            #for br_key, rule in membership_rules.iteritems():
+            #    RestLib.program_segment_and_membership_rule(env.bcf_master, env.bcf_cookie, rule,
+            #                                                env.bcf_openstack_management_tenant)
             return node_dic
 
 

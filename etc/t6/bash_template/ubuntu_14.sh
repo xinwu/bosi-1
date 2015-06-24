@@ -95,13 +95,6 @@ compute() {
     sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
     find $dhcp_dir -name "*.pyc" | xargs rm
     find $dhcp_dir -name "*.pyo" | xargs rm
-    if [[ $deploy_dhcp_agent == true ]]; then
-        echo 'Restart neutron-metadata-agent and neutron-dhcp-agent'
-        service neutron-metadata-agent start
-        update-rc.d neutron-metadata-agent defaults
-        service neutron-dhcp-agent start
-        update-rc.d neutron-dhcp-agent defaults
-    fi
 
     # install ivs
     if [[ $install_ivs == true ]]; then
@@ -201,7 +194,7 @@ compute() {
             echo -e 'iface' %(br_fw_admin)s 'inet static' >>/etc/network/interfaces
             echo -e 'bridge_ports' %(pxe_interface)s >>/etc/network/interfaces
             echo -e 'address' %(br_fw_admin_address)s >>/etc/network/interfaces
-            echo -e 'up ip route add default via' %(br_fw_admin_gw)s >>/etc/network/interfaces
+            echo -e 'up ip route add default via' %(default_gw)s >>/etc/network/interfaces
         fi
 
         #reset uplinks to move them out of bond
@@ -217,6 +210,14 @@ compute() {
 
         # assign ip to ivs internal ports
         bash /etc/rc.local
+    fi
+
+    if [[ $deploy_dhcp_agent == true ]]; then
+        echo 'Restart neutron-metadata-agent and neutron-dhcp-agent'
+        service neutron-metadata-agent restart
+        update-rc.d neutron-metadata-agent defaults
+        service neutron-dhcp-agent restart
+        update-rc.d neutron-dhcp-agent defaults
     fi
 
     echo 'Restart libvirtd and openstack-nova-compute'
