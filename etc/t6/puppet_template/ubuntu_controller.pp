@@ -14,7 +14,7 @@ start on runlevel [2345]
 stop on runlevel [!2345]
 respawn
 script
-    exec /bin/send_lldp --system-desc 5c:16:c7:00:00:00 --system-name $(uname -n) -i 30 --network_interface %(uplinks)s
+    exec /bin/send_lldp --system-desc 5c:16:c7:00:00:00 --system-name $(uname -n) -i 10 --network_interface %(uplinks)s
 end script
 ",
 }
