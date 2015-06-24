@@ -1,5 +1,6 @@
 
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
+$uplinks = %(uplinks)s
 
 # assign ip to ivs internal port
 define ivs_internal_port_ip {

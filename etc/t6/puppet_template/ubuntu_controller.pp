@@ -3,6 +3,29 @@ $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 $port_ips = [%(port_ips)s]
 $ivs_daemon_args = %(ivs_daemon_args)s
 
+# lldp
+file { "/bin/send_lldp":
+    ensure  => file,
+    mode    => 0777,
+}
+file { "/etc/init/send_lldp.conf":
+    ensure  => file,
+    content => "
+description \"BCF LLDP\"
+start on runlevel [2345]
+stop on runlevel [!2345]
+respawn
+script
+    exec /bin/send_lldp --system-desc 5c:16:c7:00:00:00 --system-name $(uname -n) -i 30 --network_interface %(uplinks)s
+end script
+",
+}
+service { "send_lldp":
+    ensure  => running,
+    enable  => true,
+    require => [File['/bin/send_lldp'], File['/etc/init/send_lldp.conf']],
+}
+
 # comment out heat domain related configurations
 $heat_config = file('/etc/heat/heat.conf','/dev/null')
 if($heat_config != '') {

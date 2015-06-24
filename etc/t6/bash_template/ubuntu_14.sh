@@ -15,7 +15,27 @@ controller() {
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
+    # change bond mode to active active
+    if [[ ${fuel_cluster_id} != 'None' ]]; then
+        declare -a bonds=(%(bonds)s)
+        len=${#bonds[@]}
+        for (( i=0; i<$len; i++ )); do
+            sed -i 's/bond-mode active-backup/bond-mode active-active/g'
+            ip link set dev ${bonds[$i]} down
+        done
+        sleep 1
+        for (( i=0; i<$len; i++ )); do
+            ip link set dev ${bonds[$i]} up
+        done
+    fi
+
     echo 'Stop and disable neutron-metadata-agent and neutron-dhcp-agent'
+    if [[ ${fuel_cluster_id} != 'None' ]]; then
+        crm resource stop p_neutron-dhcp-agent
+        crm configure delete p_neutron-dhcp-agent
+        crm resource stop p_neutron-metadata-agent
+        crm configure delete p_neutron-metadata-agent
+    fi
     service neutron-metadata-agent stop
     update-rc.d neutron-metadata-agent disable
     service neutron-dhcp-agent stop
@@ -152,9 +172,7 @@ compute() {
             fi
         done
 
-        #bring down tagged bonds
-        apt-get install -y ethtool
-        apt-get -f install -y
+        #bring down all bonds
         declare -a bonds=(%(bonds)s)
         len=${#bonds[@]}
         for (( i=0; i<$len; i++ )); do

@@ -52,12 +52,6 @@ def worker_setup_dhcp_agent():
                          {'hostname' : node.hostname})
         Helper.copy_file_to_remote(node, r'''%(dir)s/metadata_agent.ini''' % {'dir': node.setup_node_dir},
                                    '/etc/neutron', 'metadata_agent.ini')
-        Helper.safe_print("Restart neutron-metadata-agent and neutron-dhcp-agent on %(hostname)s\n" %
-                         {'hostname' : node.hostname})
-        Helper.run_command_on_remote(node, 'service neutron-metadata-agent restart')
-        Helper.run_command_on_remote(node, 'service neutron-dhcp-agent restart')
-        Helper.safe_print("Finish deploying dhcp agent and metadata agent on %(hostname)s\n" %
-                         {'hostname' : node.hostname})
         dhcp_node_q.task_done()
 
 
@@ -99,14 +93,6 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
         elif node.deploy_dhcp_agent:
             dhcp_node_q.put(node)
 
-    # Use multiple threads to setup nodes
-    for i in range(const.MAX_WORKERS):
-        t = threading.Thread(target=worker_setup_node)
-        t.daemon = True
-        t.start()
-    node_q.join()
-
-    # Use multiple threads to setup up dhcp agent and metadata agent
     if controller_node:
         Helper.safe_print("Copy dhcp_agent.ini from openstack controller %(controller_node)s\n" %
                          {'controller_node' : controller_node.hostname})
@@ -116,11 +102,27 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
                          {'controller_node' : controller_node.hostname})
         Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'metadata_agent.ini',
                                      controller_node.setup_node_dir)
-    #for i in range(const.MAX_WORKERS):
-    #    t = threading.Thread(target=worker_setup_dhcp_agent)
-    #    t.daemon = True
-    #    t.start()
-    #dhcp_node_q.join()
+        Helper.safe_print("Copy send_lldp to %(hostname)s\n" %
+                         {'hostname' : controller_node.hostname})
+        Helper.copy_file_to_remote(controller_node,
+                                   r'''%(setup_node_dir)s/%(deploy_mode)s/%(python_template_dir)s/send_lldp''' %
+                                  {'setup_node_dir'      : controller_node.setup_node_dir,
+                                   'deploy_mode'         : controller_node.deploy_mode,
+                                   'python_template_dir' : const.PYTHON_TEMPLATE_DIR},
+                                   '/bin', 'send_lldp')
+    # Use multiple threads to copy dhcp and metedata agent config to compute nodes
+    for i in range(const.MAX_WORKERS):
+        t = threading.Thread(target=worker_setup_dhcp_agent)
+        t.daemon = True
+        t.start()
+    dhcp_node_q.join()
+
+    # Use multiple threads to setup nodes
+    for i in range(const.MAX_WORKERS):
+        t = threading.Thread(target=worker_setup_node)
+        t.daemon = True
+        t.start()
+    node_q.join()
 
     Helper.safe_print("Big Cloud Fabric deployment finished! Check %(log)s on each node for details.\n" %
                      {'log' : const.LOG_FILE})

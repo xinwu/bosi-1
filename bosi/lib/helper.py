@@ -304,7 +304,8 @@ class Helper(object):
                       'bcf_controller_user'   : node.bcf_controller_user,
                       'bcf_controller_passwd' : node.bcf_controller_passwd,
                       'port_ips'              : node.get_ivs_internal_port_ips(),
-                      'default_gw'            : node.get_default_gw()})
+                      'default_gw'            : node.get_default_gw(),
+                      'uplinks'               : node.get_comma_separated_uplinks()})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,

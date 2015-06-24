@@ -193,6 +193,13 @@ class Node(object):
         return ' '.join(uplinks)
 
 
+    def get_comma_separated_uplinks(self):
+        uplinks = []
+        for intf in self.uplink_interfaces:
+            uplinks.append(intf)
+        return ','.join(uplinks)
+
+
     def get_all_bonds(self):
         bonds = []
         if self.bond:
