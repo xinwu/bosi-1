@@ -646,16 +646,15 @@ class Helper(object):
             vendor_specific = endpoints[br_name].get('vendor_specific')
             if vendor_specific:
                 vlan = vendor_specific.get('vlans')
-
-            phy_interfaces = vendor_specific.get('phy_interfaces')
-            if phy_interfaces:
-                set1 = set(node_config['uplink_interfaces'])
-                set2 = set(phy_interfaces)
-                issuperset = set1.issuperset(set2)
-                issubset = set2.issubset(set1)
-                if not (issuperset and issubset):
-                    # we don't touch the bridge which doesn't use bond
-                    continue
+                phy_interfaces = vendor_specific.get('phy_interfaces')
+                if phy_interfaces:
+                    set1 = set(node_config['uplink_interfaces'])
+                    set2 = set(phy_interfaces)
+                    issuperset = set1.issuperset(set2)
+                    issubset = set2.issubset(set1)
+                    if not (issuperset and issubset):
+                        # we don't touch the bridge which doesn't use bond
+                        continue
 
             ip = endpoints[br_name].get('IP')
             if (not ip) or (ip == const.NONE_IP):
@@ -720,8 +719,9 @@ class Helper(object):
                     if (not br.br_vlan) or (br.br_key == const.BR_KEY_PRIVATE):
                         continue
                     rule = MembershipRule(br.br_key, br.br_vlan,
-                                          node.bcf_openstack_management_tenant)
-                    membership_rules[rule.br_key] = rule
+                                          node.bcf_openstack_management_tenant,
+                                          node.fuel_cluster_id)
+                    membership_rules[rule.segment] = rule
 
         except IndexError:
             raise Exception("Could not parse node list:\n%(node_list)s\n"
@@ -741,10 +741,9 @@ class Helper(object):
             return Helper.load_nodes_from_yaml(node_yaml_config_map, env)
         else:
             node_dic, membership_rules = Helper.load_nodes_from_fuel(node_yaml_config_map, env)
-            # TODO XXX: program membership rules to controller
-            #for br_key, rule in membership_rules.iteritems():
-            #    RestLib.program_segment_and_membership_rule(env.bcf_master, env.bcf_cookie, rule,
-            #                                                env.bcf_openstack_management_tenant)
+            for br_key, rule in membership_rules.iteritems():
+                RestLib.program_segment_and_membership_rule(env.bcf_master, env.bcf_cookie, rule,
+                                                            env.bcf_openstack_management_tenant)
             return node_dic
 
 

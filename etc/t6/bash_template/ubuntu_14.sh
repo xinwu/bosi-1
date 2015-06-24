@@ -20,7 +20,7 @@ controller() {
         declare -a bonds=(%(bonds)s)
         len=${#bonds[@]}
         for (( i=0; i<$len; i++ )); do
-            sed -i 's/bond-mode active-backup/bond-mode active-active/g'
+            sed -i 's/bond-mode active-backup/bond-mode active-active/g' /etc/network/interfaces.d/ifcfg-${bonds[$i]}
             ip link set dev ${bonds[$i]} down
         done
         sleep 1
@@ -32,8 +32,9 @@ controller() {
     echo 'Stop and disable neutron-metadata-agent and neutron-dhcp-agent'
     if [[ ${fuel_cluster_id} != 'None' ]]; then
         crm resource stop p_neutron-dhcp-agent
-        crm configure delete p_neutron-dhcp-agent
         crm resource stop p_neutron-metadata-agent
+        sleep 10
+        crm configure delete p_neutron-dhcp-agent
         crm configure delete p_neutron-metadata-agent
     fi
     service neutron-metadata-agent stop

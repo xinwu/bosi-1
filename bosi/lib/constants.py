@@ -42,7 +42,7 @@ LOG_FILE             = "/var/log/bcf_setup.log"
 
 # constants for ivs config
 INBAND_VLAN     = 4092
-IVS_DAEMON_ARGS = (r'''DAEMON_ARGS=\"--syslog --inband-vlan %(inband_vlan)d%(uplink_interfaces)s%(internal_ports)s\"''')
+IVS_DAEMON_ARGS = (r'''DAEMON_ARGS=\"--inband-vlan %(inband_vlan)d%(uplink_interfaces)s%(internal_ports)s\"''')
 
 # constants of supported OSes and versions
 CENTOS          = 'centos'
@@ -73,6 +73,12 @@ BR_KEY_PRIVATE         = 'neutron/private'
 BR_KEY_FW_ADMIN        = 'fw-admin'
 BR_KEY_EXCEPTION       = [BR_KEY_FW_ADMIN]
 BR_NAME_INT            = 'br-int'
+
+# ivs internal port prefix mapping
+IVS_INTERNAL_PORT_DIC = { 'management' : 'm',
+    'ex'      : 'e',
+    'storage' : 's',
+}
 
 HASH_HEADER            = 'BCF-SETUP'
 BCF_CONTROLLER_PORT    = 8443

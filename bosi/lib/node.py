@@ -147,10 +147,11 @@ class Node(object):
             for br in self.bridges:
                 if (not br.br_vlan) or (br.br_key == const.BR_KEY_PRIVATE):
                     continue
+                internal_ports.append(' --internal-port=')
                 prefixes = br.br_key.split('/')
-                port = (r'''%(tenant)s-%(segment)s''' %
-                       {'tenant'  : self.bcf_openstack_management_tenant,
-                        'segment' : prefixes[len(prefixes)-1]})
+                segment = prefixes[len(prefixes)-1]
+                port_prefix = const.IVS_INTERNAL_PORT_DIC.get(segment)
+                port = "%s%s" % (port_prefix, self.fuel_cluster_id)
                 internal_ports.append(port)
         return ''.join(internal_ports)
 
@@ -163,9 +164,9 @@ class Node(object):
             if (not br.br_vlan) or (not br.br_ip) or (br.br_key == const.BR_KEY_PRIVATE):
                 continue
             prefixes = br.br_key.split('/')
-            port = (r'''%(tenant)s-%(segment)s''' %
-                   {'tenant'  : self.bcf_openstack_management_tenant,
-                    'segment' : prefixes[len(prefixes)-1]})
+            segment = prefixes[len(prefixes)-1]
+            port_prefix = const.IVS_INTERNAL_PORT_DIC.get(segment)
+            port = "%s%s" % (port_prefix, self.fuel_cluster_id)
             port_ips.append(r'''"%(port)s,%(ip)s"''' %
                            {'port' : port,
                             'ip'   : br.br_ip})
