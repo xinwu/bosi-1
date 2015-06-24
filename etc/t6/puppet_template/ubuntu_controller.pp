@@ -1,7 +1,5 @@
 
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
-$port_ips = [%(port_ips)s]
-$ivs_daemon_args = %(ivs_daemon_args)s
 
 # lldp
 file { "/bin/send_lldp":
@@ -68,32 +66,29 @@ if($heat_config != '') {
     }
 }
 
-# example ['storage,192.168.1.1/24', 'ex,192.168.2.1/24', 'management,192.168.3.1/24']
-class ivs_internal_port_ips {
-    $default_gw = "%(default_gw)s"
-    file { "/etc/rc.local":
-        ensure  => file,
-        mode    => 0777,
-    }->
-    file_line { "remove exit 0":
-        path    => '/etc/rc.local',
-        ensure  => absent,
-        line    => "exit 0",
-    }->
-    file_line { "clear default gw":
-        path    => '/etc/rc.local',
-        line    => "ip route del default",
-        match   => "^ip route del default$",
-    }->
-    file_line { "add default gw":
-        path    => '/etc/rc.local',
-        line    => "ip route add default via ${default_gw}",
-        match   => "^ip route add default via ${default_gw}$",
-    }->
-    file_line { "add exit 0":
-        path    => '/etc/rc.local',
-        line    => "exit 0",
-    }
+# assign default gw
+file { "/etc/rc.local":
+    ensure  => file,
+    mode    => 0777,
+}->
+file_line { "remove exit 0":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "exit 0",
+}->
+file_line { "clear default gw":
+    path    => '/etc/rc.local',
+    line    => "ip route del default",
+    match   => "^ip route del default$",
+}->
+file_line { "add default gw":
+    path    => '/etc/rc.local',
+    line    => "ip route add default via %(default_gw)s",
+    match   => "^ip route add default via %(default_gw)s",
+}->
+file_line { "add exit 0":
+    path    => '/etc/rc.local',
+    line    => "exit 0",
 }
 
 # make sure known_hosts is cleaned up

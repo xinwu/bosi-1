@@ -147,9 +147,11 @@ class Node(object):
             for br in self.bridges:
                 if (not br.br_vlan) or (br.br_key == const.BR_KEY_PRIVATE):
                     continue
-                segments = br.br_key.split('/')
-                internal_ports.append(' --internal-port=')
-                internal_ports.append(segments[len(segments)-1])
+                prefixes = br.br_key.split('/')
+                port = (r'''%(tenant)s-%(segment)s''' %
+                       {'tenant'  : self.bcf_openstack_management_tenant,
+                        'segment' : prefixes[len(prefixes)-1]})
+                internal_ports.append(port)
         return ''.join(internal_ports)
 
 
@@ -160,9 +162,13 @@ class Node(object):
         for br in self.bridges:
             if (not br.br_vlan) or (br.br_key == const.BR_KEY_PRIVATE):
                 continue
-            port_ips.append(r'''"%(internal_port)s,%(ip)s"''' %
-                                 {'internal_port' : br.br_key,
-                                  'ip'            : br.br_ip})
+            prefixes = br.br_key.split('/')
+            port = (r'''%(tenant)s-%(segment)s''' %
+                   {'tenant'  : self.bcf_openstack_management_tenant,
+                    'segment' : prefixes[len(prefixes)-1]})
+            port_ips.append(r'''"%(port)s,%(ip)s"''' %
+                           {'port' : port,
+                            'ip'   : br.br_ip})
         return ",".join(port_ips)
 
 
