@@ -203,13 +203,13 @@ class Helper(object):
 
 
     @staticmethod
-    def copy_dir_to_remote_with_key(node, src_file, dst_dir):
+    def copy_dir_to_remote_with_key(node, src_dir, dst_dir):
         mkdir_cmd = (r'''mkdir -p %(dst_dir)s''' % {'dst_dir' : dst_dir})
         Helper.run_command_on_remote_with_key(node, mkdir_cmd)
-        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_file)s %(hostname)s:%(dst_dir)s/ >> %(log)s 2>&1''' %
+        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_dir)s %(hostname)s:%(dst_dir)s/ >> %(log)s 2>&1''' %
                   {'hostname'   : node.hostname,
                    'log'        : node.log,
-                   'src_file'   : src_dir,
+                   'src_dir'    : src_dir,
                    'dst_dir'    : dst_dir
                   })
         Helper.run_command_on_local(scp_cmd)
