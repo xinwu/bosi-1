@@ -121,6 +121,21 @@ class Helper(object):
 
 
     @staticmethod
+    def copy_dir_to_remote_with_passwd(node, src_dir, dst_dir):
+        mkdir_cmd = (r'''mkdir -p %(dst_dir)s''' % {'dst_dir' : dst_dir})
+        Helper.run_command_on_remote_with_passwd(node, mkdir_cmd)
+        scp_cmd = (r'''sshpass -p %(pwd)s scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_dir)s  %(user)s@%(hostname)s:%(dst_dir)s/ >> %(log)s 2>&1''' %
+                  {'user'       : node.user,
+                   'hostname'   : node.hostname,
+                   'pwd'        : node.passwd,
+                   'log'        : node.log,
+                   'src_dir'    : src_dir,
+                   'dst_dir'    : dst_dir
+                  })
+        Helper.run_command_on_local(scp_cmd)
+
+
+    @staticmethod
     def copy_file_to_remote_with_passwd(node, src_file, dst_dir, dst_file, mode=777):
         """
         Copy file from local node to remote node,
@@ -185,6 +200,19 @@ class Helper(object):
                     'remote_cmd' : command
                    })
         Helper.run_command_on_local(local_cmd)
+
+
+    @staticmethod
+    def copy_dir_to_remote_with_key(node, src_file, dst_dir):
+        mkdir_cmd = (r'''mkdir -p %(dst_dir)s''' % {'dst_dir' : dst_dir})
+        Helper.run_command_on_remote_with_key(node, mkdir_cmd)
+        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_file)s %(hostname)s:%(dst_dir)s/ >> %(log)s 2>&1''' %
+                  {'hostname'   : node.hostname,
+                   'log'        : node.log,
+                   'src_file'   : src_dir,
+                   'dst_dir'    : dst_dir
+                  })
+        Helper.run_command_on_local(scp_cmd)
 
 
     @staticmethod
@@ -819,6 +847,14 @@ class Helper(object):
 
 
     @staticmethod
+    def copy_dir_to_remote(node, src_dir, dst_dir):
+        if node.fuel_cluster_id:
+            Helper.copy_dir_to_remote_with_key(node, src_dir, dst_dir)
+        else:
+            Helper.copy_dir_to_remote_with_passwd(node, src_dir, dst_dir)
+
+
+    @staticmethod
     def copy_file_to_remote(node, src_file, dst_dir, dst_file, mode=777):
         if node.fuel_cluster_id:
             Helper.copy_file_to_remote_with_key(node, src_file, dst_dir, dst_file, mode)
@@ -899,11 +935,10 @@ class Helper(object):
         if node.fuel_cluster_id:
             Helper.safe_print("Copy rootwrap to %(hostname)s\n" %
                              {'hostname' : node.hostname})
-            Helper.copy_file_to_remote(node,
+            Helper.copy_dir_to_remote(node,
                 (r'''%(src_dir)s/rootwrap''' %
                 {'src_dir' : node.setup_node_dir}),
-                node.dst_dir,
-                "rootwrap")
+                node.dst_dir)
 
 
 

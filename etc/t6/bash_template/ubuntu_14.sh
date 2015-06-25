@@ -284,8 +284,10 @@ fi
 if [[ ${fuel_cluster_id} != 'None' ]]; then
     mkdir -p /usr/share/nova
     rm -rf /usr/share/nova/rootwrap
-    cp -r /tmp/rootwrap /usr/share/nova/
+    rm -rf %(dst_dir)s/rootwrap/rootwrap
+    cp -r %(dst_dir)s/rootwrap /usr/share/nova/
     chmod -R 777 /usr/share/nova/rootwrap
+    rm -rf /usr/share/nova/rootwrap/rootwrap
 fi
 
 set -e
