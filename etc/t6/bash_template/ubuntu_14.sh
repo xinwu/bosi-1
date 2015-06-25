@@ -89,6 +89,8 @@ controller() {
     echo 'Restart neutron-server'
     rm -rf /etc/neutron/plugins/ml2/host_certs/*
     service neutron-server restart
+    service keystone restart
+    service apache2 restart
 }
 
 compute() {
