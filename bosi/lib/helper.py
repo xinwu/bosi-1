@@ -42,13 +42,14 @@ class Helper(object):
 
 
     @staticmethod
-    def run_command_on_remote_with_key_without_timeout(node_ip, command):
+    def run_command_on_remote_with_key_without_timeout(node_ip, node_user, command):
         """
         Run cmd on remote node.
         """
-        local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(hostname)s "%(remote_cmd)s"''' %
+        local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s "%(remote_cmd)s"''' %
                     {'hostname'   : node_ip,
                      'remote_cmd' : command,
+                     'user'       : node_user,
                     })
         return Helper.run_command_on_local_without_timeout(local_cmd)
 
@@ -195,10 +196,11 @@ class Helper(object):
         """
         Run cmd on remote node.
         """
-        local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(hostname)s >> %(log)s 2>&1 "%(remote_cmd)s"''' %
+        local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s >> %(log)s 2>&1 "%(remote_cmd)s"''' %
                    {'hostname'   : node.hostname,
                     'log'        : node.log,
-                    'remote_cmd' : command
+                    'remote_cmd' : command,
+                    'user'       : node.user,
                    })
         Helper.run_command_on_local(local_cmd)
 
@@ -584,7 +586,7 @@ class Helper(object):
 
         # get node operating system information
         os_info, errors = Helper.run_command_on_remote_with_key_without_timeout(node_config['hostname'],
-            'python -mplatform')
+            node_config['user'], 'python -mplatform')
         if errors or (not os_info):
             Helper.safe_print("Error retrieving operating system info from node %(hostname)s:\n%(errors)s\n"
                               % {'hostname' : node_config['hostname'], 'errors' : errors})
@@ -600,7 +602,7 @@ class Helper(object):
 
         # get node /etc/astute.yaml
         node_yaml, errors = Helper.run_command_on_remote_with_key_without_timeout(node_config['hostname'],
-            'cat /etc/astute.yaml')
+            node_config['user'], 'cat /etc/astute.yaml')
         if errors or not node_yaml:
             Helper.safe_print("Error retrieving config for node %(hostname)s:\n%(errors)s\n"
                               % {'hostname' : node_config['hostname'], 'errors' : errors})
@@ -615,7 +617,7 @@ class Helper(object):
         # get existing ivs version
         node_config['old_ivs_version'] = None
         output, errors = Helper.run_command_on_remote_with_key_without_timeout(node_config['hostname'],
-            'ivs --version')
+            node_config['user'], 'ivs --version')
         if errors or not output:
             Helper.safe_print("Error retrieving ivs version from node %(hostname)s:\n%(errors)s\n"
                               % {'hostname' : node_config['hostname'], 'errors' : errors})
@@ -835,8 +837,8 @@ class Helper(object):
         url = env.horizon_patch_url
         if 'http://' in url or 'https://' in url:
             code_web = subprocess.call("wget --no-check-certificate %(url)s -P %(setup_node_dir)s" %
-                                          {'url' : url, 'setup_node_dir' : setup_node_dir},
-                                           shell=True)
+                                      {'url' : url, 'setup_node_dir' : setup_node_dir},
+                                       shell=True)
         if os.path.isfile(url):
             code_local = subprocess.call("cp %(url)s %(setup_node_dir)s" %
                                         {'url' : url, 'setup_node_dir' : setup_node_dir},
@@ -849,9 +851,11 @@ class Helper(object):
     @staticmethod
     def run_command_on_remote_without_timeout(node, command):
         if node.fuel_cluster_id:
-            return Helper.run_command_on_remote_with_key_without_timeout(node, command)
+            return Helper.run_command_on_remote_with_key_without_timeout(node.hostname,
+                node.user, command)
         else:
-            return Helper.run_command_on_remote_with_passwd_without_timeout(node, command)
+            return Helper.run_command_on_remote_with_passwd_without_timeout(node.hostname,
+                node.user, node.passwd, command)
 
 
     @staticmethod
@@ -895,9 +899,14 @@ class Helper(object):
             # we only patch juno
             return
         dhcp_py = "dhcp_agent_scheduler.py"
-        src_path, error = Helper.run_command_on_remote_without_timeout("find /usr/lib -name %s" % dhcp_py)
-        if error:
-            Helper.safe_print("Failed to locate %s on %s\n" % (dhcp_py, controller_node.hostname))
+        src_path, error = Helper.run_command_on_remote_without_timeout(controller_node, "find /usr/lib -name %s" % dhcp_py)
+        if error or (not src_path):
+            Helper.safe_print(r'''Failed to locate %(dhcp_py)s on %(node)s,
+                              output = %(src_path)s, error = %(error)s\n''' %
+                             {'dhcp_py'  : dhcp_py,
+                              'node'     : controller_node.hostname,
+                              'src_path' : src_path,
+                              'error'    : error})
             return
         replace = r'''
             LOG.debug(_('Before sorting dhcp agent subnets: %s'),
@@ -924,7 +933,8 @@ class Helper(object):
                       chosen_agents)
 '''
         src_dir = os.path.dirname(src_path)
-        node.set_dhcp_agent_scheduler_dir(src_dir)
+        for node in controller_nodes:
+            node.set_dhcp_agent_scheduler_dir(src_dir)
         Helper.safe_print("%s is at %s on %s\n" % (dhcp_py, src_dir, controller_node.hostname))
         Helper.safe_print("Copy %(dhcp_py)s from openstack controller %(controller_node)s\n" %
                          {'controller_node' : controller_node.hostname,
@@ -938,8 +948,10 @@ class Helper(object):
             if line.startswith("import random"):
                 dhcp_file_new.write("import random\n")
                 dhcp_file_new.write("from collections import OrderedDict\n")
-            elif line.startswith("            chosen_agents = random.sample(active_dhcp_agents, n_agents)")
+            elif line.startswith("            chosen_agents = random.sample(active_dhcp_agents, n_agents)"):
                 dhcp_file_new.write(replace)
+            elif line.startswith("from collections import OrderedDict"):
+                pass
             else:
                 dhcp_file_new.write(line)
         dhcp_file.close()

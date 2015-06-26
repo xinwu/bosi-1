@@ -100,6 +100,7 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
 
     # copy neutron config from neutron server to setup node
     Helper.copy_neutron_config_from_controllers(controller_nodes)
+    Helper.copy_dhcp_scheduler_from_controllers(controller_nodes)
 
     # Use multiple threads to copy dhcp and metedata agent config to compute nodes
     for i in range(const.MAX_WORKERS):
