@@ -94,6 +94,11 @@ controller() {
     crm resource stop master_p_rabbitmq-server
     sleep 2
     crm resource start master_p_rabbitmq-server
+
+    # schedule cron job to reschedule network incase dhcp agent fails
+    cp %(dst_dir)s/dhcp_reschedule.sh /bin/
+    chmod a+x /bin/dhcp_reschedule.sh
+    (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
 }
 
 compute() {

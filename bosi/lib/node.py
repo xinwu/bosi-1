@@ -3,11 +3,12 @@ import constants as const
 
 class Node(object):
     def __init__(self, node_config, env):
-        self.dst_dir               = const.DST_DIR
-        self.bash_script_path      = None
-        self.puppet_script_path    = None
-        self.selinux_script_path   = None
-        self.ospurge_script_path   = None
+        self.dst_dir                     = const.DST_DIR
+        self.bash_script_path            = None
+        self.puppet_script_path          = None
+        self.selinux_script_path         = None
+        self.ospurge_script_path         = None
+        self.dhcp_reschedule_script_path = None
         self.log                   = const.LOG_FILE
         self.hostname              = node_config['hostname']
         self.role                  = node_config['role'].lower()
@@ -127,6 +128,10 @@ class Node(object):
         self.ospurge_script_path = ospurge_script_path
 
 
+    def set_dhcp_reschedule_script_path(self, dhcp_reschedule_script_path):
+        self.dhcp_reschedule_script_path = dhcp_reschedule_script_path
+
+
     def get_network_vlan_ranges(self):
         return (r'''%(physnet)s:%(lower_vlan)s:%(upper_vlan)s''' %
                {'physnet'    : self.physnet,
@@ -233,7 +238,7 @@ class Node(object):
 
     def get_neutron_id(self):
         if self.fuel_cluster_id:
-            return str(self.fuel_cluster_id)
+            return "neutron-%s" % str(self.fuel_cluster_id)
         return self.neutron_id
         
 
@@ -244,6 +249,7 @@ bash_script_path       : %(bash_script_path)s,
 puppet_script_path     : %(puppet_script_path)s,
 selinux_script_path    : %(selinux_script_path)s,
 ospurge_script_path    : %(ospurge_script_path)s,
+dhcp_reschedule_script_path : %(dhcp_reschedule_script_path)s,
 log                    : %(log)s,
 hostname               : %(hostname)s,
 role                   : %(role)s,
@@ -302,6 +308,7 @@ error                  : %(error)s,
 'puppet_script_path'    : self.puppet_script_path,
 'selinux_script_path'   : self.selinux_script_path,
 'ospurge_script_path'   : self.ospurge_script_path,
+'dhcp_reschedule_script_path' : self.dhcp_reschedule_script_path,
 'log'                   : self.log,
 'hostname'              : self.hostname,
 'role'                  : self.role,

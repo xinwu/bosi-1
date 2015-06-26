@@ -86,6 +86,11 @@ file_line { "add default gw":
     line    => "ip route add default via %(default_gw)s",
     match   => "^ip route add default via %(default_gw)s",
 }->
+file_line { "add cron job to reschedule dhcp"
+    path    => '/etc/rc.local',
+    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
+    match   => "^(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
+}->
 file_line { "add exit 0":
     path    => '/etc/rc.local',
     line    => "exit 0",

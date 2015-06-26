@@ -267,6 +267,48 @@ class Helper(object):
 
 
     @staticmethod
+    def generate_dhcp_reschedule_script(node):
+        openrc = const.MANUAL_OPENRC
+        if node.fuel_cluster_id:
+            openrc = const.FUEL_OPENRC
+        dhcp_reschedule_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/dhcp_reschedule.sh''' %
+                                      {'setup_node_dir'       : node.setup_node_dir,
+                                       'generated_script_dir' : const.GENERATED_SCRIPT_DIR})
+        node.set_dhcp_reschedule_script_path(dhcp_reschedule_script_path)
+        if os.path.isfile(dhcp_reschedule_script_path):
+            return
+        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(bash_template_dir)s/dhcp_reschedule.sh''' %
+                  {'setup_node_dir'       : node.setup_node_dir,
+                   'deploy_mode'          : node.deploy_mode,
+                   'bash_template_dir'    : const.BASH_TEMPLATE_DIR}), "r") as dhcp_reschedule_template_file:
+            dhcp_reschedule_template = dhcp_reschedule_template_file.read()
+            dhcp_reschedule = (dhcp_reschedule_template % {'openrc' : openrc})
+        with open(dhcp_reschedule_script_path, "w") as dhcp_reschedule_file:
+            dhcp_reschedule_file.write(dhcp_reschedule)
+
+
+    @staticmethod
+    def generate_ospurge_script(node):
+        openrc = const.MANUAL_OPENRC
+        if node.fuel_cluster_id:
+            openrc = const.FUEL_OPENRC
+        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(ospurge_template_dir)s/%(ospurge_template)s.sh''' %
+                  {'setup_node_dir'       : node.setup_node_dir,
+                   'deploy_mode'          : node.deploy_mode,
+                   'ospurge_template_dir' : const.OSPURGE_TEMPLATE_DIR,
+                   'ospurge_template'     : "purge_all"}), "r") as ospurge_template_file:
+            ospurge_template = ospurge_template_file.read()
+            ospurge = (ospurge_template % {'openrc' : openrc})
+        ospurge_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s_ospurge.sh''' %
+                              {'setup_node_dir'       : node.setup_node_dir,
+                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
+                               'hostname'             : node.hostname})
+        with open(ospurge_script_path, "w") as ospurge_file:
+            ospurge_file.write(ospurge)
+        node.set_ospurge_script_path(ospurge_script_path)
+
+
+    @staticmethod
     def generate_scripts_for_ubuntu(node):
         # generate bash script
         with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(bash_template_dir)s/%(bash_template)s_%(os_version)s.sh''' %
@@ -345,26 +387,11 @@ class Helper(object):
             puppet_file.write(puppet)
         node.set_puppet_script_path(puppet_script_path)
 
-        # generate ospurge script
         if node.role != const.ROLE_NEUTRON_SERVER:
             return
-        openrc = const.MANUAL_OPENRC
-        if node.fuel_cluster_id:
-            openrc = const.FUEL_OPENRC
-        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(ospurge_template_dir)s/%(ospurge_template)s.sh''' %
-                  {'setup_node_dir'       : node.setup_node_dir,
-                   'deploy_mode'          : node.deploy_mode,
-                   'ospurge_template_dir' : const.OSPURGE_TEMPLATE_DIR,
-                   'ospurge_template'     : "purge_all"}), "r") as ospurge_template_file:
-            ospurge_template = ospurge_template_file.read()
-            ospurge = (ospurge_template % {'openrc' : openrc})
-        ospurge_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s_ospurge.sh''' %
-                              {'setup_node_dir'       : node.setup_node_dir,
-                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
-                               'hostname'             : node.hostname})
-        with open(ospurge_script_path, "w") as ospurge_file:
-            ospurge_file.write(ospurge)
-        node.set_ospurge_script_path(ospurge_script_path)
+
+        Helper.generate_ospurge_script(node)
+        Helper.generate_dhcp_reschedule_script(node)
 
 
     @staticmethod
@@ -452,24 +479,9 @@ class Helper(object):
         # generate ospurge script
         if node.role != const.ROLE_NEUTRON_SERVER:
             return
-        openrc = const.PACKSTACK_OPENRC
-        if node.fuel_cluster_id:
-            openrc = const.FUEL_OPENRC
-        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(ospurge_template_dir)s/%(ospurge_template)s.sh''' %
-                  {'setup_node_dir'       : node.setup_node_dir,
-                   'deploy_mode'          : node.deploy_mode,
-                   'ospurge_template_dir' : const.OSPURGE_TEMPLATE_DIR,
-                   'ospurge_template'     : "purge_all"}), "r") as ospurge_template_file:
-            ospurge_template = ospurge_template_file.read()
-            ospurge = (ospurge_template % {'openrc' : openrc})
-        ospurge_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s_ospurge.sh''' %
-                              {'setup_node_dir'       : node.setup_node_dir,
-                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
-                               'hostname'             : node.hostname})
-        with open(ospurge_script_path, "w") as ospurge_file:
-            ospurge_file.write(ospurge)
-        node.set_ospurge_script_path(ospurge_script_path)
-        
+
+        Helper.generate_ospurge_script(node)
+        Helper.generate_dhcp_reschedule_script(node)
 
 
     @staticmethod
@@ -960,8 +972,8 @@ class Helper(object):
                node.dst_dir,
                "%(hostname)s.te" % {'hostname' : node.hostname})
 
-        # copy ospurge script to node
         if node.role == const.ROLE_NEUTRON_SERVER:
+            # copy ospurge script to node
             Helper.safe_print("Copy ospurge script to %(hostname)s\n" %
                              {'hostname' : node.hostname})
             Helper.copy_file_to_remote(node,
@@ -969,11 +981,18 @@ class Helper(object):
                node.dst_dir,
                "%(hostname)s_ospurge.sh" % {'hostname' : node.hostname})
 
-        # copy send_lldp to controller nodes
-        if node.role == const.ROLE_NEUTRON_SERVER:
+            # copy dhcp reschedule script to node
+            Helper.safe_print("Copy dhcp reschedule script to %(hostname)s\n" %
+                             {'hostname' : node.hostname})
+            Helper.copy_file_to_remote(node,
+               node.dhcp_reschedule_script_path,
+               node.dst_dir,
+               'dhcp_reschedule.sh')
+
+            # copy send_lldp to controller nodes
             Helper.safe_print("Copy send_lldp to %(hostname)s\n" %
                              {'hostname' : node.hostname})
-            Helper.copy_file_to_remote(controller_node,
+            Helper.copy_file_to_remote(node,
                                        r'''%(setup_node_dir)s/%(deploy_mode)s/%(python_template_dir)s/send_lldp''' %
                                       {'setup_node_dir'      : node.setup_node_dir,
                                        'deploy_mode'         : node.deploy_mode,
