@@ -39,6 +39,10 @@ def worker_setup_node():
              'log'      : node.log}))
         Helper.safe_print("Finish deploying %(hostname)s\n" %
                          {'hostname' : node.hostname})
+        if node.fuel_cluster_id and node.role == const.ROLE_NEUTRON_SERVER:
+            Helper.safe_print("Start to reboot %(hostname)s\n" %
+                             {'hostname' : node.hostname})
+            Helper.run_command_on_remote_without_timeout(node, "shutdown -r now")
         node_q.task_done()
 
 

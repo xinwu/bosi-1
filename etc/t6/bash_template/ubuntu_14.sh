@@ -91,9 +91,6 @@ controller() {
     service neutron-server restart
     service keystone restart
     service apache2 restart
-    # TODO: file bug to fuel upstream about rabbitmq cluster
-    #crm resource stop master_p_rabbitmq-server
-    #crm resource start master_p_rabbitmq-server
 
     # schedule cron job to reschedule network incase dhcp agent fails
     cp %(dst_dir)s/dhcp_reschedule.sh /bin/
