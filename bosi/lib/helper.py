@@ -282,7 +282,9 @@ class Helper(object):
                    'deploy_mode'          : node.deploy_mode,
                    'bash_template_dir'    : const.BASH_TEMPLATE_DIR}), "r") as dhcp_reschedule_template_file:
             dhcp_reschedule_template = dhcp_reschedule_template_file.read()
-            dhcp_reschedule = (dhcp_reschedule_template % {'openrc' : openrc})
+            dhcp_reschedule = (dhcp_reschedule_template %
+                              {'openrc'            : openrc,
+                               'openstack_release' : node.openstack_release})
         with open(dhcp_reschedule_script_path, "w") as dhcp_reschedule_file:
             dhcp_reschedule_file.write(dhcp_reschedule)
 
@@ -845,6 +847,14 @@ class Helper(object):
 
 
     @staticmethod
+    def run_command_on_remote_without_timeout(node, command):
+        if node.fuel_cluster_id:
+            return Helper.run_command_on_remote_with_key_without_timeout(node, command)
+        else:
+            return Helper.run_command_on_remote_with_passwd_without_timeout(node, command)
+
+
+    @staticmethod
     def run_command_on_remote(node, command):
         if node.fuel_cluster_id:
             Helper.run_command_on_remote_with_key(node, command)
@@ -874,6 +884,69 @@ class Helper(object):
             Helper.copy_file_to_remote_with_key(node, src_file, dst_dir, dst_file, mode)
         else:
             Helper.copy_file_to_remote_with_passwd(node, src_file, dst_dir, dst_file, mode)
+
+
+    @staticmethod
+    def copy_dhcp_scheduler_from_controllers(controller_nodes):
+        if len(controller_nodes) == 0:
+            return
+        controller_node = controller_nodes[0]
+        if controller_node.openstack_release != 'juno':
+            # we only patch juno
+            return
+        dhcp_py = "dhcp_agent_scheduler.py"
+        src_path, error = Helper.run_command_on_remote_without_timeout("find /usr/lib -name %s" % dhcp_py)
+        if error:
+            Helper.safe_print("Failed to locate %s on %s\n" % (dhcp_py, controller_node.hostname))
+            return
+        replace = r'''
+            LOG.debug(_('Before sorting dhcp agent subnets: %s'),
+                      active_dhcp_agents)
+            count_dict = {}
+            agent_dict = {}
+            for dhcp_agent in active_dhcp_agents:
+                agent_dict[dhcp_agent.id] = dhcp_agent
+                networks = plugin.list_networks_on_dhcp_agent(context, dhcp_agent.id)
+                subnets = networks['networks']
+                count = count_dict.get(dhcp_agent.id)
+                if not count:
+                    count = 0
+                count = count + len(subnets)
+                count_dict[dhcp_agent.id] = count
+            sorted_count_dict = OrderedDict(sorted(count_dict.items(), key=lambda x: x[1]))
+            active_dhcp_agents = []
+            for id, count in sorted_count_dict.items():
+                active_dhcp_agents.append(agent_dict[id])
+            LOG.debug(_('After sorting dhcp agent subnets: %s'),
+                      active_dhcp_agents)
+            chosen_agents = active_dhcp_agents[:n_agents]
+            LOG.debug(_('Chose dhcp agents: %s'),
+                      chosen_agents)
+'''
+        src_dir = os.path.dirname(src_path)
+        node.set_dhcp_agent_scheduler_dir(src_dir)
+        Helper.safe_print("%s is at %s on %s\n" % (dhcp_py, src_dir, controller_node.hostname))
+        Helper.safe_print("Copy %(dhcp_py)s from openstack controller %(controller_node)s\n" %
+                         {'controller_node' : controller_node.hostname,
+                          'dhcp_py'         : dhcp_py})
+        Helper.copy_file_from_remote(controller_node, src_dir, dhcp_py,
+                                     controller_node.setup_node_dir)
+
+        dhcp_file_new = open("%s/%s.new" % (controller_node.setup_node_dir, dhcp_py), 'w')
+        dhcp_file = open("%s/%s" % (controller_node.setup_node_dir, dhcp_py), 'r')
+        for line in dhcp_file:
+            if line.startswith("import random"):
+                dhcp_file_new.write("import random\n")
+                dhcp_file_new.write("from collections import OrderedDict\n")
+            elif line.startswith("            chosen_agents = random.sample(active_dhcp_agents, n_agents)")
+                dhcp_file_new.write(replace)
+            else:
+                dhcp_file_new.write(line)
+        dhcp_file.close()
+        dhcp_file_new.close()
+        Helper.run_command_on_local_without_timeout(r'''mv %(setup_node_dir)s/%(dhcp_py)s.new %(setup_node_dir)s/%(dhcp_py)s''' %
+                                                       {'setup_node_dir' : controller_node.setup_node_dir,
+                                                        'dhcp_py'        : dhcp_py})
 
 
     @staticmethod
@@ -993,22 +1066,30 @@ class Helper(object):
             Helper.safe_print("Copy send_lldp to %(hostname)s\n" %
                              {'hostname' : node.hostname})
             Helper.copy_file_to_remote(node,
-                                       r'''%(setup_node_dir)s/%(deploy_mode)s/%(python_template_dir)s/send_lldp''' %
-                                      {'setup_node_dir'      : node.setup_node_dir,
-                                       'deploy_mode'         : node.deploy_mode,
-                                       'python_template_dir' : const.PYTHON_TEMPLATE_DIR},
-                                       '/bin', 'send_lldp')
+                r'''%(setup_node_dir)s/%(deploy_mode)s/%(python_template_dir)s/send_lldp''' %
+                {'setup_node_dir'      : node.setup_node_dir,
+                 'deploy_mode'         : node.deploy_mode,
+                 'python_template_dir' : const.PYTHON_TEMPLATE_DIR},
+                 '/bin', 'send_lldp')
 
-        # copy horizon patch to node
-        if node.role == const.ROLE_NEUTRON_SERVER and node.deploy_horizon_patch:
-            Helper.safe_print("Copy horizon patch to %(hostname)s\n" %
-                             {'hostname' : node.hostname})
-            Helper.copy_file_to_remote(node,
-                (r'''%(src_dir)s/%(horizon_patch)s''' %
-                {'src_dir' : node.setup_node_dir,
-                 'horizon_patch' : node.horizon_patch}),
-                node.dst_dir,
-                node.horizon_patch)
+            # patch dhcp scheduler for juno
+            if node.openstack_release == 'juno':
+                Helper.safe_print("Copy dhcp_agent_scheduler.py to %(hostname)s\n" %
+                                 {'hostname' : node.hostname})
+                Helper.copy_file_to_remote(node,
+                    "%s/dhcp_agent_scheduler.py" % node.setup_node_dir,
+                    node.dhcp_agent_scheduler_dir, 'dhcp_agent_scheduler.py')
+
+            # copy horizon patch to node
+            if node.deploy_horizon_patch:
+                Helper.safe_print("Copy horizon patch to %(hostname)s\n" %
+                                 {'hostname' : node.hostname})
+                Helper.copy_file_to_remote(node,
+                    (r'''%(src_dir)s/%(horizon_patch)s''' %
+                    {'src_dir' : node.setup_node_dir,
+                     'horizon_patch' : node.horizon_patch}),
+                    node.dst_dir,
+                    node.horizon_patch)
 
         # copy rootwrap to remote
         if node.fuel_cluster_id:
@@ -1018,6 +1099,5 @@ class Helper(object):
                 (r'''%(src_dir)s/rootwrap''' %
                 {'src_dir' : node.setup_node_dir}),
                 node.dst_dir)
-
 
 

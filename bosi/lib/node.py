@@ -9,6 +9,7 @@ class Node(object):
         self.selinux_script_path         = None
         self.ospurge_script_path         = None
         self.dhcp_reschedule_script_path = None
+        self.dhcp_agent_scheduler_dir    = None
         self.log                   = const.LOG_FILE
         self.hostname              = node_config['hostname']
         self.role                  = node_config['role'].lower()
@@ -132,6 +133,10 @@ class Node(object):
         self.dhcp_reschedule_script_path = dhcp_reschedule_script_path
 
 
+    def set_dhcp_agent_scheduler_dir(self, dhcp_agent_scheduler_dir):
+        self.dhcp_agent_scheduler_dir = dhcp_agent_scheduler_dir
+
+
     def get_network_vlan_ranges(self):
         return (r'''%(physnet)s:%(lower_vlan)s:%(upper_vlan)s''' %
                {'physnet'    : self.physnet,
@@ -250,6 +255,7 @@ puppet_script_path     : %(puppet_script_path)s,
 selinux_script_path    : %(selinux_script_path)s,
 ospurge_script_path    : %(ospurge_script_path)s,
 dhcp_reschedule_script_path : %(dhcp_reschedule_script_path)s,
+dhcp_agent_scheduler_dir    : %(dhcp_agent_scheduler_dir)s,
 log                    : %(log)s,
 hostname               : %(hostname)s,
 role                   : %(role)s,
@@ -309,6 +315,7 @@ error                  : %(error)s,
 'selinux_script_path'   : self.selinux_script_path,
 'ospurge_script_path'   : self.ospurge_script_path,
 'dhcp_reschedule_script_path' : self.dhcp_reschedule_script_path,
+'dhcp_agent_scheduler_dir'    : self.dhcp_agent_scheduler_dir,
 'log'                   : self.log,
 'hostname'              : self.hostname,
 'role'                  : self.role,

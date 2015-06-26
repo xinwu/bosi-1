@@ -4,6 +4,11 @@
 # different dhcp agent if their dhcp
 # agent is offline
 
+release="%(openstack_release)s"
+if [[ $release != 'juno' ]]; then
+    exit 0
+fi
+
 source %(openrc)s
 keystone tenant-list
 if [[ $? != 0 ]]; then
