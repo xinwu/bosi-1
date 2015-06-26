@@ -185,6 +185,26 @@ ini_setting { "neutron.conf dhcp_agents_per_network":
   value             => '2',
   notify            => Service['neutron-server'],
 }
+ini_setting { "neutron.conf notification driver":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'notification_driver',
+  value             => 'messaging',
+  notify            => Service['neutron-server'],
+}
+
+# configure /etc/keystone/keystone.conf
+ini_setting { "keystone.conf notification driver":
+  ensure            => present,
+  path              => '/etc/keystone/keystone.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'notification_driver',
+  value             => 'messaging',
+  notify            => Service['keystone'],
+}
 
 # config /etc/neutron/plugin.ini
 ini_setting { "neutron plugin.ini firewall_driver":
@@ -315,6 +335,15 @@ ini_setting { "ml2 restproxy consistency interval":
   value             => 60,
   notify            => Service['neutron-server'],
 }
+ini_setting { "ml2 restproxy neutron_id":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'neutron_id',
+  value             => %(neutron_id)s,
+  notify            => Service['neutron-server'],
+}
 
 # change ml2 ownership
 file { '/etc/neutron/plugins/ml2':
@@ -327,7 +356,10 @@ file { '/etc/neutron/plugins/ml2':
 # neutron-server, neutron-dhcp-agent and neutron-metadata-agent
 service { 'neutron-server':
   ensure     => running,
-  provider   => 'upstart',
+  enable     => true,
+}
+service { 'keystone':
+  ensure     => running,
   enable     => true,
 }
 service { 'neutron-dhcp-agent':

@@ -1,4 +1,5 @@
 import os
+import sets
 import sys
 import time
 import json
@@ -334,7 +335,8 @@ class Helper(object):
                       'port_ips'              : node.get_ivs_internal_port_ips(),
                       'default_gw'            : node.get_default_gw(),
                       'uplinks'               : node.get_comma_separated_uplinks(),
-                      'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower()})
+                      'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
+                      'neutron_id'            : node.get_neutron_id()})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -863,6 +865,53 @@ class Helper(object):
 
 
     @staticmethod
+    def copy_neutron_config_from_controllers(controller_nodes):
+        if len(controller_nodes) and controller_nodes[0]:
+            controller_node = controller_nodes[0]
+            Helper.safe_print("Copy dhcp_agent.ini from openstack controller %(controller_node)s\n" %
+                             {'controller_node' : controller_node.hostname})
+            Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'dhcp_agent.ini',
+                                         controller_node.setup_node_dir)
+            Helper.safe_print("Copy metadata_agent.ini from openstack controller %(controller_node)s\n" %
+                             {'controller_node' : controller_node.hostname})
+            Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'metadata_agent.ini',
+                                         controller_node.setup_node_dir)
+
+        rabbit_hosts = sets.Set()
+        for controller_node in controller_nodes:
+            Helper.safe_print("Copy neutron.conf from openstack controller %(controller_node)s\n" %
+                             {'controller_node' : controller_node.hostname})
+            Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'neutron.conf',
+                                         controller_node.setup_node_dir)
+            # put all controllers to rabbit hosts
+            neutron_conf = open("%s/neutron.conf" % controller_node.setup_node_dir, 'r')
+            for line in neutron_conf:
+                if line.startswith("rabbit_hosts"):
+                    hosts_str = line.split("=")[1].strip()
+                    hosts = hosts_str.split(',')
+                    for host in hosts:
+                        if "127.0" in host:
+                            continue
+                        rabbit_hosts.add(host.strip())
+                    break
+
+        if len(controller_nodes):
+            controller_node = controller_nodes[0]
+            rabbit_hosts_str = ','.join(rabbit_hosts)
+            neutron_conf_new = open("%s/neutron.conf.new" % controller_node.setup_node_dir, 'w')
+            neutron_conf = open("%s/neutron.conf" % controller_node.setup_node_dir, 'r')
+            for line in neutron_conf:
+                if line.startswith("rabbit_hosts"):
+                    neutron_conf_new.write("rabbit_hosts=%s\n" % rabbit_hosts_str)
+                else:
+                    neutron_conf_new.write(line)
+            neutron_conf.close()
+            neutron_conf_new.close()
+            Helper.run_command_on_local_without_timeout(r'''mv %(setup_node_dir)s/neutron.conf.new %(setup_node_dir)s/neutron.conf''' %
+                                                       {'setup_node_dir' : controller_node.setup_node_dir})
+
+
+    @staticmethod
     def copy_pkg_scripts_to_remote(node):
         # copy ivs to node
         if node.deploy_mode == const.T6:
@@ -919,6 +968,17 @@ class Helper(object):
                node.ospurge_script_path,
                node.dst_dir,
                "%(hostname)s_ospurge.sh" % {'hostname' : node.hostname})
+
+        # copy send_lldp to controller nodes
+        if node.role == const.ROLE_NEUTRON_SERVER:
+            Helper.safe_print("Copy send_lldp to %(hostname)s\n" %
+                             {'hostname' : node.hostname})
+            Helper.copy_file_to_remote(controller_node,
+                                       r'''%(setup_node_dir)s/%(deploy_mode)s/%(python_template_dir)s/send_lldp''' %
+                                      {'setup_node_dir'      : node.setup_node_dir,
+                                       'deploy_mode'         : node.deploy_mode,
+                                       'python_template_dir' : const.PYTHON_TEMPLATE_DIR},
+                                       '/bin', 'send_lldp')
 
         # copy horizon patch to node
         if node.role == const.ROLE_NEUTRON_SERVER and node.deploy_horizon_patch:

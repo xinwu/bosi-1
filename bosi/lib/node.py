@@ -37,6 +37,7 @@ class Node(object):
 
         self.cleanup               = env.cleanup
 
+        self.neutron_id            = env.neutron_id
         self.openstack_release     = env.openstack_release
         self.bsnstacklib_version   = env.bsnstacklib_version
         self.bcf_controllers       = env.bcf_controllers
@@ -230,6 +231,12 @@ class Node(object):
         return ','.join(self.bcf_controllers)
 
 
+    def get_neutron_id(self):
+        if self.fuel_cluster_id:
+            return str(self.fuel_cluster_id)
+        return self.neutron_id
+        
+
     def __str__(self):
         return (r'''
 dst_dir                : %(dst_dir)s,
@@ -262,6 +269,7 @@ ex_gw                  : %(ex_gw)s,
 tag                    : %(tag)s,
 env_tag                : %(env_tag)s,
 cleanup                : %(cleanup)s,
+neutron_id             : %(neutron_id)s,
 openstack_release      : %(openstack_release)s,
 bsnstacklib_version    : %(bsnstacklib_version)s,
 bcf_controllers        : %(bcf_controllers)s,
@@ -319,6 +327,7 @@ error                  : %(error)s,
 'tag'                   : self.tag,
 'env_tag'               : self.env_tag,
 'cleanup'               : self.cleanup,
+'neutron_id'            : self.neutron_id,
 'openstack_release'     : self.openstack_release,
 'bsnstacklib_version'   : self.bsnstacklib_version,
 'bcf_controllers'       : self.bcf_controllers,

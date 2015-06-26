@@ -16,6 +16,9 @@ class Environment(object):
         # clean up flag
         self.cleanup = cleanup
 
+        # neutron_id for ml2 plugin restproxy
+        self.neutron_id = config.get('neutron_id')
+
         # flags for upgrade
         self.install_ivs = config.get('default_install_ivs')
         self.install_bsnstacklib = config.get('default_install_bsnstacklib')

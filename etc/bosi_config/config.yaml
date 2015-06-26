@@ -19,6 +19,8 @@ bcf_controller_passwd: adminadmin
 bcf_openstack_management_tenant: os-mgmt
 
 # configuration can be overrided by fuel
+# neutron_id is to let bcf ml2 plugin differenciate different openstack controller clusters
+neutron_id: neutron
 default_user: root
 default_passwd: bsn
 default_os: centos

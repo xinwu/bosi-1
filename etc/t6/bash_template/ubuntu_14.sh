@@ -91,6 +91,9 @@ controller() {
     service neutron-server restart
     service keystone restart
     service apache2 restart
+    crm resource stop master_p_rabbitmq-server
+    sleep 2
+    crm resource start master_p_rabbitmq-server
 }
 
 compute() {
