@@ -98,6 +98,8 @@ controller() {
     # schedule cron job to reschedule network incase dhcp agent fails
     cp %(dst_dir)s/dhcp_reschedule.sh /bin/
     chmod a+x /bin/dhcp_reschedule.sh
+    crontab -r
+    (crontab -l; echo "*/30 * * * * /usr/bin/fuel-logrotate") | crontab -
     (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
 }
 

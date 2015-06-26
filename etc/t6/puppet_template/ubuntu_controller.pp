@@ -86,6 +86,16 @@ file_line { "add default gw":
     line    => "ip route add default via %(default_gw)s",
     match   => "^ip route add default via %(default_gw)s",
 }->
+file_line { "clean up cron job":
+    path    => '/etc/rc.local',
+    line    => "crontab -r",
+    match   => "^crontab -r",
+}->
+file_line { "add cron job to rotate log":
+    path    => '/etc/rc.local',
+    line    => "(crontab -l; echo \"*/30 * * * * /usr/bin/fuel-logrotate\") | crontab -",
+    match   => "^(crontab -l; echo \"*/30 * * * * /usr/bin/fuel-logrotate\") | crontab -",
+}->
 file_line { "add cron job to reschedule dhcp":
     path    => '/etc/rc.local',
     line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
