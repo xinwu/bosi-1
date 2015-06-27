@@ -92,8 +92,7 @@ controller() {
     service keystone restart
     service apache2 restart
 
-    # schedule cron job to reschedule network incase dhcp agent fails
-    cp %(dst_dir)s/dhcp_reschedule.sh /bin/
+    # schedule cron job to reschedule network in case dhcp agent fails
     chmod a+x /bin/dhcp_reschedule.sh
     crontab -r
     (crontab -l; echo "*/30 * * * * /usr/bin/fuel-logrotate") | crontab -

@@ -1071,8 +1071,7 @@ class Helper(object):
                              {'hostname' : node.hostname})
             Helper.copy_file_to_remote(node,
                node.dhcp_reschedule_script_path,
-               node.dst_dir,
-               'dhcp_reschedule.sh')
+               '/bin', 'dhcp_reschedule.sh')
 
             # copy send_lldp to controller nodes
             Helper.safe_print("Copy send_lldp to %(hostname)s\n" %

@@ -66,7 +66,7 @@ if($heat_config != '') {
     }
 }
 
-# assign default gw
+# edit rc.local for cron job and default gw
 file { "/etc/rc.local":
     ensure  => file,
     mode    => 0777,
