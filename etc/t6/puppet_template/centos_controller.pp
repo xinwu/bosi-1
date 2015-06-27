@@ -43,33 +43,29 @@ if($heat_config != '') {
     }
 }
 
-# assign ip to ivs internal port
-define ivs_internal_port_ip {
-    $port_ip = split($name, ',')
-    file_line { "ifconfig ${port_ip[0]} ${port_ip[1]}":
-        path  => '/etc/rc.d/rc.local',
-        line  => "ifconfig ${port_ip[0]} ${port_ip[1]}",
-        match => "^ifconfig ${port_ip[0]} ${port_ip[1]}$",
-    }
+# edit rc.local for cron job
+file { "/etc/rc.d/rc.local":
+    ensure  => file,
+    mode    => 0777,
+}->
+file_line { "remove crontab -r":
+    path    => '/etc/rc.d/rc.local',
+    ensure  => absent,
+    line    => "crontab -r",
+}->
+file_line { "remove dhcp_reschedule.sh":
+    path    => '/etc/rc.d/rc.local',
+    ensure  => absent,
+    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
+}->
+file_line { "clean up cron job":
+    path    => '/etc/rc.d/rc.local',
+    line    => "crontab -r",
+}->
+file_line { "add cron job to reschedule dhcp":
+    path    => '/etc/rc.d/rc.local',
+    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
 }
-# example ['storage,192.168.1.1/24', 'ex,192.168.2.1/24', 'management,192.168.3.1/24']
-class ivs_internal_port_ips {
-    $port_ips = [%(port_ips)s]
-    file { "/etc/rc.d/rc.local":
-        ensure  => file,
-        mode    => 0777,
-    }
-    file_line { "restart ivs":
-        require => File['/etc/rc.d/rc.local'],
-        path    => '/etc/rc.d/rc.local',
-        line    => "systemctl restart ivs",
-        match   => "^systemctl restart ivs$",
-    }
-    ivs_internal_port_ip { $port_ips:
-        require => File_line['restart ivs'],
-    }
-}
-include ivs_internal_port_ips
 
 # install and enable ntp
 package { "ntp":
@@ -129,26 +125,6 @@ selinux::module { 'selinux-bcf':
     source => 'puppet:///modules/selinux/centos.te',
 }
 
-# ivs configruation and service
-file { '/etc/sysconfig/ivs':
-    ensure  => file,
-    mode    => 0644,
-    content => "%(ivs_daemon_args)s",
-    notify  => Service['ivs'],
-}
-service{ 'ivs':
-    ensure  => running,
-    enable  => true,
-    path    => $binpath,
-    require => Selinux::Module['selinux-bcf'],
-}
-
-# fix centos symbolic link problem for ivs debug logging
-file { '/usr/lib64/debug':
-   ensure => link,
-   target => '/lib/debug',
-}
-
 # config neutron-bsn-agent service
 ini_setting { "neutron-bsn-agent.service Description":
   ensure            => present,
@@ -205,6 +181,26 @@ ini_setting { "neutron.conf dhcp_agents_per_network":
   value             => '2',
   notify            => Service['neutron-server'],
 }
+ini_setting { "neutron.conf notification driver":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'notification_driver',
+  value             => 'messaging',
+  notify            => Service['neutron-server'],
+}
+
+# configure /etc/keystone/keystone.conf
+ini_setting { "keystone.conf notification driver":
+  ensure            => present,
+  path              => '/etc/keystone/keystone.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'notification_driver',
+  value             => 'messaging',
+  notify            => Service['keystone'],
+}
 
 # config /etc/neutron/plugin.ini
 ini_setting { "neutron plugin.ini firewall_driver":
@@ -225,57 +221,9 @@ ini_setting { "neutron plugin.ini enable_security_group":
   value             => 'True',
   notify            => Service['neutron-server'],
 }
-
-# config /etc/neutron/dhcp_agent.ini
-ini_setting { "dhcp agent interface driver":
-  ensure            => present,
-  path              => '/etc/neutron/dhcp_agent.ini',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'interface_driver',
-  value             => 'neutron.agent.linux.interface.IVSInterfaceDriver',
-  notify            => Service['neutron-dhcp-agent'],
-}
-ini_setting { "dhcp agent dhcp driver":
-  ensure            => present,
-  path              => '/etc/neutron/dhcp_agent.ini',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'dhcp_driver',
-  value             => 'bsnstacklib.plugins.bigswitch.dhcp_driver.DnsmasqWithMetaData',
-  notify            => Service['neutron-dhcp-agent'],
-}
-ini_setting { "dhcp agent enable isolated metadata":
-  ensure            => present,
-  path              => '/etc/neutron/dhcp_agent.ini',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'enable_isolated_metadata',
-  value             => 'True',
-  notify            => Service['neutron-dhcp-agent'],
-}
-ini_setting { "dhcp agent disable metadata network":
-  ensure            => present,
-  path              => '/etc/neutron/dhcp_agent.ini',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'enable_metadata_network',
-  value             => 'False',
-  notify            => Service['neutron-dhcp-agent'],
-}
-ini_setting { "dhcp agent disable dhcp_delete_namespaces":
-  ensure            => present,
-  path              => '/etc/neutron/dhcp_agent.ini',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'dhcp_delete_namespaces',
-  value             => 'False',
-  notify            => Service['neutron-dhcp-agent'],
-}
 file { '/etc/neutron/dnsmasq-neutron.conf':
   ensure            => file,
   content           => 'dhcp-option-force=26,1400',
-  notify            => Service['neutron-dhcp-agent'],
 }
 
 # disable l3 agent
@@ -291,13 +239,6 @@ ini_setting { "l3 agent disable metadata proxy":
   key_val_separator => '=',
   setting           => 'enable_metadata_proxy',
   value             => 'False',
-}
-
-# make sure metadata agent is running
-service { 'neutron-metadata-agent':
-  ensure  => running,
-  enable  => true,
-  path    => $binpath,
 }
 
 # config /etc/neutron/plugins/ml2/ml2_conf.ini 
@@ -400,15 +341,7 @@ file { '/etc/neutron/plugins/ml2':
   notify  => Service['neutron-server'],
 }
 
-# stop and disable neutron-openvswitch-agent
-service { 'neutron-openvswitch-agent':
-  ensure  => stopped,
-  enable  => false,
-  path    => $binpath,
-  require => Selinux::Module['selinux-bcf'],
-}
-
-# neutron-server and neutron-dhcp-agent
+# make services in right state
 service { 'neutron-server':
   ensure  => running,
   enable  => true,
@@ -416,10 +349,14 @@ service { 'neutron-server':
   require => [Selinux::Module['selinux-bcf'], Exec['purge bcf key']]
 }
 service { 'neutron-dhcp-agent':
-  ensure  => running,
-  enable  => true,
+  ensure  => stopped,
+  enable  => false,
   path    => $binpath,
-  require => Selinux::Module['selinux-bcf'],
+}
+service { 'neutron-metadata-agent':
+  ensure  => stopped,
+  enable  => false,
+  path    => $binpath,
 }
 
 # patch for packstack nova

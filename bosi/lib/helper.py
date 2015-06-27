@@ -421,6 +421,7 @@ class Helper(object):
                     'deploy_horizon_patch': str(node.deploy_horizon_patch).lower(),
                     'ivs_version'         : node.ivs_version,
                     'bsnstacklib_version' : node.bsnstacklib_version,
+                    'openstack_release'   : node.openstack_release,
                     'dst_dir'             : node.dst_dir,
                     'hostname'            : node.hostname,
                     'ivs_pkg'             : node.ivs_pkg,
@@ -430,7 +431,14 @@ class Helper(object):
                     'ivs_debug_pkg'       : node.ivs_debug_pkg,
                     'ovs_br'              : node.get_all_ovs_brs(),
                     'bonds'               : node.get_all_bonds(),
-                    'br-int'              : const.BR_NAME_INT})
+                    'br-int'              : const.BR_NAME_INT,
+                    'fuel_cluster_id'     : str(node.fuel_cluster_id),
+                    'interfaces'          : node.get_all_interfaces(),
+                    'br_fw_admin'         : node.br_fw_admin,
+                    'pxe_interface'       : node.pxe_interface,
+                    'br_fw_admin_address' : node.br_fw_admin_address,
+                    'default_gw'          : node.get_default_gw(),
+                    'uplinks'             : node.get_all_uplinks()})
         bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh''' %
                            {'setup_node_dir'       : node.setup_node_dir,
                             'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -457,8 +465,11 @@ class Helper(object):
                       'bcf_controllers'       : node.get_controllers_for_neutron(),
                       'bcf_controller_user'   : node.bcf_controller_user,
                       'bcf_controller_passwd' : node.bcf_controller_passwd,
-                      'selinux_mode'          : node.selinux_mode,
-                      'port_ips'              : node.get_ivs_internal_port_ips()})
+                      'port_ips'              : node.get_ivs_internal_port_ips(),
+                      'default_gw'            : node.get_default_gw(),
+                      'uplinks'               : node.get_comma_separated_uplinks(),
+                      'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
+                      'neutron_id'            : node.get_neutron_id()})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,

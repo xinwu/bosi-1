@@ -4,20 +4,20 @@ $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 # assign ip to ivs internal port
 define ivs_internal_port_ip {
     $port_ip = split($name, ',')
-    file_line { "ifconfig ${port_ip[0]} ${port_ip[1]}":
-        path  => '/etc/rc.local',
-        line  => "ifconfig ${port_ip[0]} ${port_ip[1]}",
-        match => "^ifconfig ${port_ip[0]} ${port_ip[1]}$",
-    }
     file_line { "ifconfig ${port_ip[0]} up":
         path  => '/etc/rc.local',
         line  => "ifconfig ${port_ip[0]} up",
         match => "^ifconfig ${port_ip[0]} up",
-    }
+    }->
     file_line { "ip link set ${port_ip[0]} up":
         path  => '/etc/rc.local',
         line  => "ip link set ${port_ip[0]} up",
         match => "^ip link set ${port_ip[0]} up",
+    }->
+    file_line { "ifconfig ${port_ip[0]} ${port_ip[1]}":
+        path  => '/etc/rc.local',
+        line  => "ifconfig ${port_ip[0]} ${port_ip[1]}",
+        match => "^ifconfig ${port_ip[0]} ${port_ip[1]}$",
     }
 }
 # example ['storage,192.168.1.1/24', 'ex,192.168.2.1/24', 'management,192.168.3.1/24']
