@@ -81,7 +81,6 @@ service{'ivs':
     ensure  => running,
     enable  => true,
     path    => $binpath,
-    require => Selinux::Module['selinux-bcf'],
 }
 
 # fix centos symbolic link problem for ivs debug logging
@@ -128,7 +127,6 @@ service{'neutron-bsn-agent':
     ensure  => running,
     enable  => true,
     path    => $binpath,
-    require => Selinux::Module['selinux-bcf'],
 }
 
 # stop and disable neutron-openvswitch-agent
@@ -136,7 +134,6 @@ service { 'neutron-openvswitch-agent':
   ensure  => stopped,
   enable  => false,
   path    => $binpath,
-  require => Selinux::Module['selinux-bcf'],
 }
 
 # patch for packstack nova
@@ -163,14 +160,6 @@ ini_setting { "l3 agent disable metadata proxy":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'enable_metadata_proxy',
-  value             => 'False',
-}
-ini_setting { "dhcp agent disable dhcp_delete_namespaces":
-  ensure            => present,
-  path              => '/etc/neutron/dhcp_agent.ini',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'dhcp_delete_namespaces',
   value             => 'False',
 }
 file { '/etc/neutron/dnsmasq-neutron.conf':

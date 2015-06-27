@@ -51,6 +51,9 @@ controller() {
         fi
     fi
 
+    # restart keystone and horizon
+    systemctl restart httpd
+
     echo 'Restart neutron-server'
     rm -rf /etc/neutron/plugins/ml2/host_certs/*
     systemctl restart neutron-server
@@ -58,7 +61,6 @@ controller() {
     # schedule cron job to reschedule network in case dhcp agent fails
     chmod a+x /bin/dhcp_reschedule.sh
     crontab -r
-    (crontab -l; echo "*/30 * * * * /usr/bin/fuel-logrotate") | crontab -
     (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
 }
 
@@ -97,11 +99,9 @@ compute() {
         fi
 
         if [[ $pass == true ]]; then
-            dpkg --force-all -i %(dst_dir)s/%(ivs_pkg)s
+            rpm -ivh --force %(dst_dir)s/%(ivs_pkg)s
             if [[ -f %(dst_dir)s/%(ivs_debug_pkg)s ]]; then
-                apt-get install -y libnl-genl-3-200
-                apt-get -f install -y
-                dpkg --force-all -i %(dst_dir)s/%(ivs_debug_pkg)s
+                rpm -ivh --force %(dst_dir)s/%(ivs_debug_pkg)s
             fi
         else
             echo "ivs upgrade fails version validation"
@@ -152,12 +152,10 @@ compute() {
         declare -a uplinks=(%(uplinks)s)
         len=${#uplinks[@]}
         for (( i=0; i<$len; i++ )); do
-            ifdown ${uplinks[$i]}
             ip link set ${uplinks[$i]} down
         done
         sleep 2
         for (( i=0; i<$len; i++ )); do
-            ifup ${uplinks[$i]}
             ip link set ${uplinks[$i]} up
         done
 

@@ -216,12 +216,10 @@ compute() {
         declare -a uplinks=(%(uplinks)s)
         len=${#uplinks[@]}
         for (( i=0; i<$len; i++ )); do
-            ifdown ${uplinks[$i]}
             ip link set ${uplinks[$i]} down
         done
         sleep 2
         for (( i=0; i<$len; i++ )); do
-            ifup ${uplinks[$i]}
             ip link set ${uplinks[$i]} up
         done
 

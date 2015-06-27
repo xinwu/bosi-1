@@ -196,11 +196,14 @@ class Node(object):
 
     def get_all_interfaces(self):
         interfaces = []
-        interfaces.append(self.pxe_interface)
-        for intf in self.uplink_interfaces:
-            interfaces.append(intf)
-        for intf in self.tagged_intfs:
-            interfaces.append(intf)
+        if self.pxe_interface:
+            interfaces.append(self.pxe_interface)
+        if self.uplink_interfaces:
+            for intf in self.uplink_interfaces:
+                interfaces.append(intf)
+        if self.tagged_intfs:
+            for intf in self.tagged_intfs:
+                interfaces.append(intf)
         return ' '.join(interfaces)
 
 

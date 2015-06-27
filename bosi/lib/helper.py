@@ -469,7 +469,8 @@ class Helper(object):
                       'default_gw'            : node.get_default_gw(),
                       'uplinks'               : node.get_comma_separated_uplinks(),
                       'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
-                      'neutron_id'            : node.get_neutron_id()})
+                      'neutron_id'            : node.get_neutron_id(),
+                      'selinux_mode'          : node.selinux_mode})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,

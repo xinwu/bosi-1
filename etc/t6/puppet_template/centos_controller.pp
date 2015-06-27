@@ -92,6 +92,14 @@ ini_setting { "keystone paste config":
     setting           => 'config_file',
     value             => '/usr/share/keystone/keystone-dist-paste.ini',
 }
+ini_setting { "keystone.conf notification driver":
+  ensure            => present,
+  path              => '/etc/keystone/keystone.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'notification_driver',
+  value             => 'messaging',
+}
 
 # reserve keystone ephemeral port
 exec { "reserve keystone port":
@@ -152,7 +160,6 @@ service {'neutron-bsn-agent':
     ensure  => running,
     enable  => true,
     path    => $binpath,
-    require => Selinux::Module['selinux-bcf'],
 }
 
 # purge bcf controller public key
@@ -189,17 +196,6 @@ ini_setting { "neutron.conf notification driver":
   setting           => 'notification_driver',
   value             => 'messaging',
   notify            => Service['neutron-server'],
-}
-
-# configure /etc/keystone/keystone.conf
-ini_setting { "keystone.conf notification driver":
-  ensure            => present,
-  path              => '/etc/keystone/keystone.conf',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'notification_driver',
-  value             => 'messaging',
-  notify            => Service['keystone'],
 }
 
 # config /etc/neutron/plugin.ini
@@ -346,7 +342,7 @@ service { 'neutron-server':
   ensure  => running,
   enable  => true,
   path    => $binpath,
-  require => [Selinux::Module['selinux-bcf'], Exec['purge bcf key']]
+  require => Exec['purge bcf key'],
 }
 service { 'neutron-dhcp-agent':
   ensure  => stopped,
