@@ -39,6 +39,11 @@ def worker_setup_node():
              'log'      : node.log}))
         Helper.safe_print("Finish deploying %(hostname)s\n" %
                          {'hostname' : node.hostname})
+        # If all cluster nodes stop in a simultaneous and uncontrolled manner
+        # (for example with a power cut) you can be left with a situation in
+        # which all nodes think that some other node stopped after them. In this
+        # case you can use the force_boot command on one node to make it bootable
+        # again - consult the rabbitmqctl manpage for more information.
         #if node.fuel_cluster_id and node.role == const.ROLE_NEUTRON_SERVER:
         #    Helper.safe_print("Start to reboot %(hostname)s\n" %
         #                     {'hostname' : node.hostname})
