@@ -1,29 +1,6 @@
 
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 
-# lldp
-file { "/bin/send_lldp":
-    ensure  => file,
-    mode    => 0777,
-}
-file { "/etc/init/send_lldp.conf":
-    ensure  => file,
-    content => "
-description \"BCF LLDP\"
-start on runlevel [2345]
-stop on runlevel [!2345]
-respawn
-script
-    exec /bin/send_lldp --system-desc 5c:16:c7:00:00:00 --system-name $(uname -n) -i 10 --network_interface %(uplinks)s
-end script
-",
-}
-service { "send_lldp":
-    ensure  => running,
-    enable  => true,
-    require => [File['/bin/send_lldp'], File['/etc/init/send_lldp.conf']],
-}
-
 # comment out heat domain related configurations
 $heat_config = file('/etc/heat/heat.conf','/dev/null')
 if($heat_config != '') {
@@ -162,21 +139,12 @@ file_line {'load 8021q on boot':
     match   => '^8021q$',
     require => Package['vlan'],
 }
-exec { "load 8021q":
-    command => "modprobe 8021q",
-    path    => $binpath,
-    require => Package['vlan'],
-}
 
 # load bonding module
 file_line {'load bonding on boot':
     path    => '/etc/modules',
     line    => 'bonding',
     match   => '^bonding$',
-}
-exec { "load bonding":
-    command => "modprobe bonding",
-    path    => $binpath,
 }
 
 # install and enable ntp

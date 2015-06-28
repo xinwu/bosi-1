@@ -15,24 +15,6 @@ controller() {
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
-    # change bond mode to active active
-    if [[ ${fuel_cluster_id} != 'None' ]]; then
-        declare -a bonds=(%(bonds)s)
-        len=${#bonds[@]}
-        for (( i=0; i<$len; i++ )); do
-            sed -i 's/bond-mode active-backup/bond-mode 2/g' /etc/network/interfaces.d/ifcfg-${bonds[$i]}
-        done
-        declare -a uplinks=(%(uplinks)s)
-        len=${#uplinks[@]}
-        for (( i=0; i<$len; i++ )); do
-            ifdown ${uplinks[$i]}
-        done
-        rmmod bonding
-        for (( i=0; i<$len; i++ )); do
-            ifup ${uplinks[$i]}
-        done
-    fi
-
     echo 'Stop and disable neutron-metadata-agent and neutron-dhcp-agent'
     if [[ ${fuel_cluster_id} != 'None' ]]; then
         crm resource stop p_neutron-dhcp-agent
@@ -82,15 +64,14 @@ controller() {
             sed -i 's/from neutron.openstack.common import log as logging/import logging/g' $neutron_api_py
             find $neutron_api_dir -name "*.pyc" | xargs rm
             find $neutron_api_dir -name "*.pyo" | xargs rm
-            service apache2 restart
         fi
     fi
 
     echo 'Restart neutron-server'
     rm -rf /etc/neutron/plugins/ml2/host_certs/*
-    service neutron-server restart
     service keystone restart
     service apache2 restart
+    service neutron-server restart
 
     # schedule cron job to reschedule network in case dhcp agent fails
     chmod a+x /bin/dhcp_reschedule.sh
