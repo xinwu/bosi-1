@@ -4,6 +4,16 @@ $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 # assign ip to ivs internal port
 define ivs_internal_port_ip {
     $port_ip = split($name, ',')
+    file_line { "ifconfig ${port_ip[0]} up":
+        path  => '/etc/rc.local',
+        line  => "ifconfig ${port_ip[0]} up",
+        match => "^ifconfig ${port_ip[0]} up",
+    }->
+    file_line { "ip link set ${port_ip[0]} up":
+        path  => '/etc/rc.local',
+        line  => "ip link set ${port_ip[0]} up",
+        match => "^ip link set ${port_ip[0]} up",
+    }->
     file_line { "ifconfig ${port_ip[0]} ${port_ip[1]}":
         path  => '/etc/rc.local',
         line  => "ifconfig ${port_ip[0]} ${port_ip[1]}",
@@ -13,7 +23,7 @@ define ivs_internal_port_ip {
 # example ['storage,192.168.1.1/24', 'ex,192.168.2.1/24', 'management,192.168.3.1/24']
 class ivs_internal_port_ips {
     $port_ips = [%(port_ips)s]
-    $setup_node_ip = "%(setup_node_ip)s"
+    $default_gw = "%(default_gw)s"
     file { "/etc/rc.local":
         ensure  => file,
         mode    => 0777,
@@ -42,8 +52,8 @@ class ivs_internal_port_ips {
     }->
     file_line { "add default gw":
         path    => '/etc/rc.local',
-        line    => "ip route add default via ${setup_node_ip}",
-        match   => "^ip route add default via ${setup_node_ip}$",
+        line    => "ip route add default via ${default_gw}",
+        match   => "^ip route add default via ${default_gw}$",
     }->
     file_line { "add exit 0":
         path    => '/etc/rc.local',
@@ -135,16 +145,53 @@ ini_setting { "l3 agent disable metadata proxy":
   setting           => 'enable_metadata_proxy',
   value             => 'False',
 }
-ini_setting { "dhcp agent disable dhcp_delete_namespaces":
-  ensure            => present,
-  path              => '/etc/neutron/dhcp_agent.ini',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'dhcp_delete_namespaces',
-  value             => 'False',
-}
 file { '/etc/neutron/dnsmasq-neutron.conf':
   ensure            => file,
   content           => 'dhcp-option-force=26,1400',
 }
+
+# dhcp configuration
+if %(deploy_dhcp_agent)s {
+    ini_setting { "dhcp agent interface driver":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'interface_driver',
+        value             => 'neutron.agent.linux.interface.IVSInterfaceDriver',
+    }
+    ini_setting { "dhcp agent dhcp driver":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'dhcp_driver',
+        value             => 'bsnstacklib.plugins.bigswitch.dhcp_driver.DnsmasqWithMetaData',
+    }
+    ini_setting { "dhcp agent enable isolated metadata":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'enable_isolated_metadata',
+        value             => 'True',
+    }
+    ini_setting { "dhcp agent disable metadata network":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'enable_metadata_network',
+        value             => 'False',
+    }
+    ini_setting { "dhcp agent disable dhcp_delete_namespaces":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'dhcp_delete_namespaces',
+        value             => 'False',
+    }
+}
+
 

@@ -1,3 +1,4 @@
+import re
 import yaml
 import Queue
 import argparse
@@ -38,12 +39,25 @@ def worker_setup_node():
              'log'      : node.log}))
         Helper.safe_print("Finish deploying %(hostname)s\n" %
                          {'hostname' : node.hostname})
+        # If all cluster nodes stop in a simultaneous and uncontrolled manner
+        # (for example with a power cut) you can be left with a situation in
+        # which all nodes think that some other node stopped after them. In this
+        # case you can use the force_boot command on one node to make it bootable
+        # again - consult the rabbitmqctl manpage for more information.
+        #if node.fuel_cluster_id and node.role == const.ROLE_NEUTRON_SERVER:
+        #    Helper.safe_print("Start to reboot %(hostname)s\n" %
+        #                     {'hostname' : node.hostname})
+        #    Helper.run_command_on_remote_without_timeout(node, "shutdown -r now")
         node_q.task_done()
 
 
 def worker_setup_dhcp_agent():
     while True:
         node = dhcp_node_q.get()
+        Helper.safe_print("Copy neutron.conf to %(hostname)s\n" %
+                         {'hostname' : node.hostname})
+        Helper.copy_file_to_remote(node, r'''%(dir)s/neutron.conf''' % {'dir' : node.setup_node_dir},
+                                   '/etc/neutron', 'neutron.conf')
         Helper.safe_print("Copy dhcp_agent.ini to %(hostname)s\n" %
                          {'hostname' : node.hostname})
         Helper.copy_file_to_remote(node, r'''%(dir)s/dhcp_agent.ini''' % {'dir' : node.setup_node_dir},
@@ -52,12 +66,6 @@ def worker_setup_dhcp_agent():
                          {'hostname' : node.hostname})
         Helper.copy_file_to_remote(node, r'''%(dir)s/metadata_agent.ini''' % {'dir': node.setup_node_dir},
                                    '/etc/neutron', 'metadata_agent.ini')
-        Helper.safe_print("Restart neutron-metadata-agent and neutron-dhcp-agent on %(hostname)s\n" %
-                         {'hostname' : node.hostname})
-        Helper.run_command_on_remote(node, 'service neutron-metadata-agent restart')
-        Helper.run_command_on_remote(node, 'service neutron-dhcp-agent restart')
-        Helper.safe_print("Finish deploying dhcp agent and metadata agent on %(hostname)s\n" %
-                         {'hostname' : node.hostname})
         dhcp_node_q.task_done()
 
 
@@ -66,7 +74,7 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
     Helper.safe_print("Start to prepare setup node\n")
     env = Environment(config, fuel_cluster_id, tag, cleanup)
     Helper.common_setup_node_preparation(env)
-    controller_node = None
+    controller_nodes = []
 
     # Generate detailed node information
     Helper.safe_print("Start to setup Big Cloud Fabric\n")
@@ -81,8 +89,7 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
             Helper.generate_scripts_for_centos(node)
         elif node.os == const.UBUNTU:
             Helper.generate_scripts_for_ubuntu(node)
-        with open(const.LOG_FILE, "a") as log_file:
-            log_file.write(str(node))
+
         if node.skip:
             Helper.safe_print("skip node %(hostname)s due to %(error)s\n" %
                              {'hostname' : hostname,
@@ -95,9 +102,24 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
         node_q.put(node)
 
         if node.role == const.ROLE_NEUTRON_SERVER:
-            controller_node = node
+            controller_nodes.append(node)
         elif node.deploy_dhcp_agent:
             dhcp_node_q.put(node)
+
+    # copy neutron config from neutron server to setup node
+    Helper.copy_neutron_config_from_controllers(controller_nodes)
+    Helper.copy_dhcp_scheduler_from_controllers(controller_nodes)
+
+    for hostname, node in node_dic.iteritems():
+        with open(const.LOG_FILE, "a") as log_file:
+            log_file.write(str(node))
+
+    # Use multiple threads to copy dhcp and metedata agent config to compute nodes
+    for i in range(const.MAX_WORKERS):
+        t = threading.Thread(target=worker_setup_dhcp_agent)
+        t.daemon = True
+        t.start()
+    dhcp_node_q.join()
 
     # Use multiple threads to setup nodes
     for i in range(const.MAX_WORKERS):
@@ -105,22 +127,6 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
         t.daemon = True
         t.start()
     node_q.join()
-
-    # Use multiple threads to setup up dhcp agent and metadata agent
-    if controller_node:
-        Helper.safe_print("Copy dhcp_agent.ini from openstack controller %(controller_node)s\n" %
-                         {'controller_node' : controller_node.hostname})
-        Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'dhcp_agent.ini',
-                                     controller_node.setup_node_dir)
-        Helper.safe_print("Copy metadata_agent.ini from openstack controller %(controller_node)s\n" %
-                         {'controller_node' : controller_node.hostname})
-        Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'metadata_agent.ini',
-                                     controller_node.setup_node_dir)
-    for i in range(const.MAX_WORKERS):
-        t = threading.Thread(target=worker_setup_dhcp_agent)
-        t.daemon = True
-        t.start()
-    dhcp_node_q.join()
 
     Helper.safe_print("Big Cloud Fabric deployment finished! Check %(log)s on each node for details.\n" %
                      {'log' : const.LOG_FILE})

@@ -3,11 +3,13 @@ import constants as const
 
 class Node(object):
     def __init__(self, node_config, env):
-        self.dst_dir               = const.DST_DIR
-        self.bash_script_path      = None
-        self.puppet_script_path    = None
-        self.selinux_script_path   = None
-        self.ospurge_script_path   = None
+        self.dst_dir                     = const.DST_DIR
+        self.bash_script_path            = None
+        self.puppet_script_path          = None
+        self.selinux_script_path         = None
+        self.ospurge_script_path         = None
+        self.dhcp_reschedule_script_path = None
+        self.dhcp_agent_scheduler_dir    = None
         self.log                   = const.LOG_FILE
         self.hostname              = node_config['hostname']
         self.role                  = node_config['role'].lower()
@@ -30,12 +32,14 @@ class Node(object):
         self.br_fw_admin           = node_config.get('br_fw_admin')
         self.br_fw_admin_address   = node_config.get('br_fw_admin_address')
         self.tagged_intfs          = node_config.get('tagged_intfs')
+        self.ex_gw                 = node_config.get('ex_gw')
 
         self.tag                   = node_config.get('tag')
         self.env_tag               = env.tag
 
         self.cleanup               = env.cleanup
 
+        self.neutron_id            = env.neutron_id
         self.openstack_release     = env.openstack_release
         self.bsnstacklib_version   = env.bsnstacklib_version
         self.bcf_controllers       = env.bcf_controllers
@@ -125,6 +129,14 @@ class Node(object):
         self.ospurge_script_path = ospurge_script_path
 
 
+    def set_dhcp_reschedule_script_path(self, dhcp_reschedule_script_path):
+        self.dhcp_reschedule_script_path = dhcp_reschedule_script_path
+
+
+    def set_dhcp_agent_scheduler_dir(self, dhcp_agent_scheduler_dir):
+        self.dhcp_agent_scheduler_dir = dhcp_agent_scheduler_dir
+
+
     def get_network_vlan_ranges(self):
         return (r'''%(physnet)s:%(lower_vlan)s:%(upper_vlan)s''' %
                {'physnet'    : self.physnet,
@@ -146,9 +158,12 @@ class Node(object):
             for br in self.bridges:
                 if (not br.br_vlan) or (br.br_key == const.BR_KEY_PRIVATE):
                     continue
-                segments = br.br_key.split('/')
                 internal_ports.append(' --internal-port=')
-                internal_ports.append(segments[len(segments)-1])
+                prefixes = br.br_key.split('/')
+                segment = prefixes[len(prefixes)-1]
+                port_prefix = const.IVS_INTERNAL_PORT_DIC.get(segment)
+                port = "%s%s" % (port_prefix, self.fuel_cluster_id)
+                internal_ports.append(port)
         return ''.join(internal_ports)
 
 
@@ -157,11 +172,15 @@ class Node(object):
         if not self.bridges:
             return ' '.join(port_ips)
         for br in self.bridges:
-            if (not br.br_vlan) or (br.br_key == const.BR_KEY_PRIVATE):
+            if (not br.br_vlan) or (not br.br_ip) or (br.br_key == const.BR_KEY_PRIVATE):
                 continue
-            port_ips.append(r'''"%(internal_port)s,%(ip)s"''' %
-                                 {'internal_port' : br.br_key,
-                                  'ip'            : br.br_ip})
+            prefixes = br.br_key.split('/')
+            segment = prefixes[len(prefixes)-1]
+            port_prefix = const.IVS_INTERNAL_PORT_DIC.get(segment)
+            port = "%s%s" % (port_prefix, self.fuel_cluster_id)
+            port_ips.append(r'''"%(port)s,%(ip)s"''' %
+                           {'port' : port,
+                            'ip'   : br.br_ip})
         return ",".join(port_ips)
 
 
@@ -177,11 +196,14 @@ class Node(object):
 
     def get_all_interfaces(self):
         interfaces = []
-        interfaces.append(self.pxe_interface)
-        for intf in self.uplink_interfaces:
-            interfaces.append(intf)
-        for intf in self.tagged_intfs:
-            interfaces.append(intf)
+        if self.pxe_interface:
+            interfaces.append(self.pxe_interface)
+        if self.uplink_interfaces:
+            for intf in self.uplink_interfaces:
+                interfaces.append(intf)
+        if self.tagged_intfs:
+            for intf in self.tagged_intfs:
+                interfaces.append(intf)
         return ' '.join(interfaces)
 
 
@@ -190,6 +212,13 @@ class Node(object):
         for intf in self.uplink_interfaces:
             uplinks.append(intf)
         return ' '.join(uplinks)
+
+
+    def get_comma_separated_uplinks(self):
+        uplinks = []
+        for intf in self.uplink_interfaces:
+            uplinks.append(intf)
+        return ','.join(uplinks)
 
 
     def get_all_bonds(self):
@@ -204,9 +233,22 @@ class Node(object):
         return ' '.join(bonds)
 
 
+    def get_default_gw(self):
+        if self.ex_gw:
+            return self.ex_gw
+        else:
+            return self.setup_node_ip
+
+
     def get_controllers_for_neutron(self):
         return ','.join(self.bcf_controllers)
 
+
+    def get_neutron_id(self):
+        if self.fuel_cluster_id:
+            return "neutron-%s" % str(self.fuel_cluster_id)
+        return self.neutron_id
+        
 
     def __str__(self):
         return (r'''
@@ -215,6 +257,8 @@ bash_script_path       : %(bash_script_path)s,
 puppet_script_path     : %(puppet_script_path)s,
 selinux_script_path    : %(selinux_script_path)s,
 ospurge_script_path    : %(ospurge_script_path)s,
+dhcp_reschedule_script_path : %(dhcp_reschedule_script_path)s,
+dhcp_agent_scheduler_dir    : %(dhcp_agent_scheduler_dir)s,
 log                    : %(log)s,
 hostname               : %(hostname)s,
 role                   : %(role)s,
@@ -236,9 +280,11 @@ pxe_interface          : %(pxe_interface)s,
 br_fw_admin            : %(br_fw_admin)s,
 br_fw_admin_address    : %(br_fw_admin_address)s,
 tagged_intfs           : %(tagged_intfs)s,
+ex_gw                  : %(ex_gw)s,
 tag                    : %(tag)s,
 env_tag                : %(env_tag)s,
 cleanup                : %(cleanup)s,
+neutron_id             : %(neutron_id)s,
 openstack_release      : %(openstack_release)s,
 bsnstacklib_version    : %(bsnstacklib_version)s,
 bcf_controllers        : %(bcf_controllers)s,
@@ -271,6 +317,8 @@ error                  : %(error)s,
 'puppet_script_path'    : self.puppet_script_path,
 'selinux_script_path'   : self.selinux_script_path,
 'ospurge_script_path'   : self.ospurge_script_path,
+'dhcp_reschedule_script_path' : self.dhcp_reschedule_script_path,
+'dhcp_agent_scheduler_dir'    : self.dhcp_agent_scheduler_dir,
 'log'                   : self.log,
 'hostname'              : self.hostname,
 'role'                  : self.role,
@@ -292,9 +340,11 @@ error                  : %(error)s,
 'br_fw_admin'           : self.br_fw_admin,
 'br_fw_admin_address'   : self.br_fw_admin_address,
 'tagged_intfs'          : self.tagged_intfs,
+'ex_gw'                 : self.ex_gw,
 'tag'                   : self.tag,
 'env_tag'               : self.env_tag,
 'cleanup'               : self.cleanup,
+'neutron_id'            : self.neutron_id,
 'openstack_release'     : self.openstack_release,
 'bsnstacklib_version'   : self.bsnstacklib_version,
 'bcf_controllers'       : self.bcf_controllers,

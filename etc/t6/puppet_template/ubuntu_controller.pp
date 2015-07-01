@@ -43,56 +43,65 @@ if($heat_config != '') {
     }
 }
 
-# assign ip to ivs internal port
-define ivs_internal_port_ip {
-    $port_ip = split($name, ',')
-    file_line { "ifconfig ${port_ip[0]} ${port_ip[1]}":
-        path  => '/etc/rc.local',
-        line  => "ifconfig ${port_ip[0]} ${port_ip[1]}",
-        match => "^ifconfig ${port_ip[0]} ${port_ip[1]}$",
-    }
+# edit rc.local for cron job and default gw
+file { "/etc/rc.local":
+    ensure  => file,
+    mode    => 0777,
+}->
+file_line { "remove exit 0":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "exit 0",
+}->
+file_line { "remove crontab -r":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "crontab -r",
+}->
+file_line { "remove fuel-logrotate":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "(crontab -l; echo \"*/30 * * * * /usr/bin/fuel-logrotate\") | crontab -",
+}->
+file_line { "remove dhcp_reschedule.sh":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
+}->
+file_line { "remove clear default gw":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "ip route del default",
+}->
+file_line { "remove ip route add default":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "ip route add default via %(default_gw)s",
+}->
+file_line { "clear default gw":
+    path    => '/etc/rc.local',
+    line    => "ip route del default",
+}->
+file_line { "add default gw":
+    path    => '/etc/rc.local',
+    line    => "ip route add default via %(default_gw)s",
+}->
+file_line { "clean up cron job":
+    path    => '/etc/rc.local',
+    line    => "crontab -r",
+}->
+file_line { "add cron job to rotate log":
+    path    => '/etc/rc.local',
+    line    => "(crontab -l; echo \"*/30 * * * * /usr/bin/fuel-logrotate\") | crontab -",
+}->
+file_line { "add cron job to reschedule dhcp":
+    path    => '/etc/rc.local',
+    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
+}->
+file_line { "add exit 0":
+    path    => '/etc/rc.local',
+    line    => "exit 0",
 }
-# example ['storage,192.168.1.1/24', 'ex,192.168.2.1/24', 'management,192.168.3.1/24']
-class ivs_internal_port_ips {
-    $port_ips = [%(port_ips)s]
-    $setup_node_ip = "%(setup_node_ip)s"
-    file { "/etc/rc.local":
-        ensure  => file,
-        mode    => 0777,
-    }->
-    file_line { "remove exit 0":
-        path    => '/etc/rc.local',
-        ensure  => absent,
-        line    => "exit 0",
-    }->
-    file_line { "restart ivs":
-        path    => '/etc/rc.local',
-        line    => "service ivs restart",
-        match   => "^service ivs restart$",
-    }->
-    file_line { "sleep 2":
-        path    => '/etc/rc.local',
-        line    => "sleep 2",
-        match   => "^sleep 2$",
-    }->
-    ivs_internal_port_ip { $port_ips:
-    }->
-    file_line { "clear default gw":
-        path    => '/etc/rc.local',
-        line    => "ip route del default",
-        match   => "^ip route del default$",
-    }->
-    file_line { "add default gw":
-        path    => '/etc/rc.local',
-        line    => "ip route add default via ${setup_node_ip}",
-        match   => "^ip route add default via ${setup_node_ip}$",
-    }->
-    file_line { "add exit 0":
-        path    => '/etc/rc.local',
-        line    => "exit 0",
-    }
-}
-include ivs_internal_port_ips
 
 # make sure known_hosts is cleaned up
 file { "/root/.ssh/known_hosts":
@@ -130,10 +139,12 @@ file_line {'load 8021q on boot':
     match   => '^8021q$',
     require => Package['vlan'],
 }
-exec { "load 8021q":
-    command => "modprobe 8021q",
-    path    => $binpath,
-    require => Package['vlan'],
+
+# load bonding module
+file_line {'load bonding on boot':
+    path    => '/etc/modules',
+    line    => 'bonding',
+    match   => '^bonding$',
 }
 
 # install and enable ntp
@@ -146,50 +157,9 @@ service { "ntp":
     require => Package['ntp'],
 }
 
-# ivs configruation and service
-file { '/etc/default/ivs':
-    ensure  => file,
-    mode    => 0644,
-    content => "%(ivs_daemon_args)s",
-    notify  => Service['ivs'],
-}
-service{ 'ivs':
-    ensure     => 'running',
-    provider   => 'upstart',
-    hasrestart => 'true',
-    hasstatus  => 'true',
-    subscribe  => File['/etc/default/ivs'],
-}
-
 # add pkg for ivs debug logging
 package { 'binutils':
    ensure => latest,
-}
-
-# config neutron-bsn-agent conf
-file { '/etc/init/neutron-bsn-agent.conf':
-    ensure => present,
-    content => "
-description \"Neutron BSN Agent\"
-start on runlevel [2345]
-stop on runlevel [!2345]
-respawn
-script
-    exec /usr/local/bin/neutron-bsn-agent --config-file=/etc/neutron/neutron.conf --config-file=/etc/neutron/plugins/ml2/ml2_conf.ini --log-file=/var/log/neutron/neutron-bsn-agent.log
-end script
-",
-}
-file { '/etc/init.d/neutron-bsn-agent':
-    ensure => link,
-    target => '/lib/init/upstart-job',
-    notify => Service['neutron-bsn-agent'],
-}
-service {'neutron-bsn-agent':
-    ensure     => 'running',
-    provider   => 'upstart',
-    hasrestart => 'true',
-    hasstatus  => 'true',
-    subscribe  => [File['/etc/init/neutron-bsn-agent.conf'], File['/etc/init.d/neutron-bsn-agent']],
 }
 
 # purge bcf controller public key
@@ -218,6 +188,26 @@ ini_setting { "neutron.conf dhcp_agents_per_network":
   value             => '2',
   notify            => Service['neutron-server'],
 }
+ini_setting { "neutron.conf notification driver":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'notification_driver',
+  value             => 'messaging',
+  notify            => Service['neutron-server'],
+}
+
+# configure /etc/keystone/keystone.conf
+ini_setting { "keystone.conf notification driver":
+  ensure            => present,
+  path              => '/etc/keystone/keystone.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'notification_driver',
+  value             => 'messaging',
+  notify            => Service['keystone'],
+}
 
 # config /etc/neutron/plugin.ini
 ini_setting { "neutron plugin.ini firewall_driver":
@@ -238,57 +228,9 @@ ini_setting { "neutron plugin.ini enable_security_group":
   value             => 'True',
   notify            => Service['neutron-server'],
 }
-
-# config /etc/neutron/dhcp_agent.ini
-ini_setting { "dhcp agent interface driver":
-  ensure            => present,
-  path              => '/etc/neutron/dhcp_agent.ini',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'interface_driver',
-  value             => 'neutron.agent.linux.interface.IVSInterfaceDriver',
-  notify            => Service['neutron-dhcp-agent'],
-}
-ini_setting { "dhcp agent dhcp driver":
-  ensure            => present,
-  path              => '/etc/neutron/dhcp_agent.ini',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'dhcp_driver',
-  value             => 'bsnstacklib.plugins.bigswitch.dhcp_driver.DnsmasqWithMetaData',
-  notify            => Service['neutron-dhcp-agent'],
-}
-ini_setting { "dhcp agent enable isolated metadata":
-  ensure            => present,
-  path              => '/etc/neutron/dhcp_agent.ini',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'enable_isolated_metadata',
-  value             => 'True',
-  notify            => Service['neutron-dhcp-agent'],
-}
-ini_setting { "dhcp agent disable metadata network":
-  ensure            => present,
-  path              => '/etc/neutron/dhcp_agent.ini',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'enable_metadata_network',
-  value             => 'False',
-  notify            => Service['neutron-dhcp-agent'],
-}
-ini_setting { "dhcp agent disable dhcp_delete_namespaces":
-  ensure            => present,
-  path              => '/etc/neutron/dhcp_agent.ini',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'dhcp_delete_namespaces',
-  value             => 'False',
-  notify            => Service['neutron-dhcp-agent'],
-}
 file { '/etc/neutron/dnsmasq-neutron.conf':
   ensure            => file,
   content           => 'dhcp-option-force=26,1400',
-  notify            => Service['neutron-dhcp-agent'],
 }
 
 # disable l3 agent
@@ -303,12 +245,6 @@ ini_setting { "l3 agent disable metadata proxy":
   key_val_separator => '=',
   setting           => 'enable_metadata_proxy',
   value             => 'False',
-}
-
-# make sure metadata agent is running
-service { 'neutron-metadata-agent':
-  ensure  => running,
-  enable  => true,
 }
 
 # config /etc/neutron/plugins/ml2/ml2_conf.ini 
@@ -402,6 +338,15 @@ ini_setting { "ml2 restproxy consistency interval":
   value             => 60,
   notify            => Service['neutron-server'],
 }
+ini_setting { "ml2 restproxy neutron_id":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'neutron_id',
+  value             => %(neutron_id)s,
+  notify            => Service['neutron-server'],
+}
 
 # change ml2 ownership
 file { '/etc/neutron/plugins/ml2':
@@ -411,22 +356,22 @@ file { '/etc/neutron/plugins/ml2':
   notify  => Service['neutron-server'],
 }
 
-# stop and disable neutron-plugin-openvswitch-agent
-service { 'neutron-plugin-openvswitch-agent':
-  ensure   => 'stopped',
-  enable   => false,
-  provider => 'upstart',
-}
-
-# neutron-server and neutron-dhcp-agent
+# neutron-server, neutron-dhcp-agent and neutron-metadata-agent
 service { 'neutron-server':
   ensure     => running,
-  provider   => 'upstart',
+  enable     => true,
+}
+service { 'keystone':
+  ensure     => running,
   enable     => true,
 }
 service { 'neutron-dhcp-agent':
-  ensure     => running,
-  provider   => 'upstart',
-  enable     => true,
+  ensure     => stopped,
+  enable     => false,
 }
+service { 'neutron-metadata-agent':
+  ensure  => stopped,
+  enable  => false,
+}
+
 

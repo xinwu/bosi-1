@@ -16,6 +16,9 @@ class Environment(object):
         # clean up flag
         self.cleanup = cleanup
 
+        # neutron_id for ml2 plugin restproxy
+        self.neutron_id = config.get('neutron_id')
+
         # flags for upgrade
         self.install_ivs = config.get('default_install_ivs')
         self.install_bsnstacklib = config.get('default_install_bsnstacklib')
@@ -36,11 +39,12 @@ class Environment(object):
         self.deploy_mode = config.get('default_deploy_mode')
         if not self.deploy_mode:
             self.deploy_mode = const.T5
-        for node_config in config['nodes']:
-            node_mode = node_config.get('deploy_mode')
-            if node_mode and node_mode.lower() == const.T6:
-                self.deploy_mode = const.T6
-                break
+        if config['nodes']:
+            for node_config in config['nodes']:
+                node_mode = node_config.get('deploy_mode')
+                if node_mode and node_mode.lower() == const.T6:
+                    self.deploy_mode = const.T6
+                    break
 
         # selinux configuration
         self.selinux_mode = None

@@ -3,7 +3,6 @@ import httplib
 import constants as const
 from membership_rule import MembershipRule
 
-
 class RestLib(object):
     @staticmethod
     def request(url, prefix="/api/v1/data/controller/", method='GET',
@@ -119,9 +118,16 @@ class RestLib(object):
 
     @staticmethod
     def program_segment_and_membership_rule(server, cookie, rule, tenant, port=const.BCF_CONTROLLER_PORT):
+        existing_segments = RestLib.get_os_mgmt_segments(server, cookie, tenant, port)
+        if rule.segment not in existing_segments:
+            with open(const.LOG_FILE, "a") as log_file:
+                log_file.write(r'''BCF controller does not have tenant %(tenant)s segment %(segment)s''' %
+                              {'tenant' : tenant, 'segment' : rule.segment})
+            return
+
         segment_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/segment[name="%(segment)s"]''' %
-                      {'tenant' : tenant, 'segment' : rule.br_key})
-        segment_data = {"name": rule.br_key}
+                      {'tenant' : tenant, 'segment' : rule.segment})
+        segment_data = {"name": rule.segment}
         ret = RestLib.put(cookie, segment_url, server, port, json.dumps(segment_data))
         if ret[0] != 204:
             raise Exception(ret)
@@ -133,7 +139,7 @@ class RestLib(object):
 
         intf_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/segment[name="%(segment)s"]/switch-port-membership-rule[interface="%(interface)s"][switch="%(switch)s"][vlan=%(vlan)d]''' %
                        {'tenant'    : tenant,
-                        'segment'   : rule.br_key,
+                        'segment'   : rule.segment,
                         'interface' : const.ANY,
                         'switch'    : const.ANY,
                         'vlan'      : vlan})
@@ -144,7 +150,7 @@ class RestLib(object):
 
         pg_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/segment[name="%(segment)s"]/port-group-membership-rule[port-group="%(pg)s"][vlan=%(vlan)d]''' %
                        {'tenant'    : tenant,
-                        'segment'   : rule.br_key,
+                        'segment'   : rule.segment,
                         'pg'        : const.ANY,
                         'vlan'      : vlan})
         rule_data = {"port-group" : const.ANY, "vlan" : vlan}
@@ -154,11 +160,11 @@ class RestLib(object):
 
         specific_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/segment[name="%(segment)s"]/switch-port-membership-rule[interface="%(interface)s"][switch="%(switch)s"][vlan=%(vlan)d]''' %
                        {'tenant'    : tenant,
-                        'segment'   : rule.br_key,
-                        'interface' : rule.br_key,
+                        'segment'   : rule.segment,
+                        'interface' : rule.internal_port,
                         'switch'    : const.ANY,
                         'vlan'      : -1})
-        rule_data = {"interface" : rule.br_key, "switch" : const.ANY, "vlan" : -1}
+        rule_data = {"interface" : rule.internal_port, "switch" : const.ANY, "vlan" : -1}
         ret = RestLib.put(cookie, specific_rule_url, server, port, json.dumps(rule_data))
         if ret[0] != 204:
             raise Exception(ret)

@@ -1,4 +1,5 @@
 import os
+import sets
 import sys
 import time
 import json
@@ -41,13 +42,14 @@ class Helper(object):
 
 
     @staticmethod
-    def run_command_on_remote_with_key_without_timeout(node_ip, command):
+    def run_command_on_remote_with_key_without_timeout(node_ip, node_user, command):
         """
         Run cmd on remote node.
         """
-        local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(hostname)s "%(remote_cmd)s"''' %
+        local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s "%(remote_cmd)s"''' %
                     {'hostname'   : node_ip,
                      'remote_cmd' : command,
+                     'user'       : node_user,
                     })
         return Helper.run_command_on_local_without_timeout(local_cmd)
 
@@ -121,6 +123,21 @@ class Helper(object):
 
 
     @staticmethod
+    def copy_dir_to_remote_with_passwd(node, src_dir, dst_dir):
+        mkdir_cmd = (r'''mkdir -p %(dst_dir)s''' % {'dst_dir' : dst_dir})
+        Helper.run_command_on_remote_with_passwd(node, mkdir_cmd)
+        scp_cmd = (r'''sshpass -p %(pwd)s scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_dir)s  %(user)s@%(hostname)s:%(dst_dir)s/ >> %(log)s 2>&1''' %
+                  {'user'       : node.user,
+                   'hostname'   : node.hostname,
+                   'pwd'        : node.passwd,
+                   'log'        : node.log,
+                   'src_dir'    : src_dir,
+                   'dst_dir'    : dst_dir
+                  })
+        Helper.run_command_on_local(scp_cmd)
+
+
+    @staticmethod
     def copy_file_to_remote_with_passwd(node, src_file, dst_dir, dst_file, mode=777):
         """
         Copy file from local node to remote node,
@@ -179,12 +196,26 @@ class Helper(object):
         """
         Run cmd on remote node.
         """
-        local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(hostname)s >> %(log)s 2>&1 "%(remote_cmd)s"''' %
+        local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s >> %(log)s 2>&1 "%(remote_cmd)s"''' %
                    {'hostname'   : node.hostname,
                     'log'        : node.log,
-                    'remote_cmd' : command
+                    'remote_cmd' : command,
+                    'user'       : node.user,
                    })
         Helper.run_command_on_local(local_cmd)
+
+
+    @staticmethod
+    def copy_dir_to_remote_with_key(node, src_dir, dst_dir):
+        mkdir_cmd = (r'''mkdir -p %(dst_dir)s''' % {'dst_dir' : dst_dir})
+        Helper.run_command_on_remote_with_key(node, mkdir_cmd)
+        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_dir)s %(hostname)s:%(dst_dir)s/ >> %(log)s 2>&1''' %
+                  {'hostname'   : node.hostname,
+                   'log'        : node.log,
+                   'src_dir'    : src_dir,
+                   'dst_dir'    : dst_dir
+                  })
+        Helper.run_command_on_local(scp_cmd)
 
 
     @staticmethod
@@ -238,6 +269,50 @@ class Helper(object):
 
 
     @staticmethod
+    def generate_dhcp_reschedule_script(node):
+        openrc = const.PACKSTACK_OPENRC
+        if node.fuel_cluster_id:
+            openrc = const.FUEL_OPENRC
+        dhcp_reschedule_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/dhcp_reschedule.sh''' %
+                                      {'setup_node_dir'       : node.setup_node_dir,
+                                       'generated_script_dir' : const.GENERATED_SCRIPT_DIR})
+        node.set_dhcp_reschedule_script_path(dhcp_reschedule_script_path)
+        if os.path.isfile(dhcp_reschedule_script_path):
+            return
+        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(bash_template_dir)s/dhcp_reschedule.sh''' %
+                  {'setup_node_dir'       : node.setup_node_dir,
+                   'deploy_mode'          : node.deploy_mode,
+                   'bash_template_dir'    : const.BASH_TEMPLATE_DIR}), "r") as dhcp_reschedule_template_file:
+            dhcp_reschedule_template = dhcp_reschedule_template_file.read()
+            dhcp_reschedule = (dhcp_reschedule_template %
+                              {'openrc'            : openrc,
+                               'openstack_release' : node.openstack_release})
+        with open(dhcp_reschedule_script_path, "w") as dhcp_reschedule_file:
+            dhcp_reschedule_file.write(dhcp_reschedule)
+
+
+    @staticmethod
+    def generate_ospurge_script(node):
+        openrc = const.PACKSTACK_OPENRC
+        if node.fuel_cluster_id:
+            openrc = const.FUEL_OPENRC
+        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(ospurge_template_dir)s/%(ospurge_template)s.sh''' %
+                  {'setup_node_dir'       : node.setup_node_dir,
+                   'deploy_mode'          : node.deploy_mode,
+                   'ospurge_template_dir' : const.OSPURGE_TEMPLATE_DIR,
+                   'ospurge_template'     : "purge_all"}), "r") as ospurge_template_file:
+            ospurge_template = ospurge_template_file.read()
+            ospurge = (ospurge_template % {'openrc' : openrc})
+        ospurge_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s_ospurge.sh''' %
+                              {'setup_node_dir'       : node.setup_node_dir,
+                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
+                               'hostname'             : node.hostname})
+        with open(ospurge_script_path, "w") as ospurge_file:
+            ospurge_file.write(ospurge)
+        node.set_ospurge_script_path(ospurge_script_path)
+
+
+    @staticmethod
     def generate_scripts_for_ubuntu(node):
         # generate bash script
         with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(bash_template_dir)s/%(bash_template)s_%(os_version)s.sh''' %
@@ -259,6 +334,7 @@ class Helper(object):
                     'deploy_horizon_patch': str(node.deploy_horizon_patch).lower(),
                     'ivs_version'         : node.ivs_version,
                     'bsnstacklib_version' : node.bsnstacklib_version,
+                    'openstack_release'   : node.openstack_release,
                     'dst_dir'             : node.dst_dir,
                     'hostname'            : node.hostname,
                     'ivs_pkg'             : node.ivs_pkg,
@@ -274,7 +350,7 @@ class Helper(object):
                     'br_fw_admin'         : node.br_fw_admin,
                     'pxe_interface'       : node.pxe_interface,
                     'br_fw_admin_address' : node.br_fw_admin_address,
-                    'br_fw_admin_gw'      : node.setup_node_ip,
+                    'default_gw'          : node.get_default_gw(),
                     'uplinks'             : node.get_all_uplinks()})
         bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh''' %
                            {'setup_node_dir'       : node.setup_node_dir,
@@ -303,7 +379,10 @@ class Helper(object):
                       'bcf_controller_user'   : node.bcf_controller_user,
                       'bcf_controller_passwd' : node.bcf_controller_passwd,
                       'port_ips'              : node.get_ivs_internal_port_ips(),
-                      'setup_node_ip'         : node.setup_node_ip})
+                      'default_gw'            : node.get_default_gw(),
+                      'uplinks'               : node.get_comma_separated_uplinks(),
+                      'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
+                      'neutron_id'            : node.get_neutron_id()})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -312,26 +391,11 @@ class Helper(object):
             puppet_file.write(puppet)
         node.set_puppet_script_path(puppet_script_path)
 
-        # generate ospurge script
         if node.role != const.ROLE_NEUTRON_SERVER:
             return
-        openrc = const.MANUAL_OPENRC
-        if node.fuel_cluster_id:
-            openrc = const.FUEL_OPENRC
-        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(ospurge_template_dir)s/%(ospurge_template)s.sh''' %
-                  {'setup_node_dir'       : node.setup_node_dir,
-                   'deploy_mode'          : node.deploy_mode,
-                   'ospurge_template_dir' : const.OSPURGE_TEMPLATE_DIR,
-                   'ospurge_template'     : "purge_all"}), "r") as ospurge_template_file:
-            ospurge_template = ospurge_template_file.read()
-            ospurge = (ospurge_template % {'openrc' : openrc})
-        ospurge_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s_ospurge.sh''' %
-                              {'setup_node_dir'       : node.setup_node_dir,
-                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
-                               'hostname'             : node.hostname})
-        with open(ospurge_script_path, "w") as ospurge_file:
-            ospurge_file.write(ospurge)
-        node.set_ospurge_script_path(ospurge_script_path)
+
+        Helper.generate_ospurge_script(node)
+        Helper.generate_dhcp_reschedule_script(node)
 
 
     @staticmethod
@@ -357,6 +421,7 @@ class Helper(object):
                     'deploy_horizon_patch': str(node.deploy_horizon_patch).lower(),
                     'ivs_version'         : node.ivs_version,
                     'bsnstacklib_version' : node.bsnstacklib_version,
+                    'openstack_release'   : node.openstack_release,
                     'dst_dir'             : node.dst_dir,
                     'hostname'            : node.hostname,
                     'ivs_pkg'             : node.ivs_pkg,
@@ -366,7 +431,14 @@ class Helper(object):
                     'ivs_debug_pkg'       : node.ivs_debug_pkg,
                     'ovs_br'              : node.get_all_ovs_brs(),
                     'bonds'               : node.get_all_bonds(),
-                    'br-int'              : const.BR_NAME_INT})
+                    'br-int'              : const.BR_NAME_INT,
+                    'fuel_cluster_id'     : str(node.fuel_cluster_id),
+                    'interfaces'          : node.get_all_interfaces(),
+                    'br_fw_admin'         : node.br_fw_admin,
+                    'pxe_interface'       : node.pxe_interface,
+                    'br_fw_admin_address' : node.br_fw_admin_address,
+                    'default_gw'          : node.get_default_gw(),
+                    'uplinks'             : node.get_all_uplinks()})
         bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh''' %
                            {'setup_node_dir'       : node.setup_node_dir,
                             'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -393,8 +465,12 @@ class Helper(object):
                       'bcf_controllers'       : node.get_controllers_for_neutron(),
                       'bcf_controller_user'   : node.bcf_controller_user,
                       'bcf_controller_passwd' : node.bcf_controller_passwd,
-                      'selinux_mode'          : node.selinux_mode,
-                      'port_ips'              : node.get_ivs_internal_port_ips()})
+                      'port_ips'              : node.get_ivs_internal_port_ips(),
+                      'default_gw'            : node.get_default_gw(),
+                      'uplinks'               : node.get_comma_separated_uplinks(),
+                      'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
+                      'neutron_id'            : node.get_neutron_id(),
+                      'selinux_mode'          : node.selinux_mode})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -419,24 +495,9 @@ class Helper(object):
         # generate ospurge script
         if node.role != const.ROLE_NEUTRON_SERVER:
             return
-        openrc = const.PACKSTACK_OPENRC
-        if node.fuel_cluster_id:
-            openrc = const.FUEL_OPENRC
-        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(ospurge_template_dir)s/%(ospurge_template)s.sh''' %
-                  {'setup_node_dir'       : node.setup_node_dir,
-                   'deploy_mode'          : node.deploy_mode,
-                   'ospurge_template_dir' : const.OSPURGE_TEMPLATE_DIR,
-                   'ospurge_template'     : "purge_all"}), "r") as ospurge_template_file:
-            ospurge_template = ospurge_template_file.read()
-            ospurge = (ospurge_template % {'openrc' : openrc})
-        ospurge_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s_ospurge.sh''' %
-                              {'setup_node_dir'       : node.setup_node_dir,
-                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
-                               'hostname'             : node.hostname})
-        with open(ospurge_script_path, "w") as ospurge_file:
-            ospurge_file.write(ospurge)
-        node.set_ospurge_script_path(ospurge_script_path)
-        
+
+        Helper.generate_ospurge_script(node)
+        Helper.generate_dhcp_reschedule_script(node)
 
 
     @staticmethod
@@ -537,7 +598,7 @@ class Helper(object):
 
         # get node operating system information
         os_info, errors = Helper.run_command_on_remote_with_key_without_timeout(node_config['hostname'],
-            'python -mplatform')
+            node_config['user'], 'python -mplatform')
         if errors or (not os_info):
             Helper.safe_print("Error retrieving operating system info from node %(hostname)s:\n%(errors)s\n"
                               % {'hostname' : node_config['hostname'], 'errors' : errors})
@@ -553,7 +614,7 @@ class Helper(object):
 
         # get node /etc/astute.yaml
         node_yaml, errors = Helper.run_command_on_remote_with_key_without_timeout(node_config['hostname'],
-            'cat /etc/astute.yaml')
+            node_config['user'], 'cat /etc/astute.yaml')
         if errors or not node_yaml:
             Helper.safe_print("Error retrieving config for node %(hostname)s:\n%(errors)s\n"
                               % {'hostname' : node_config['hostname'], 'errors' : errors})
@@ -568,7 +629,7 @@ class Helper(object):
         # get existing ivs version
         node_config['old_ivs_version'] = None
         output, errors = Helper.run_command_on_remote_with_key_without_timeout(node_config['hostname'],
-            'ivs --version')
+            node_config['user'], 'ivs --version')
         if errors or not output:
             Helper.safe_print("Error retrieving ivs version from node %(hostname)s:\n%(errors)s\n"
                               % {'hostname' : node_config['hostname'], 'errors' : errors})
@@ -643,25 +704,29 @@ class Helper(object):
             vendor_specific = endpoints[br_name].get('vendor_specific')
             if vendor_specific:
                 vlan = vendor_specific.get('vlans')
-            else:
-                # we don't touch bridge without vendor_specific,
-                # for example: br-floating
-                continue
+                phy_interfaces = vendor_specific.get('phy_interfaces')
+                if phy_interfaces:
+                    set1 = set(node_config['uplink_interfaces'])
+                    set2 = set(phy_interfaces)
+                    issuperset = set1.issuperset(set2)
+                    issubset = set2.issubset(set1)
+                    if not (issuperset and issubset):
+                        # we don't touch the bridge which doesn't use bond
+                        continue
 
-            phy_interfaces = vendor_specific.get('phy_interfaces')
-            if not (set(node_config['uplink_interfaces']).issuperset(set(phy_interfaces)) and
-                    set(phy_interfaces).issuperset(set(node_config['uplink_interfaces']))):
-                # we don't touch the bridge which doesn't use bond
-                continue
-
-            ip = endpoints[br_name]['IP']
-            if ip == const.NONE_IP:
+            ip = endpoints[br_name].get('IP')
+            if (not ip) or (ip == const.NONE_IP):
                 ip = None
             else:
                 ip = ip[0]
             bridge = Bridge(br_key, br_name, ip, vlan)
             bridges.append(bridge)
             bridge_names.append(br_name)
+
+            # get default gw, most likely on br-ex
+            gw = endpoints[br_name].get('gateway')
+            if gw:
+                node_config['ex_gw'] = gw
         node_config['bridges'] = bridges
 
         # get non-bond, non-pxe interfaces,
@@ -682,6 +747,7 @@ class Helper(object):
     @staticmethod
     def load_nodes_from_fuel(node_yaml_config_map, env):
         fuel_settings = Helper.__load_fuel_evn_setting__(env.fuel_cluster_id)
+
         Helper.safe_print("Retrieving list of Fuel nodes\n")
         cmd = (r'''fuel nodes --env %(fuel_cluster_id)s''' %
               {'fuel_cluster_id' : str(env.fuel_cluster_id)})
@@ -711,8 +777,9 @@ class Helper(object):
                     if (not br.br_vlan) or (br.br_key == const.BR_KEY_PRIVATE):
                         continue
                     rule = MembershipRule(br.br_key, br.br_vlan,
-                                          node.bcf_openstack_management_tenant)
-                    membership_rules[rule.br_key] = rule
+                                          node.bcf_openstack_management_tenant,
+                                          node.fuel_cluster_id)
+                    membership_rules[rule.segment] = rule
 
         except IndexError:
             raise Exception("Could not parse node list:\n%(node_list)s\n"
@@ -732,7 +799,6 @@ class Helper(object):
             return Helper.load_nodes_from_yaml(node_yaml_config_map, env)
         else:
             node_dic, membership_rules = Helper.load_nodes_from_fuel(node_yaml_config_map, env)
-            # program membership rules to controller
             for br_key, rule in membership_rules.iteritems():
                 RestLib.program_segment_and_membership_rule(env.bcf_master, env.bcf_cookie, rule,
                                                             env.bcf_openstack_management_tenant)
@@ -783,8 +849,8 @@ class Helper(object):
         url = env.horizon_patch_url
         if 'http://' in url or 'https://' in url:
             code_web = subprocess.call("wget --no-check-certificate %(url)s -P %(setup_node_dir)s" %
-                                          {'url' : url, 'setup_node_dir' : setup_node_dir},
-                                           shell=True)
+                                      {'url' : url, 'setup_node_dir' : setup_node_dir},
+                                       shell=True)
         if os.path.isfile(url):
             code_local = subprocess.call("cp %(url)s %(setup_node_dir)s" %
                                         {'url' : url, 'setup_node_dir' : setup_node_dir},
@@ -792,6 +858,16 @@ class Helper(object):
         if env.deploy_horizon_patch and code_web != 0 and code_local != 0:
             Helper.safe_print("Required horizon packages are not correctly downloaded.\n")
             exit(1)
+
+
+    @staticmethod
+    def run_command_on_remote_without_timeout(node, command):
+        if node.fuel_cluster_id:
+            return Helper.run_command_on_remote_with_key_without_timeout(node.hostname,
+                node.user, command)
+        else:
+            return Helper.run_command_on_remote_with_passwd_without_timeout(node.hostname,
+                node.user, node.passwd, command)
 
 
     @staticmethod
@@ -811,11 +887,137 @@ class Helper(object):
 
 
     @staticmethod
+    def copy_dir_to_remote(node, src_dir, dst_dir):
+        if node.fuel_cluster_id:
+            Helper.copy_dir_to_remote_with_key(node, src_dir, dst_dir)
+        else:
+            Helper.copy_dir_to_remote_with_passwd(node, src_dir, dst_dir)
+
+
+    @staticmethod
     def copy_file_to_remote(node, src_file, dst_dir, dst_file, mode=777):
         if node.fuel_cluster_id:
             Helper.copy_file_to_remote_with_key(node, src_file, dst_dir, dst_file, mode)
         else:
             Helper.copy_file_to_remote_with_passwd(node, src_file, dst_dir, dst_file, mode)
+
+
+    @staticmethod
+    def copy_dhcp_scheduler_from_controllers(controller_nodes):
+        if len(controller_nodes) == 0:
+            return
+        controller_node = controller_nodes[0]
+        if controller_node.openstack_release != 'juno':
+            # we only patch juno
+            return
+        dhcp_py = "dhcp_agent_scheduler.py"
+        src_path, error = Helper.run_command_on_remote_without_timeout(controller_node, "find /usr/lib -name %s" % dhcp_py)
+        if error or (not src_path):
+            Helper.safe_print(r'''Failed to locate %(dhcp_py)s on %(node)s,
+                              output = %(src_path)s, error = %(error)s\n''' %
+                             {'dhcp_py'  : dhcp_py,
+                              'node'     : controller_node.hostname,
+                              'src_path' : src_path,
+                              'error'    : error})
+            return
+        replace = r'''
+            LOG.debug(_('Before sorting dhcp agent subnets: %s'),
+                      active_dhcp_agents)
+            count_dict = {}
+            agent_dict = {}
+            for dhcp_agent in active_dhcp_agents:
+                agent_dict[dhcp_agent.id] = dhcp_agent
+                networks = plugin.list_networks_on_dhcp_agent(context, dhcp_agent.id)
+                subnets = networks['networks']
+                count = count_dict.get(dhcp_agent.id)
+                if not count:
+                    count = 0
+                count = count + len(subnets)
+                count_dict[dhcp_agent.id] = count
+            sorted_count_dict = OrderedDict(sorted(count_dict.items(), key=lambda x: x[1]))
+            active_dhcp_agents = []
+            for id, count in sorted_count_dict.items():
+                active_dhcp_agents.append(agent_dict[id])
+            LOG.debug(_('After sorting dhcp agent subnets: %s'),
+                      active_dhcp_agents)
+            chosen_agents = active_dhcp_agents[:n_agents]
+            LOG.debug(_('Chose dhcp agents: %s'),
+                      chosen_agents)
+'''
+        src_dir = os.path.dirname(src_path)
+        for node in controller_nodes:
+            node.set_dhcp_agent_scheduler_dir(src_dir)
+        Helper.safe_print("%s is at %s on %s\n" % (dhcp_py, src_dir, controller_node.hostname))
+        Helper.safe_print("Copy %(dhcp_py)s from openstack controller %(controller_node)s\n" %
+                         {'controller_node' : controller_node.hostname,
+                          'dhcp_py'         : dhcp_py})
+        Helper.copy_file_from_remote(controller_node, src_dir, dhcp_py,
+                                     controller_node.setup_node_dir)
+
+        dhcp_file_new = open("%s/%s.new" % (controller_node.setup_node_dir, dhcp_py), 'w')
+        dhcp_file = open("%s/%s" % (controller_node.setup_node_dir, dhcp_py), 'r')
+        for line in dhcp_file:
+            if line.startswith("import random"):
+                dhcp_file_new.write("import random\n")
+                dhcp_file_new.write("from collections import OrderedDict\n")
+            elif line.startswith("            chosen_agents = random.sample(active_dhcp_agents, n_agents)"):
+                dhcp_file_new.write(replace)
+            elif line.startswith("from collections import OrderedDict"):
+                pass
+            else:
+                dhcp_file_new.write(line)
+        dhcp_file.close()
+        dhcp_file_new.close()
+        Helper.run_command_on_local_without_timeout(r'''mv %(setup_node_dir)s/%(dhcp_py)s.new %(setup_node_dir)s/%(dhcp_py)s''' %
+                                                       {'setup_node_dir' : controller_node.setup_node_dir,
+                                                        'dhcp_py'        : dhcp_py})
+
+
+    @staticmethod
+    def copy_neutron_config_from_controllers(controller_nodes):
+        if len(controller_nodes) and controller_nodes[0]:
+            controller_node = controller_nodes[0]
+            Helper.safe_print("Copy dhcp_agent.ini from openstack controller %(controller_node)s\n" %
+                             {'controller_node' : controller_node.hostname})
+            Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'dhcp_agent.ini',
+                                         controller_node.setup_node_dir)
+            Helper.safe_print("Copy metadata_agent.ini from openstack controller %(controller_node)s\n" %
+                             {'controller_node' : controller_node.hostname})
+            Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'metadata_agent.ini',
+                                         controller_node.setup_node_dir)
+
+        rabbit_hosts = sets.Set()
+        for controller_node in controller_nodes:
+            Helper.safe_print("Copy neutron.conf from openstack controller %(controller_node)s\n" %
+                             {'controller_node' : controller_node.hostname})
+            Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'neutron.conf',
+                                         controller_node.setup_node_dir)
+            # put all controllers to rabbit hosts
+            neutron_conf = open("%s/neutron.conf" % controller_node.setup_node_dir, 'r')
+            for line in neutron_conf:
+                if line.startswith("rabbit_hosts"):
+                    hosts_str = line.split("=")[1].strip()
+                    hosts = hosts_str.split(',')
+                    for host in hosts:
+                        if "127.0" in host:
+                            continue
+                        rabbit_hosts.add(host.strip())
+                    break
+
+        if len(controller_nodes):
+            controller_node = controller_nodes[0]
+            rabbit_hosts_str = ','.join(rabbit_hosts)
+            neutron_conf_new = open("%s/neutron.conf.new" % controller_node.setup_node_dir, 'w')
+            neutron_conf = open("%s/neutron.conf" % controller_node.setup_node_dir, 'r')
+            for line in neutron_conf:
+                if line.startswith("rabbit_hosts"):
+                    neutron_conf_new.write("rabbit_hosts=%s\n" % rabbit_hosts_str)
+                else:
+                    neutron_conf_new.write(line)
+            neutron_conf.close()
+            neutron_conf_new.close()
+            Helper.run_command_on_local_without_timeout(r'''mv %(setup_node_dir)s/neutron.conf.new %(setup_node_dir)s/neutron.conf''' %
+                                                       {'setup_node_dir' : controller_node.setup_node_dir})
 
 
     @staticmethod
@@ -867,8 +1069,8 @@ class Helper(object):
                node.dst_dir,
                "%(hostname)s.te" % {'hostname' : node.hostname})
 
-        # copy ospurge script to node
         if node.role == const.ROLE_NEUTRON_SERVER:
+            # copy ospurge script to node
             Helper.safe_print("Copy ospurge script to %(hostname)s\n" %
                              {'hostname' : node.hostname})
             Helper.copy_file_to_remote(node,
@@ -876,26 +1078,49 @@ class Helper(object):
                node.dst_dir,
                "%(hostname)s_ospurge.sh" % {'hostname' : node.hostname})
 
-        # copy horizon patch to node
-        if node.role == const.ROLE_NEUTRON_SERVER and node.deploy_horizon_patch:
-            Helper.safe_print("Copy horizon patch to %(hostname)s\n" %
+            # copy dhcp reschedule script to node
+            Helper.safe_print("Copy dhcp reschedule script to %(hostname)s\n" %
                              {'hostname' : node.hostname})
             Helper.copy_file_to_remote(node,
-                (r'''%(src_dir)s/%(horizon_patch)s''' %
-                {'src_dir' : node.setup_node_dir,
-                 'horizon_patch' : node.horizon_patch}),
-                node.dst_dir,
-                node.horizon_patch)
+               node.dhcp_reschedule_script_path,
+               '/bin', 'dhcp_reschedule.sh')
+
+            # copy send_lldp to controller nodes
+            Helper.safe_print("Copy send_lldp to %(hostname)s\n" %
+                             {'hostname' : node.hostname})
+            Helper.copy_file_to_remote(node,
+                r'''%(setup_node_dir)s/%(deploy_mode)s/%(python_template_dir)s/send_lldp''' %
+                {'setup_node_dir'      : node.setup_node_dir,
+                 'deploy_mode'         : node.deploy_mode,
+                 'python_template_dir' : const.PYTHON_TEMPLATE_DIR},
+                 '/bin', 'send_lldp')
+
+            # patch dhcp scheduler for juno
+            if node.openstack_release == 'juno':
+                Helper.safe_print("Copy dhcp_agent_scheduler.py to %(hostname)s\n" %
+                                 {'hostname' : node.hostname})
+                Helper.copy_file_to_remote(node,
+                    "%s/dhcp_agent_scheduler.py" % node.setup_node_dir,
+                    node.dhcp_agent_scheduler_dir, 'dhcp_agent_scheduler.py')
+
+            # copy horizon patch to node
+            if node.deploy_horizon_patch:
+                Helper.safe_print("Copy horizon patch to %(hostname)s\n" %
+                                 {'hostname' : node.hostname})
+                Helper.copy_file_to_remote(node,
+                    (r'''%(src_dir)s/%(horizon_patch)s''' %
+                    {'src_dir' : node.setup_node_dir,
+                     'horizon_patch' : node.horizon_patch}),
+                    node.dst_dir,
+                    node.horizon_patch)
 
         # copy rootwrap to remote
         if node.fuel_cluster_id:
             Helper.safe_print("Copy rootwrap to %(hostname)s\n" %
                              {'hostname' : node.hostname})
-            Helper.copy_file_to_remote(node,
+            Helper.copy_dir_to_remote(node,
                 (r'''%(src_dir)s/rootwrap''' %
                 {'src_dir' : node.setup_node_dir}),
-                node.dst_dir,
-                "rootwrap")
-
+                node.dst_dir)
 
 
