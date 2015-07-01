@@ -359,3 +359,34 @@ service { 'neutron-metadata-agent':
 package { "device-mapper-libs":
   ensure => latest,
 }
+
+# ovs_neutron_plugin for packstack
+file { "/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini":
+    ensure  => file,
+    mode    => 0777,
+}
+ini_setting { "disable tunneling":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
+  section           => 'ovs',
+  key_val_separator => '=',
+  setting           => 'enable_tunneling',
+  value             => 'False',
+  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
+  notify            => Service['neutron-openvswitch-agent'],
+}
+ini_setting { "clear tunnel type":
+  ensure            => absent,
+  path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
+  section           => 'ovs',
+  key_val_separator => '=',
+  setting           => 'tunnel_type',
+  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],  
+  notify            => Service['neutron-openvswitch-agent'],
+}
+service { 'neutron-openvswitch-agent':
+  ensure  => running,
+  enable  => true,
+}
+
+
