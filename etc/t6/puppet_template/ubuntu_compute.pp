@@ -110,7 +110,7 @@ ini_setting { "neutron.conf service_plugins":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'service_plugins',
-  value             => 'bsn_l3,router,lbaas',
+  value             => 'bsn_l3,lbaas',
 }
 ini_setting { "neutron.conf dhcp_agents_per_network":
   ensure            => present,
