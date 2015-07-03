@@ -1,6 +1,6 @@
 
 # max number of threads, each thread sets up one node
-MAX_WORKERS = 20
+MAX_WORKERS = 10
 
 # root access to all the nodes is required
 DEFAULT_USER = 'root'
@@ -22,10 +22,10 @@ OS_RELEASE_TO_BSN_LIB = { 'juno' : '2015.1',
 # horizon patch
 DEPLOY_HORIZON_PATCH = True
 HORIZON_PATCH_URL = {
-    'juno' : 'https://github.com/bigswitch/horizon/archive/master.tar.gz',
+    'juno' : 'https://github.com/bigswitch/horizon/archive/juno-bcf-3.0-beta1.tar.gz',
 }
 HORIZON_PATCH_DIR = {
-    'juno' : 'horizon-master',
+    'juno' : 'horizon-juno-bcf-3.0-beta1',
 }
 HORIZON_BASE_DIR = '/usr/share/openstack-dashboard'
 

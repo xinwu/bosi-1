@@ -9,6 +9,8 @@ from lib.node import Node
 from lib.helper import Helper
 from lib.environment import Environment
 
+# queue to store all controller nodes
+controller_node_q = Queue.Queue()
 
 # queue to store all nodes
 node_q = Queue.Queue()
@@ -17,9 +19,9 @@ node_q = Queue.Queue()
 dhcp_node_q = Queue.Queue()
 
 
-def worker_setup_node():
+def worker_setup_node(q):
     while True:
-        node = node_q.get()
+        node = q.get()
         # copy ivs pkg to node
         Helper.copy_pkg_scripts_to_remote(node)
 
@@ -39,16 +41,7 @@ def worker_setup_node():
              'log'      : node.log}))
         Helper.safe_print("Finish deploying %(hostname)s\n" %
                          {'hostname' : node.hostname})
-        # If all cluster nodes stop in a simultaneous and uncontrolled manner
-        # (for example with a power cut) you can be left with a situation in
-        # which all nodes think that some other node stopped after them. In this
-        # case you can use the force_boot command on one node to make it bootable
-        # again - consult the rabbitmqctl manpage for more information.
-        #if node.fuel_cluster_id and node.role == const.ROLE_NEUTRON_SERVER:
-        #    Helper.safe_print("Start to reboot %(hostname)s\n" %
-        #                     {'hostname' : node.hostname})
-        #    Helper.run_command_on_remote_without_timeout(node, "shutdown -r now")
-        node_q.task_done()
+        q.task_done()
 
 
 def worker_setup_dhcp_agent():
@@ -99,11 +92,14 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
             Helper.safe_print("skip node %(hostname)s due to mismatched tag\n" %
                              {'hostname' : hostname})
             continue
-        node_q.put(node)
 
         if node.role == const.ROLE_NEUTRON_SERVER:
             controller_nodes.append(node)
-        elif node.deploy_dhcp_agent:
+            controller_node_q.put(node)
+        else:
+            node_q.put(node)
+
+        if node.deploy_dhcp_agent:
             dhcp_node_q.put(node)
 
     # copy neutron config from neutron server to setup node
@@ -121,9 +117,16 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
         t.start()
     dhcp_node_q.join()
 
-    # Use multiple threads to setup nodes
+    # Use multiple threads to setup controller nodes
     for i in range(const.MAX_WORKERS):
-        t = threading.Thread(target=worker_setup_node)
+        t = threading.Thread(target=worker_setup_node, args=(controller_node_q,))
+        t.daemon = True
+        t.start()
+    controller_node_q.join()
+
+    # Use multiple threads to setup compute nodes
+    for i in range(const.MAX_WORKERS):
+        t = threading.Thread(target=worker_setup_node, args=(node_q,))
         t.daemon = True
         t.start()
     node_q.join()

@@ -587,12 +587,15 @@ class Helper(object):
 
 
     @staticmethod
-    def __load_fuel_node__(hostname, role, node_yaml_config, env):
+    def __load_fuel_node__(hostname, role, node_yaml_config_map, env):
         node_config = {}
+        node_yaml_config = node_yaml_config_map.get(hostname)
         if node_yaml_config:
             node_config = Helper.__load_node_yaml_config__(node_yaml_config, env)
-        else:
+        elif not len(node_yaml_config_map):
             node_config = Helper.__load_node_yaml_config__(node_config, env)
+        else:
+            return None
         node_config['hostname'] = hostname
         node_config['role'] = role
 
@@ -765,9 +768,10 @@ class Helper(object):
             for line in lines:
                 hostname = str(netaddr.IPAddress(line.split('|')[4].strip()))
                 role = str(line.split('|')[6].strip())
-                node_yaml_config = None
-                node_yaml_config = node_yaml_config_map.get(hostname)
-                node = Helper.__load_fuel_node__(hostname, role, node_yaml_config, env)
+                online = str(line.split('|')[8].strip())
+                if online == 'False':
+                    continue
+                node = Helper.__load_fuel_node__(hostname, role, node_yaml_config_map, env)
                 if (not node) or (not node.hostname):
                     continue
                 node_dic[node.hostname] = node
@@ -987,6 +991,7 @@ class Helper(object):
                                          controller_node.setup_node_dir)
 
         rabbit_hosts = sets.Set()
+        rabbit_port = None
         for controller_node in controller_nodes:
             Helper.safe_print("Copy neutron.conf from openstack controller %(controller_node)s\n" %
                              {'controller_node' : controller_node.hostname})
@@ -1000,13 +1005,22 @@ class Helper(object):
                     hosts = hosts_str.split(',')
                     for host in hosts:
                         if "127.0" in host:
+                            rabbit_port = host.split(':')[1]
                             continue
                         rabbit_hosts.add(host.strip())
                     break
 
         if len(controller_nodes):
             controller_node = controller_nodes[0]
-            rabbit_hosts_str = ','.join(rabbit_hosts)
+            rabbit_hosts_str = None
+            if len(rabbit_hosts):
+                rabbit_hosts_str = ','.join(rabbit_hosts)
+            else:
+                for bridge in controller_node.bridges:
+                    if bridge.br_key == 'management':
+                        rabbit_ip = bridge.br_ip.split('/')[0]
+                        rabbit_hosts_str = "%s:%s" % (rabbit_ip, rabbit_port)
+                        break
             neutron_conf_new = open("%s/neutron.conf.new" % controller_node.setup_node_dir, 'w')
             neutron_conf = open("%s/neutron.conf" % controller_node.setup_node_dir, 'r')
             for line in neutron_conf:
