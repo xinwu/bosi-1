@@ -126,7 +126,7 @@ compute() {
     fi
 
     if [[ $deploy_haproxy == true ]]; then
-        apt-get install -y neutron-lbaas-agent
+        apt-get install -y neutron-lbaas-agent haproxy
         service neutron-lbaas-agent restart
     fi
 

@@ -15,9 +15,6 @@ controller_node_q = Queue.Queue()
 # queue to store all nodes
 node_q = Queue.Queue()
 
-# data structure to setup dhcp agent and metadata agent
-dhcp_node_q = Queue.Queue()
-
 
 def worker_setup_node(q):
     while True:
@@ -42,24 +39,6 @@ def worker_setup_node(q):
         Helper.safe_print("Finish deploying %(hostname)s\n" %
                          {'hostname' : node.hostname})
         q.task_done()
-
-
-def worker_setup_dhcp_agent():
-    while True:
-        node = dhcp_node_q.get()
-        Helper.safe_print("Copy neutron.conf to %(hostname)s\n" %
-                         {'hostname' : node.hostname})
-        Helper.copy_file_to_remote(node, r'''%(dir)s/neutron.conf''' % {'dir' : node.setup_node_dir},
-                                   '/etc/neutron', 'neutron.conf')
-        Helper.safe_print("Copy dhcp_agent.ini to %(hostname)s\n" %
-                         {'hostname' : node.hostname})
-        Helper.copy_file_to_remote(node, r'''%(dir)s/dhcp_agent.ini''' % {'dir' : node.setup_node_dir},
-                                   '/etc/neutron', 'dhcp_agent.ini')
-        Helper.safe_print("Copy metadata_agent.ini to %(hostname)s\n" %
-                         {'hostname' : node.hostname})
-        Helper.copy_file_to_remote(node, r'''%(dir)s/metadata_agent.ini''' % {'dir': node.setup_node_dir},
-                                   '/etc/neutron', 'metadata_agent.ini')
-        dhcp_node_q.task_done()
 
 
 def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
@@ -99,8 +78,6 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
         else:
             node_q.put(node)
 
-        if node.deploy_dhcp_agent:
-            dhcp_node_q.put(node)
 
     # copy neutron config from neutron server to setup node
     Helper.copy_neutron_config_from_controllers(controller_nodes)
@@ -109,13 +86,6 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
     for hostname, node in node_dic.iteritems():
         with open(const.LOG_FILE, "a") as log_file:
             log_file.write(str(node))
-
-    # Use multiple threads to copy dhcp and metedata agent config to compute nodes
-    for i in range(const.MAX_WORKERS):
-        t = threading.Thread(target=worker_setup_dhcp_agent)
-        t.daemon = True
-        t.start()
-    dhcp_node_q.join()
 
     # Use multiple threads to setup controller nodes
     for i in range(const.MAX_WORKERS):
