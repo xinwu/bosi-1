@@ -280,6 +280,11 @@ if %(deploy_haproxy)s {
         value             => 'neutron.services.loadbalancer.drivers.haproxy.namespace_driver.HaproxyNSDriver',
         notify            => Service['neutron-lbaas-agent'],
     }
+    service { "haproxy":
+        ensure            => running,
+        enable            => true,
+        require           => Package['haproxy'],
+    }
     service { "neutron-lbaas-agent":
         ensure            => running,
         enable            => true,
