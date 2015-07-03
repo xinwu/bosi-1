@@ -247,7 +247,7 @@ if %(deploy_dhcp_agent)s {
 
 # haproxy
 if %(deploy_haproxy)s {
-    package { "neutron-lbaas-agent":
+    package { "haproxy":
         ensure  => installed,
     }
     package { "keepalived":
@@ -260,7 +260,6 @@ if %(deploy_haproxy)s {
         key_val_separator => '=',
         setting           => 'periodic_interval',
         value             => '10',
-        require           => Package['neutron-lbaas-agent'],
         notify            => Service['neutron-lbaas-agent'],
     }
     ini_setting { "haproxy agent interface driver":
@@ -270,7 +269,6 @@ if %(deploy_haproxy)s {
         key_val_separator => '=',
         setting           => 'interface_driver',
         value             => 'neutron.agent.linux.interface.IVSInterfaceDriver',
-        require           => Package['neutron-lbaas-agent'],
         notify            => Service['neutron-lbaas-agent'],
     }
     ini_setting { "haproxy agent device driver":
@@ -280,13 +278,12 @@ if %(deploy_haproxy)s {
         key_val_separator => '=',
         setting           => 'device_driver',
         value             => 'neutron.services.loadbalancer.drivers.haproxy.namespace_driver.HaproxyNSDriver',
-        require           => Package['neutron-lbaas-agent'],
         notify            => Service['neutron-lbaas-agent'],
     }
     service { "neutron-lbaas-agent":
         ensure            => running,
         enable            => true,
-        require           => Package['neutron-lbaas-agent'],
+        require           => Package['haproxy'],
     }
     service { "keepalived":
         ensure            => running,
