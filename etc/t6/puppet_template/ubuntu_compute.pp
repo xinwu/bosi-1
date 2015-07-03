@@ -200,6 +200,15 @@ if %(deploy_haproxy)s {
         ensure  => file,
         mode    => 0777,
     }
+    ini_setting { "haproxy agent periodic interval":
+        ensure            => present,
+        path              => '/etc/neutron/lbaas_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'periodic_interval',
+        value             => '10',
+        require           => File['/etc/neutron/lbaas_agent.ini'],
+    }
     ini_setting { "haproxy agent interface driver":
         ensure            => present,
         path              => '/etc/neutron/lbaas_agent.ini',
