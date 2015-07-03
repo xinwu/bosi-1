@@ -27,6 +27,9 @@ class Environment(object):
         # flags for dhcp and metadata agent
         self.deploy_dhcp_agent = config.get('default_deploy_dhcp_agent')
 
+        # flags for haproxy
+        self.deploy_haproxy = config.get('default_deploy_haproxy')
+
         # setup node ip and directory
         self.setup_node_ip  = Helper.get_setup_node_ip()
         example_yamls = ["/usr/local/etc/bosi/config.yaml", "/usr/etc/bosi/config.yaml"]

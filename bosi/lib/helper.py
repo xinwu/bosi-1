@@ -351,7 +351,8 @@ class Helper(object):
                     'pxe_interface'       : node.pxe_interface,
                     'br_fw_admin_address' : node.br_fw_admin_address,
                     'default_gw'          : node.get_default_gw(),
-                    'uplinks'             : node.get_all_uplinks()})
+                    'uplinks'             : node.get_all_uplinks(),
+                    'deploy_haproxy'      : str(node.deploy_haproxy).lower()})
         bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh''' %
                            {'setup_node_dir'       : node.setup_node_dir,
                             'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -382,7 +383,8 @@ class Helper(object):
                       'default_gw'            : node.get_default_gw(),
                       'uplinks'               : node.get_comma_separated_uplinks(),
                       'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
-                      'neutron_id'            : node.get_neutron_id()})
+                      'neutron_id'            : node.get_neutron_id(),
+                      'deploy_haproxy'        : str(node.deploy_haproxy).lower()})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -526,6 +528,8 @@ class Helper(object):
             node_config['install_all'] = env.install_all
         if 'deploy_dhcp_agent' not in node_config:
             node_config['deploy_dhcp_agent'] = env.deploy_dhcp_agent
+        if 'deploy_haproxy' not in node_config:
+            node_config['deploy_haproxy'] = env.deploy_haproxy
         return node_config
 
 

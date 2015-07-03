@@ -194,4 +194,29 @@ if %(deploy_dhcp_agent)s {
     }
 }
 
+# haproxy
+if %(deploy_haproxy)s {
+    file { "/etc/neutron/lbaas_agent.ini":
+        ensure  => file,
+        mode    => 0777,
+    }
+    ini_setting { "haproxy agent interface driver":
+        ensure            => present,
+        path              => '/etc/neutron/lbaas_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'interface_driver',
+        value             => 'neutron.agent.linux.interface.IVSInterfaceDriver',
+        require           => File['/etc/neutron/lbaas_agent.ini'],
+    }
+    ini_setting { "haproxy agent device driver":
+        ensure            => present,
+        path              => '/etc/neutron/lbaas_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'device_driver',
+        value             => 'neutron.services.loadbalancer.drivers.haproxy.namespace_driver.HaproxyNSDriver',
+        require           => File['/etc/neutron/lbaas_agent.ini'],
+    }
+}
 
