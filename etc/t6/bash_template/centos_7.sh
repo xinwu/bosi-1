@@ -9,6 +9,7 @@ is_controller=%(is_controller)s
 deploy_horizon_patch=%(deploy_horizon_patch)s
 fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
+deploy_haproxy=%(deploy_haproxy)s
 
 
 controller() {
@@ -26,6 +27,8 @@ controller() {
 
     # deploy bcf horizon patch to controller node
     if [[ $deploy_horizon_patch == true ]]; then
+        # enable lb
+        sed -i 's/'"'"'enable_lb'"'"': False/'"'"'enable_lb'"'"': True/g' %(horizon_base_dir)s/openstack_dashboard/local/local_settings.py
 
         # chmod neutron config since bigswitch horizon patch reads neutron config as well
         chmod -R a+r /usr/share/neutron
@@ -106,6 +109,12 @@ compute() {
         else
             echo "ivs upgrade fails version validation"
         fi
+    fi
+
+    if [[ $deploy_haproxy == true ]]; then
+        groupadd nogroup
+        yum install -y keepalived haproxy
+        sysctl -w net.ipv4.ip_nonlocal_bind=1
     fi
 
     # full installation

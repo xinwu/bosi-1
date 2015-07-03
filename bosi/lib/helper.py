@@ -440,7 +440,8 @@ class Helper(object):
                     'pxe_interface'       : node.pxe_interface,
                     'br_fw_admin_address' : node.br_fw_admin_address,
                     'default_gw'          : node.get_default_gw(),
-                    'uplinks'             : node.get_all_uplinks()})
+                    'uplinks'             : node.get_all_uplinks(),
+                    'deploy_haproxy'      : str(node.deploy_haproxy).lower()})
         bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh''' %
                            {'setup_node_dir'       : node.setup_node_dir,
                             'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -472,7 +473,8 @@ class Helper(object):
                       'uplinks'               : node.get_comma_separated_uplinks(),
                       'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
                       'neutron_id'            : node.get_neutron_id(),
-                      'selinux_mode'          : node.selinux_mode})
+                      'selinux_mode'          : node.selinux_mode,
+                      'deploy_haproxy'        : str(node.deploy_haproxy).lower()})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
