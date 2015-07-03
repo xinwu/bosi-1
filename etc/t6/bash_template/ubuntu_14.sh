@@ -35,7 +35,7 @@ controller() {
 
     if [[ $deploy_horizon_patch == true ]]; then
         # enable lb
-        sed 's/'"'"'enable_lb'"'"': False/'"'"'enable_lb'"'"': True/g' %(horizon_base_dir)s/openstack_dashboard/local/local_settings.py
+        sed -i 's/'"'"'enable_lb'"'"': False/'"'"'enable_lb'"'"': True/g' %(horizon_base_dir)s/openstack_dashboard/local/local_settings.py
 
         # chmod neutron config since bigswitch horizon patch reads neutron config as well
         chmod -R a+r /usr/share/neutron
