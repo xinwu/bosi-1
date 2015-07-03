@@ -43,7 +43,7 @@ controller() {
         if [[ -f %(dst_dir)s/%(horizon_patch)s ]]; then
             chmod -R 777 '/etc/neutron/'
             tar -xzf %(dst_dir)s/%(horizon_patch)s -C %(dst_dir)s
-            fs=('openstack_dashboard/dashboards/admin/dashboard.py' 'openstack_dashboard/dashboards/project/dashboard.py' 'openstack_dashboard/dashboards/admin/connections' 'openstack_dashboard/dashboards/project/connections')
+            fs=('openstack_dashboard/dashboards/admin/dashboard.py' 'openstack_dashboard/dashboards/project/dashboard.py' 'openstack_dashboard/dashboards/admin/connections' 'openstack_dashboard/dashboards/project/connections' 'openstack_dashboard/dashboards/router')
             for f in "${fs[@]}"
             do
                 if [[ -f %(dst_dir)s/%(horizon_patch_dir)s/$f ]]; then
