@@ -96,7 +96,7 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
         if node.role == const.ROLE_NEUTRON_SERVER:
             controller_nodes.append(node)
             controller_node_q.put(node)
-        else
+        else:
             node_q.put(node)
 
         if node.deploy_dhcp_agent:

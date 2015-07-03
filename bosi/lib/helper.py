@@ -768,6 +768,9 @@ class Helper(object):
             for line in lines:
                 hostname = str(netaddr.IPAddress(line.split('|')[4].strip()))
                 role = str(line.split('|')[6].strip())
+                online = str(line.split('|')[8].strip())
+                if online == 'False':
+                    continue
                 node = Helper.__load_fuel_node__(hostname, role, node_yaml_config_map, env)
                 if (not node) or (not node.hostname):
                     continue
