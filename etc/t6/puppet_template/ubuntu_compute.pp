@@ -266,6 +266,11 @@ if %(deploy_haproxy)s {
         require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
         notify            => Service['neutron-lbaas-agent'],
     }
+    service { "haproxy":
+        ensure            => running,
+        enable            => true,
+        require           => Package['haproxy'],
+    }
     service { "neutron-lbaas-agent":
         ensure            => running,
         enable            => true,
