@@ -21,6 +21,8 @@ controller() {
     systemctl disable neutron-dhcp-agent
     systemctl stop neutron-metadata-agent
     systemctl disable neutron-metadata-agent
+    systemctl stop neutron-bsn-agent
+    systemctl disable neutron-bsn-agent
 
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp

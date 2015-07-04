@@ -30,8 +30,11 @@ controller() {
     update-rc.d neutron-metadata-agent disable
     service neutron-dhcp-agent stop
     update-rc.d neutron-dhcp-agent disable
-    service p_neutron-l3-agent stop
-    update-rc.d p_neutron-l3-agent disable
+    service neutron-l3-agent stop
+    update-rc.d neutron-l3-agent disable
+    service neutron-bsn-agent stop
+    update-rc.d neutron-bsn-agent disable
+    
 
     if [[ $deploy_horizon_patch == true ]]; then
         # enable lb
