@@ -103,6 +103,40 @@ exec { "load 8021q":
     require => Package['vlan'],
 }
 
+# config /etc/neutron/neutron.conf
+ini_setting { "neutron.conf service_plugins":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'service_plugins',
+  value             => 'bsn_l3,router,lbaas',
+}
+ini_setting { "neutron.conf dhcp_agents_per_network":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'dhcp_agents_per_network',
+  value             => '2',
+}
+ini_setting { "neutron.conf notification driver":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'notification_driver',
+  value             => 'messaging',
+}
+ini_setting { "neutron.conf service providers":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'service_providers',
+  key_val_separator => '=',
+  setting           => 'service_provider',
+  value             => 'LOADBALANCER:Haproxy:neutron.services.loadbalancer.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default',
+}
+
 # config neutron-bsn-agent conf
 file { '/etc/init/neutron-bsn-agent.conf':
     ensure => present,

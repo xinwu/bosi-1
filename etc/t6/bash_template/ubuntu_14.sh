@@ -34,6 +34,9 @@ controller() {
     update-rc.d p_neutron-l3-agent disable
 
     if [[ $deploy_horizon_patch == true ]]; then
+        # enable lb
+        sed -i 's/'"'"'enable_lb'"'"': False/'"'"'enable_lb'"'"': True/g' %(horizon_base_dir)s/openstack_dashboard/local/local_settings.py
+
         # chmod neutron config since bigswitch horizon patch reads neutron config as well
         chmod -R a+r /usr/share/neutron
         chmod -R a+x /usr/share/neutron
@@ -126,7 +129,7 @@ compute() {
     fi
 
     if [[ $deploy_haproxy == true ]]; then
-        apt-get install -y neutron-lbaas-agent
+        apt-get install -y neutron-lbaas-agent haproxy
         service neutron-lbaas-agent restart
     fi
 

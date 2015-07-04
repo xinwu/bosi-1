@@ -1040,6 +1040,21 @@ class Helper(object):
 
     @staticmethod
     def copy_pkg_scripts_to_remote(node):
+
+        # copy neutron, metadata, dhcp config to node
+        Helper.safe_print("Copy neutron.conf to %(hostname)s\n" %
+                         {'hostname' : node.hostname})
+        Helper.copy_file_to_remote(node, r'''%(dir)s/neutron.conf''' % {'dir' : node.setup_node_dir},
+                                   '/etc/neutron', 'neutron.conf')
+        Helper.safe_print("Copy dhcp_agent.ini to %(hostname)s\n" %
+                         {'hostname' : node.hostname})
+        Helper.copy_file_to_remote(node, r'''%(dir)s/dhcp_agent.ini''' % {'dir' : node.setup_node_dir},
+                                   '/etc/neutron', 'dhcp_agent.ini')
+        Helper.safe_print("Copy metadata_agent.ini to %(hostname)s\n" %
+                         {'hostname' : node.hostname})
+        Helper.copy_file_to_remote(node, r'''%(dir)s/metadata_agent.ini''' % {'dir': node.setup_node_dir},
+                                   '/etc/neutron', 'metadata_agent.ini')
+
         # copy ivs to node
         if node.deploy_mode == const.T6:
             Helper.safe_print("Copy %(ivs_pkg)s to %(hostname)s\n" %
