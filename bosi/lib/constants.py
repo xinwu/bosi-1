@@ -63,9 +63,11 @@ SELINUX_CONFIG_PATH             = '/etc/selinux/config'
 
 
 # openrc
-FUEL_OPENRC            = '/root/openrc'
-PACKSTACK_OPENRC       = '/root/keystonerc_admin'
-MANUAL_OPENRC          = '/root/admin-openrc.sh'
+FUEL_OPENRC             = '/root/openrc'
+PACKSTACK_OPENRC        = '/root/keystonerc_admin'
+MANUAL_OPENRC           = '/root/admin-openrc.sh'
+RHOSP_UNDERCLOUD_OPENRC = '/home/stack/stackrc'
+RHOSP_OVERCLOUD_OPENRC  = '/home/stack/overcloudrc'
 
 # fuel constants
 NONE_IP                = 'none'

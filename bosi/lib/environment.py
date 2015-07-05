@@ -129,6 +129,16 @@ class Environment(object):
             if (not self.bcf_master) or (not self.bcf_cookie):
                 raise Exception("Failed to connect to master BCF controller, quit setup.")
 
+        # RHOSP 7 related config
+        self.rhosp_automate_register = False
+        if 'rhosp_automate_register' in config:
+            self.rhosp_automate_register = config['rhosp_automate_register']
+        self.rhosp_installer_management_interface = config.get('rhosp_installer_management_interface')
+        self.rhosp_installer_pxe_interface = config['rhosp_installer_pxe_interface']
+        self.rhosp_undercloud_dns = config['rhosp_undercloud_dns']
+        self.rhosp_register_username = config['rhosp_register_username']
+        self.rhosp_register_passwd = config['rhosp_register_passwd']
+
 
     def set_physnet(self, physnet):
         self.physnet = physnet

@@ -33,13 +33,18 @@ class Node(object):
         self.br_fw_admin_address   = node_config.get('br_fw_admin_address')
         self.tagged_intfs          = node_config.get('tagged_intfs')
         self.ex_gw                 = node_config.get('ex_gw')
-
         self.deploy_haproxy        = node_config.get('deploy_haproxy')
-
         self.tag                   = node_config.get('tag')
         self.env_tag               = env.tag
-
         self.cleanup               = env.cleanup
+
+        # rhosp related config
+        self.rhosp_automate_register = env.rhosp_automate_register
+        self.rhosp_installer_management_interface = env.rhosp_installer_management_interface
+        self.rhosp_installer_pxe_interface = env.rhosp_installer_pxe_interface
+        self.rhosp_undercloud_dns = env.rhosp_undercloud_dns
+        self.rhosp_register_username = env.rhosp_register_username
+        self.rhosp_register_passwd = env.rhosp_register_passwd
 
         self.neutron_id            = env.neutron_id
         self.openstack_release     = env.openstack_release
@@ -287,6 +292,12 @@ deploy_haproxy         : %(deploy_haproxy)s,
 tag                    : %(tag)s,
 env_tag                : %(env_tag)s,
 cleanup                : %(cleanup)s,
+rhosp_automate_register              : %(rhosp_automate_register)s,
+rhosp_installer_management_interface : %(rhosp_installer_management_interface)s,
+rhosp_installer_pxe_interface        : %(rhosp_installer_pxe_interface)s,
+rhosp_undercloud_dns                 : %(rhosp_undercloud_dns)s,
+rhosp_register_username              : %(rhosp_register_username)s,
+rhosp_register_passwd                : %(rhosp_register_passwd)s,
 neutron_id             : %(neutron_id)s,
 openstack_release      : %(openstack_release)s,
 bsnstacklib_version    : %(bsnstacklib_version)s,
@@ -348,6 +359,12 @@ error                  : %(error)s,
 'tag'                   : self.tag,
 'env_tag'               : self.env_tag,
 'cleanup'               : self.cleanup,
+'rhosp_automate_register'              : self.rhosp_automate_register,
+'rhosp_installer_management_interface' : self.rhosp_installer_management_interface,
+'rhosp_installer_pxe_interface'        : self.rhosp_installer_pxe_interface,
+'rhosp_undercloud_dns'                 : self.rhosp_undercloud_dns,
+'rhosp_register_username'              : self.rhosp_register_username,
+'rhosp_register_passwd'                : self.rhosp_register_passwd,
 'neutron_id'            : self.neutron_id,
 'openstack_release'     : self.openstack_release,
 'bsnstacklib_version'   : self.bsnstacklib_version,
