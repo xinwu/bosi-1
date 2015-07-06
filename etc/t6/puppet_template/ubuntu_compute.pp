@@ -62,16 +62,6 @@ class ivs_internal_port_ips {
 }
 include ivs_internal_port_ips
 
-# install and enable ntp
-package { "ntp":
-    ensure  => installed,
-}
-service { "ntp":
-    ensure  => running,
-    enable  => true,
-    require => Package['ntp'],
-}
-
 # ivs configruation and service
 file { '/etc/default/ivs':
     ensure  => file,
@@ -110,7 +100,7 @@ ini_setting { "neutron.conf service_plugins":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'service_plugins',
-  value             => 'bsn_l3,router,lbaas',
+  value             => 'bsn_l3,lbaas',
 }
 ini_setting { "neutron.conf dhcp_agents_per_network":
   ensure            => present,
@@ -128,6 +118,13 @@ ini_setting { "neutron.conf notification driver":
   setting           => 'notification_driver',
   value             => 'messaging',
 }
+ini_setting { "ensure absent of neutron.conf service providers":
+  ensure            => absent,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'service_providers',
+  key_val_separator => '=',
+  setting           => 'service_provider',
+}->
 ini_setting { "neutron.conf service providers":
   ensure            => present,
   path              => '/etc/neutron/neutron.conf',
