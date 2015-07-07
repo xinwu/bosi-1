@@ -128,7 +128,7 @@ class RestLib(object):
         segment_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/segment[name="%(segment)s"]''' %
                       {'tenant' : tenant, 'segment' : rule.segment})
         segment_data = {"name": rule.segment}
-        ret = RestLib.put(cookie, segment_url, server, port, json.dumps(segment_data))
+        ret = RestLib.post(cookie, segment_url, server, port, json.dumps(segment_data))
         if ret[0] != 204:
             raise Exception(ret)
 
@@ -144,7 +144,7 @@ class RestLib(object):
                         'switch'    : const.ANY,
                         'vlan'      : vlan})
         rule_data = {"interface" : const.ANY, "switch" : const.ANY, "vlan" : vlan}
-        ret = RestLib.put(cookie, intf_rule_url, server, port, json.dumps(rule_data))
+        ret = RestLib.post(cookie, intf_rule_url, server, port, json.dumps(rule_data))
         if ret[0] != 204:
             raise Exception(ret)
 
@@ -154,7 +154,7 @@ class RestLib(object):
                         'pg'        : const.ANY,
                         'vlan'      : vlan})
         rule_data = {"port-group" : const.ANY, "vlan" : vlan}
-        ret = RestLib.put(cookie, pg_rule_url, server, port, json.dumps(rule_data))
+        ret = RestLib.post(cookie, pg_rule_url, server, port, json.dumps(rule_data))
         if ret[0] != 204:
             raise Exception(ret)
 
@@ -165,7 +165,7 @@ class RestLib(object):
                         'switch'    : const.ANY,
                         'vlan'      : -1})
         rule_data = {"interface" : rule.internal_port, "switch" : const.ANY, "vlan" : -1}
-        ret = RestLib.put(cookie, specific_rule_url, server, port, json.dumps(rule_data))
+        ret = RestLib.post(cookie, specific_rule_url, server, port, json.dumps(rule_data))
         if ret[0] != 204:
             raise Exception(ret)
 
