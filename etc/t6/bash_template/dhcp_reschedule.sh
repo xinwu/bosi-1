@@ -4,6 +4,9 @@
 # different dhcp agent if their dhcp
 # agent is offline
 
+# disable for now until dhcp agent bug get fixed
+exit 0
+
 release="%(openstack_release)s"
 if [[ $release != 'juno' ]]; then
     exit 0

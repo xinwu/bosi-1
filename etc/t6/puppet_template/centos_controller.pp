@@ -400,6 +400,15 @@ ini_setting { "clear tunnel type":
   require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],  
   notify            => Service['neutron-openvswitch-agent'],
 }
+ini_setting { "clear tunnel types":
+  ensure            => absent,
+  path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
+  section           => 'ovs',
+  key_val_separator => '=',
+  setting           => 'tunnel_types',
+  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
+  notify            => Service['neutron-openvswitch-agent'],
+}
 service { 'neutron-openvswitch-agent':
   ensure  => running,
   enable  => true,
