@@ -133,32 +133,10 @@ exec { "load 8021q":
 #    source => 'puppet:///modules/selinux/centos.te',
 #}
 
-# config neutron-bsn-agent service
-ini_setting { "neutron-bsn-agent.service Description":
-  ensure            => present,
-  path              => '/usr/lib/systemd/system/neutron-bsn-agent.service',
-  section           => 'Unit',
-  key_val_separator => '=',
-  setting           => 'Description',
-  value             => 'OpenStack Neutron BSN Agent',
-}
-ini_setting { "neutron-bsn-agent.service ExecStart":
-  notify            => File['/etc/systemd/system/multi-user.target.wants/neutron-bsn-agent.service'],
-  ensure            => present,
-  path              => '/usr/lib/systemd/system/neutron-bsn-agent.service',
-  section           => 'Service',
-  key_val_separator => '=',
-  setting           => 'ExecStart',
-  value             => '/usr/bin/neutron-bsn-agent --config-file /usr/share/neutron/neutron-dist.conf --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini --log-file /var/log/neutron/neutron-bsn-agent.log',
-}
-file { '/etc/systemd/system/multi-user.target.wants/neutron-bsn-agent.service':
-   ensure => link,
-   target => '/usr/lib/systemd/system/neutron-bsn-agent.service',
-   notify => Service['neutron-bsn-agent'],
-}
+# disable neutron-bsn-agent service
 service {'neutron-bsn-agent':
-    ensure  => running,
-    enable  => true,
+    ensure  => stopped,
+    enable  => false,
     path    => $binpath,
 }
 

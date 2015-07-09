@@ -379,5 +379,9 @@ service { 'neutron-metadata-agent':
   ensure  => stopped,
   enable  => false,
 }
+service {'neutron-bsn-agent':
+    ensure  => stopped,
+    enable  => false,
+}
 
 
