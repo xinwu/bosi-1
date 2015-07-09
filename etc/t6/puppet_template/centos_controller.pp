@@ -403,7 +403,7 @@ ini_setting { "clear tunnel type":
 ini_setting { "clear tunnel types":
   ensure            => absent,
   path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
-  section           => 'ovs',
+  section           => 'agent',
   key_val_separator => '=',
   setting           => 'tunnel_types',
   require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
