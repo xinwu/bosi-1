@@ -1,48 +1,6 @@
 
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 
-# comment out heat domain related configurations
-$heat_config = file('/etc/heat/heat.conf','/dev/null')
-if($heat_config != '') {
-    ini_setting { "heat stack_domain_admin_password":
-        ensure            => absent,
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'stack_domain_admin_password',
-        notify            => Service['heat-engine'],
-    }
-    ini_setting { "heat stack_domain_admin":
-        ensure            => absent,
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'stack_domain_admin',
-        notify            => Service['heat-engine'],
-    }
-    ini_setting { "heat stack_user_domain":
-        ensure            => absent,
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'stack_user_domain',
-        notify            => Service['heat-engine'],
-    }
-    ini_setting {"heat_deferred_auth_method":
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        setting           => 'deferred_auth_method',
-        value             => 'password',
-        ensure            => present,
-        notify            => Service['heat-engine'],
-    }
-    service { 'heat-engine':
-        ensure     => running,
-        provider   => 'upstart',
-        enable     => true,
-    }
-}
-
 # edit rc.local for cron job and default gw
 file { "/etc/rc.local":
     ensure  => file,
@@ -362,26 +320,31 @@ file { '/etc/neutron/plugins/ml2':
   notify  => Service['neutron-server'],
 }
 
-# neutron-server, neutron-dhcp-agent and neutron-metadata-agent
+# heat-engine, neutron-server, neutron-dhcp-agent and neutron-metadata-agent
+service { 'heat-engine':
+  ensure  => running,
+  enable  => true,
+}
 service { 'neutron-server':
-  ensure     => running,
-  enable     => true,
+  ensure  => running,
+  enable  => true,
 }
 service { 'keystone':
-  ensure     => running,
-  enable     => true,
+  ensure  => running,
+  enable  => true,
 }
 service { 'neutron-dhcp-agent':
-  ensure     => stopped,
-  enable     => false,
+  ensure  => stopped,
+  enable  => false,
 }
 service { 'neutron-metadata-agent':
   ensure  => stopped,
   enable  => false,
 }
 service {'neutron-bsn-agent':
-    ensure  => stopped,
-    enable  => false,
+  ensure  => stopped,
+  enable  => false,
 }
+
 
 
