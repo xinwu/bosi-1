@@ -18,6 +18,7 @@ bcf_controllers:
 bcf_controller_user: admin
 bcf_controller_passwd: adminadmin
 bcf_openstack_management_tenant: os-mgmt
+installer_pxe_interface_ip: 192.168.1.1
 
 # keys with rhosp prefix are specific to RHOSP7
 rhosp_automate_register: true

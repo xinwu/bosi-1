@@ -6,9 +6,12 @@ from helper import Helper
 from rest import RestLib
 
 class Environment(object):
-    def __init__(self, config, fuel_cluster_id, tag, cleanup):
+    def __init__(self, config, fuel_cluster_id, rhosp, tag, cleanup):
         # fuel cluster id
         self.fuel_cluster_id = fuel_cluster_id
+
+        # rhosp as installer
+        self.rhosp = rhosp
 
         # tag, only deploy nodes with this tag
         self.tag = tag
@@ -18,6 +21,9 @@ class Environment(object):
 
         # neutron_id for ml2 plugin restproxy
         self.neutron_id = config.get('neutron_id')
+
+        # installer pxe interface ip
+        self.installer_pxe_interface_ip = config.get('installer_pxe_interface_ip')
 
         # flags for upgrade
         self.install_ivs = config.get('default_install_ivs')

@@ -25,4 +25,15 @@ if [[ $? == 0 ]]; then
     exit 0
 fi
 
+python -mplatform | grep redhat
+if [[ $? == 0 ]]; then
+    sudo rpm -iUvh http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
+    sudo rpm -ivh https://yum.puppetlabs.com/el/7/products/x86_64/puppetlabs-release-7-10.noarch.rpm
+    sudo yum install -y wget ntp sshpass
+    sudo yum groupinstall -y 'Development Tools'
+    sudo yum install -y python-devel python-yaml python-pip
+    sudo pip install --upgrade subprocess32 futures
+    exit 0
+fi
+
 echo "Unsupported operating system."

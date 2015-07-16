@@ -49,9 +49,11 @@ CENTOS          = 'centos'
 CENTOS_VERSIONS = ['7']
 UBUNTU          = 'ubuntu'
 UBUNTU_VERSIONS = ['14']
+REDHAT          = 'redhat'
+REDHAT_VERSIONS = ['7']
 
 # OSes that uses rpm or deb packages
-RPM_OS_SET = [CENTOS]
+RPM_OS_SET = [CENTOS, REDHAT]
 DEB_OS_SET = [UBUNTU]
 
 # regular expressions

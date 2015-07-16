@@ -11,10 +11,9 @@ deploy_horizon_patch=false
 fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
 deploy_haproxy=%(deploy_haproxy)s
+default_gw=%(default_gw)s
 
 rhosp_automate_register=%(rhosp_automate_register)
-rhosp_installer_management_interface=%(rhosp_installer_management_interface)
-rhosp_installer_pxe_interface=%(rhosp_installer_pxe_interface)
 rhosp_undercloud_dns=%(rhosp_undercloud_dns)
 rhosp_register_username=%(rhosp_register_username)
 rhosp_register_passwd=%(rhosp_register_passwd)
@@ -36,6 +35,12 @@ controller() {
     sudo pcs resource disable neutron-l3-agent
     sudo pcs resource delete neutron-l3-agent-clone
     sudo pcs resource delete neutron-l3-agent
+
+    # install bsnstacklib
+    if [[ $install_bsnstacklib == true ]]; then
+        sudo pip install --upgrade "bsnstacklib<%(bsnstacklib_version)s"
+    fi
+    sudo systemctl stop neutron-bsn-agent
 
     # deploy bcf
     sudo puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
@@ -85,14 +90,14 @@ compute() {
 
     if [[ $deploy_dhcp_agent == true ]]; then
         echo 'Restart neutron-metadata-agent, neutron-dhcp-agent and neutron-l3-agent'
-        sudo systemctl restart neutron-metadata-agent
+        sudo systemctl start neutron-metadata-agent
         sudo systemctl enable neutron-metadata-agent
-        sudo systemctl restart neutron-dhcp-agent
+        sudo systemctl start neutron-dhcp-agent
         sudo systemctl enable neutron-dhcp-agent
     fi
 
     if [[ $deploy_l3_agent == true ]]; then
-        sudo systemctl restart neutron-l3-agent
+        sudo systemctl start neutron-l3-agent
         sudo systemctl enable neutron-l3-agent
     fi
 
@@ -108,6 +113,14 @@ compute() {
 
 set +e
 
+# update dns
+sudo sed -i "s/^nameserver.*/nameserver $rhosp_undercloud_dns/" /etc/resolv.conf
+
+# assign default gw
+sudo ip route del default
+sudo ip route del default
+sudo ip route add default via $default_gw
+
 # auto register
 if [[ $rhosp_automate_register == true ]]; then
     sudo subscription-manager register --username $rhosp_register_username --password $rhosp_register_passwd --auto-attach
@@ -119,21 +132,15 @@ if [[ $? == 0 ]]; then
     exit 1
 fi
 
-
 # prepare dependencies
 sudo rpm -iUvh http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
 sudo rpm -ivh https://yum.puppetlabs.com/el/7/products/x86_64/puppetlabs-release-7-10.noarch.rpm
+sudo yum update -y
 sudo yum groupinstall -y 'Development Tools'
 sudo yum install -y python-devel puppet python-pip wget libffi-devel openssl-devel ntp
-sudo yum update -y
 sudo easy_install pip
 sudo puppet module install --force puppetlabs-inifile
 sudo puppet module install --force puppetlabs-stdlib
-
-# install bsnstacklib
-if [[ $install_bsnstacklib == true ]]; then
-    sudo pip install --upgrade "bsnstacklib<%(bsnstacklib_version)s"
-fi
 
 if [[ $is_controller == true ]]; then
     controller
