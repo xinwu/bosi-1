@@ -148,6 +148,22 @@ exec { 'purge bcf key':
 }
 
 # config /etc/neutron/neutron.conf
+ini_setting { "neutron.conf report_interval":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'agent',
+  key_val_separator => '=',
+  setting           => 'report_interval',
+  value             => '60',
+}
+ini_setting { "neutron.conf agent_down_time":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'agent_down_time',
+  value             => '150',
+}
 ini_setting { "neutron.conf service_plugins":
   ensure            => present,
   path              => '/etc/neutron/neutron.conf',
