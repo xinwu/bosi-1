@@ -1,80 +1,6 @@
 
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 
-# lldp
-file { "/bin/send_lldp":
-    ensure  => file,
-    mode    => 0777,
-}
-file { "/usr/lib/systemd/system/send_lldp.service":
-    ensure  => file,
-    content => "
-[Unit]
-Description=send lldp
-After=syslog.target network.target
-[Service]
-Type=simple
-ExecStart=/bin/send_lldp --system-desc 5c:16:c7:00:00:00 --system-name $(uname -n) -i 10 --network_interface %(uplinks)s
-Restart=always
-StartLimitInterval=60s
-StartLimitBurst=3
-[Install]
-WantedBy=multi-user.target
-",
-}->
-file { '/etc/systemd/system/multi-user.target.wants/send_lldp.service':
-   ensure => link,
-   target => '/usr/lib/systemd/system/send_lldp.service',
-   notify => Service['send_lldp'],
-}
-service { "send_lldp":
-    ensure  => running,
-    enable  => true,
-    require => [File['/bin/send_lldp'], File['/etc/systemd/system/multi-user.target.wants/send_lldp.service']],
-}
-
-# comment out heat domain related configurations
-$heat_config = file('/etc/heat/heat.conf','/dev/null')
-if($heat_config != '') {
-    ini_setting { "heat stack_domain_admin_password":
-        ensure            => absent,
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'stack_domain_admin_password',
-        notify            => Service['heat-engine'],
-    }
-    ini_setting { "heat stack_domain_admin":
-        ensure            => absent,
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'stack_domain_admin',
-        notify            => Service['heat-engine'],
-    }
-    ini_setting { "heat stack_user_domain":
-        ensure            => absent,
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'stack_user_domain',
-        notify            => Service['heat-engine'],
-    }
-    ini_setting {"heat_deferred_auth_method":
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        setting           => 'deferred_auth_method',
-        value             => 'password',
-        ensure            => present,
-        notify            => Service['heat-engine'],
-    }
-    service { 'heat-engine':
-        ensure     => running,
-        provider   => 'upstart',
-        enable     => true,
-    }
-}
-
 # edit rc.local for cron job and default gw
 file { "/etc/rc.local":
     ensure  => file,
@@ -84,16 +10,6 @@ file_line { "remove touch /var/lock/subsys/local":
     path    => '/etc/rc.local',
     ensure  => absent,
     line    => "touch /var/lock/subsys/local",
-}->
-file_line { "remove crontab -r":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "crontab -r",
-}->
-file_line { "remove dhcp_reschedule.sh":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
 }->
 file_line { "remove clear default gw":
     path    => '/etc/rc.local',
@@ -105,6 +21,10 @@ file_line { "remove ip route add default":
     ensure  => absent,
     line    => "ip route add default via %(default_gw)s",
 }->
+file_line { "touch /var/lock/subsys/local":
+    path    => '/etc/rc.local',
+    line    => "touch /var/lock/subsys/local",
+}->
 file_line { "clear default gw":
     path    => '/etc/rc.local',
     line    => "ip route del default",
@@ -112,14 +32,6 @@ file_line { "clear default gw":
 file_line { "add default gw":
     path    => '/etc/rc.local',
     line    => "ip route add default via %(default_gw)s",
-}->
-file_line { "clean up cron job":
-    path    => '/etc/rc.local',
-    line    => "crontab -r",
-}->
-file_line { "add cron job to reschedule dhcp":
-    path    => '/etc/rc.local',
-    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
 }
 
 # make sure known_hosts is cleaned up
@@ -147,11 +59,6 @@ file_line {'load bonding on boot':
 exec { "load bonding":
     command => "modprobe bonding",
     path    => $binpath,
-}
-
-# add pkg for ivs debug logging
-package { 'binutils':
-   ensure => latest,
 }
 
 # purge bcf controller public key
@@ -225,11 +132,7 @@ file { '/etc/neutron/dnsmasq-neutron.conf':
   content           => 'dhcp-option-force=26,1400',
 }
 
-# disable l3 agent
-service { 'neutron-l3-agent':
-  ensure  => stopped,
-  enable  => false,
-}
+# disable l3 agent proxy metadata
 ini_setting { "l3 agent disable metadata proxy":
   ensure            => present,
   path              => '/etc/neutron/l3_agent.ini',
@@ -362,6 +265,10 @@ service { 'neutron-dhcp-agent':
   enable     => false,
 }
 service { 'neutron-metadata-agent':
+  ensure  => stopped,
+  enable  => false,
+}
+service { 'neutron-l3-agent':
   ensure  => stopped,
   enable  => false,
 }

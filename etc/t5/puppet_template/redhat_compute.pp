@@ -1,6 +1,39 @@
 
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 
+# lldp
+file { "/bin/send_lldp":
+    ensure  => file,
+    mode    => 0777,
+}
+file { "/usr/lib/systemd/system/send_lldp.service":
+    ensure  => file,
+    content => "
+[Unit]
+Description=send lldp
+After=syslog.target network.target
+[Service]
+Type=simple
+ExecStart=/bin/send_lldp --system-desc 5c:16:c7:00:00:00 --system-name $(uname -n) -i 10 --network_interface %(uplinks)s
+Restart=always
+StartLimitInterval=60s
+StartLimitBurst=3
+[Install]
+WantedBy=multi-user.target
+",
+}->
+file { '/etc/systemd/system/multi-user.target.wants/send_lldp.service':
+   ensure => link,
+   target => '/usr/lib/systemd/system/send_lldp.service',
+   notify => Service['send_lldp'],
+}
+#TODO
+service { "send_lldp":
+    ensure  => stopped,
+    enable  => false,
+    require => [File['/bin/send_lldp'], File['/etc/systemd/system/multi-user.target.wants/send_lldp.service']],
+}
+
 # dhcp configuration
 if %(deploy_dhcp_agent)s {
     ini_setting { "dhcp agent interface driver":
