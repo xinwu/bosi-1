@@ -11,6 +11,13 @@ fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
 deploy_haproxy=%(deploy_haproxy)s
 
+rhosp_automate_register=%(rhosp_automate_register)
+rhosp_installer_management_interface=%(rhosp_installer_management_interface)
+rhosp_installer_pxe_interface=%(rhosp_installer_pxe_interface)
+rhosp_undercloud_dns=%(rhosp_undercloud_dns)
+rhosp_register_username=%(rhosp_register_username)
+rhosp_register_passwd=%(rhosp_register_passwd)
+
 
 controller() {
 
@@ -204,18 +211,20 @@ if [ "$(id -u)" != "0" ]; then
    exit 1
 fi
 
+# auto register
+if [[ $rhosp_automate_register == true ]]; then
+    subscription-manager register --username $rhosp_register_username --password $rhosp_register_passwd --auto-attach
+fi
+
 # prepare dependencies
 rpm -iUvh http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
 rpm -ivh https://yum.puppetlabs.com/el/7/products/x86_64/puppetlabs-release-7-10.noarch.rpm
 yum groupinstall -y 'Development Tools'
-yum install -y python-devel puppet python-pip wget libffi-devel openssl-devel
+yum install -y python-devel puppet python-pip wget libffi-devel openssl-devel ntp
 yum update -y
 easy_install pip
 puppet module install --force puppetlabs-inifile
 puppet module install --force puppetlabs-stdlib
-puppet module install jfryman-selinux
-mkdir -p /etc/puppet/modules/selinux/files
-cp %(dst_dir)s/%(hostname)s.te /etc/puppet/modules/selinux/files/centos.te
 
 # install bsnstacklib
 if [[ $install_bsnstacklib == true ]]; then
