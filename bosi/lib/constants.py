@@ -23,9 +23,11 @@ OS_RELEASE_TO_BSN_LIB = { 'juno' : '2015.1',
 DEPLOY_HORIZON_PATCH = True
 HORIZON_PATCH_URL = {
     'juno' : 'https://github.com/bigswitch/horizon/archive/juno-bcf-3.0-beta1.tar.gz',
+    'kilo' : 'https://github.com/bigswitch/horizon/archive/master.tar.gz',
 }
 HORIZON_PATCH_DIR = {
     'juno' : 'horizon-juno-bcf-3.0-beta1',
+    'kilo' : 'horizon-master',
 }
 HORIZON_BASE_DIR = '/usr/share/openstack-dashboard'
 

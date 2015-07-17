@@ -91,20 +91,21 @@ class Environment(object):
         # ivs pkg and debug pkg
         self.ivs_pkg_map = {}
         self.ivs_url_map = {}
-        for ivs_url in config['ivs_packages']:
-            ivs_pkg = os.path.basename(ivs_url)
-            if '.rpm' in ivs_pkg and 'debuginfo' not in ivs_pkg:
-                self.ivs_url_map['rpm'] = ivs_url
-                self.ivs_pkg_map['rpm'] = ivs_pkg
-            elif '.rpm' in ivs_pkg and 'debuginfo' in ivs_pkg:
-                self.ivs_url_map['debug_rpm'] = ivs_url
-                self.ivs_pkg_map['debug_rpm'] = ivs_pkg
-            elif '.deb' in ivs_pkg and 'dbg' not in ivs_pkg:
-                self.ivs_url_map['deb'] = ivs_url
-                self.ivs_pkg_map['deb'] = ivs_pkg
-            elif '.deb' in ivs_pkg and 'dbg' in ivs_pkg:
-                self.ivs_url_map['debug_deb'] = ivs_url
-                self.ivs_pkg_map['debug_deb'] = ivs_pkg
+        if config['ivs_packages']:
+            for ivs_url in config['ivs_packages']:
+                ivs_pkg = os.path.basename(ivs_url)
+                if '.rpm' in ivs_pkg and 'debuginfo' not in ivs_pkg:
+                    self.ivs_url_map['rpm'] = ivs_url
+                    self.ivs_pkg_map['rpm'] = ivs_pkg
+                elif '.rpm' in ivs_pkg and 'debuginfo' in ivs_pkg:
+                    self.ivs_url_map['debug_rpm'] = ivs_url
+                    self.ivs_pkg_map['debug_rpm'] = ivs_pkg
+                elif '.deb' in ivs_pkg and 'dbg' not in ivs_pkg:
+                    self.ivs_url_map['deb'] = ivs_url
+                    self.ivs_pkg_map['deb'] = ivs_pkg
+                elif '.deb' in ivs_pkg and 'dbg' in ivs_pkg:
+                    self.ivs_url_map['debug_deb'] = ivs_url
+                    self.ivs_pkg_map['debug_deb'] = ivs_pkg
 
         # information will be passed on to nodes
         self.skip = False

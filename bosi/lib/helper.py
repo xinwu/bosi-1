@@ -209,11 +209,12 @@ class Helper(object):
     def copy_dir_to_remote_with_key(node, src_dir, dst_dir):
         mkdir_cmd = (r'''mkdir -p %(dst_dir)s''' % {'dst_dir' : dst_dir})
         Helper.run_command_on_remote_with_key(node, mkdir_cmd)
-        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_dir)s %(hostname)s:%(dst_dir)s/ >> %(log)s 2>&1''' %
+        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_dir)s %(user)s@%(hostname)s:%(dst_dir)s/ >> %(log)s 2>&1''' %
                   {'hostname'   : node.hostname,
                    'log'        : node.log,
                    'src_dir'    : src_dir,
-                   'dst_dir'    : dst_dir
+                   'dst_dir'    : dst_dir,
+                   'user'       : node.user,
                   })
         Helper.run_command_on_local(scp_cmd)
 
@@ -227,12 +228,13 @@ class Helper(object):
         """
         mkdir_cmd = (r'''mkdir -p %(dst_dir)s''' % {'dst_dir' : dst_dir})
         Helper.run_command_on_remote_with_key(node, mkdir_cmd)
-        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_file)s %(hostname)s:%(dst_dir)s/%(dst_file)s >> %(log)s 2>&1''' %
+        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_file)s %(user)s@%(hostname)s:%(dst_dir)s/%(dst_file)s >> %(log)s 2>&1''' %
                   {'hostname'   : node.hostname,
                    'log'        : node.log,
                    'src_file'   : src_file,
                    'dst_dir'    : dst_dir,
-                   'dst_file'   : dst_file
+                   'dst_file'   : dst_file,
+                   'user'       : node.user,
                   })
         Helper.run_command_on_local(scp_cmd)
         chmod_cmd = (r'''chmod -R %(mode)d %(dst_dir)s/%(dst_file)s''' %
@@ -252,12 +254,13 @@ class Helper(object):
         """
         mkdir_cmd = (r'''mkdir -p %(dst_dir)s''' % {'dst_dir' : dst_dir})
         Helper.run_command_on_local(mkdir_cmd)
-        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet %(hostname)s:%(src_dir)s/%(src_file)s %(dst_dir)s/%(src_file)s >> %(log)s 2>&1''' %
+        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s:%(src_dir)s/%(src_file)s %(dst_dir)s/%(src_file)s >> %(log)s 2>&1''' %
                   {'hostname'   : node.hostname,
                    'log'        : node.log,
                    'src_dir'    : src_dir,
                    'dst_dir'    : dst_dir,
-                   'src_file'   : src_file
+                   'src_file'   : src_file,
+                   'user'       : node.user,
                   })
         Helper.run_command_on_local(scp_cmd)
         chmod_cmd = (r'''chmod -R %(mode)d %(dst_dir)s/%(src_file)s''' %
@@ -696,46 +699,21 @@ class Helper(object):
         node_config['hostname'] = hostname
         node_config['role'] = role
 
-        # get node operating system information
-        os_info, errors = Helper.run_command_on_remote_with_key_without_timeout(node_config['hostname'],
-            node_config['user'], 'python -mplatform')
-        if errors or (not os_info):
-            Helper.safe_print("Error retrieving operating system info from node %(hostname)s:\n%(errors)s\n"
-                              % {'hostname' : node_config['hostname'], 'errors' : errors})
-            return None
-        try:
-            os_and_version = os_info.split('with-')[1].split('-')
-            node_config['os'] = os_and_version[0]
-            node_config['os_version'] = os_and_version[1]
-        except Exception as e:
-            Helper.safe_print("Error parsing node %(hostname)s operating system info:\n%(e)s\n"
-                              % {'hostname' : node_config['hostname'], 'e' : e})
-            return None
-
         #parse /etc/os-net-config/config.json
-        node_json, errors = Helper.run_command_on_remote_with_key_without_timeout(node_config['hostname'],
-            node_config['user'], 'cat /etc/os-net-config/config.json')
-        if errors or not node_json:
-            Helper.safe_print("Error retrieving config for node %(hostname)s:\n%(errors)s\n"
-                              % {'hostname' : node_config['hostname'], 'errors' : errors})
+        node = Node(node_config, env)
+        subprocess.call("rm -f /tmp/config.json", shell=True)
+        Helper.copy_file_from_remote(node, "/etc/os-net-config", "config.json", "/tmp")
+        if not os.path.isfile("/tmp/config.json"):
+            Helper.safe_print("Error retrieving config for node %(hostname)s:\n"
+                              % {'hostname' : node_config['hostname']})
             return None
         try:
-            node_json_config = json.loads(node_json)
+            data=open("/tmp/config.json").read()
+            node_json_config = json.loads(data)
         except Exception as e:
             Helper.safe_print("Error parsing node %(hostname)s json file:\n%(e)s\n"
                               % {'hostname' : node_config['hostname'], 'e' : e})
             return None
-
-        # get existing ivs version
-        node_config['old_ivs_version'] = None
-        output, errors = Helper.run_command_on_remote_with_key_without_timeout(node_config['hostname'],
-            node_config['user'], 'ivs --version')
-        if errors or not output:
-            Helper.safe_print("Error retrieving ivs version from node %(hostname)s:\n%(errors)s\n"
-                              % {'hostname' : node_config['hostname'], 'errors' : errors})
-            return None
-        if 'command not found' not in output:
-            node_config['old_ivs_version'] = output.split()[1]
 
         # get ovs bridge and bond
         node_config['br_bond'] = str(node_json_config['network_config'][0]['name'])
@@ -746,6 +724,7 @@ class Helper(object):
                 break
 
         # TODO parse other vlans
+        # TODO get ivs version
         node = Node(node_config, env)
         return node
 
@@ -993,7 +972,10 @@ class Helper(object):
                                           node.bcf_openstack_management_tenant,
                                           node.fuel_cluster_id)
                     membership_rules[rule.segment] = rule
-
+        except IndexError:
+            raise Exception("Could not parse node list:\n%(node_list)s\n"
+                            % {'node_list' : node_list})
+        return node_dic, membership_rules
 
 
     @staticmethod
@@ -1075,20 +1057,23 @@ class Helper(object):
 
         # prepare for rhosp7
         if env.rhosp:
-            subprocess.call("sudo sysctl -w net.ipv4.ip_forward=1")
+            subprocess.call("sudo sysctl -w net.ipv4.ip_forward=1", shell=True)
             subprocess.call(r'''sudo iptables -t nat -A POSTROUTING -o %(external)s -j MASQUERADE''' %
-                           {'external' : env.rhosp_installer_management_interface})
+                           {'external' : env.rhosp_installer_management_interface}, shell=True)
             subprocess.call(r'''sudo iptables -A FORWARD -i %(external)s -o %(internal)s -m state --state RELATED,ESTABLISHED -j ACCEPT''' %
                            {'external' : env.rhosp_installer_management_interface,
-                            'internal' : env.rhosp_installer_pxe_interface})
+                            'internal' : env.rhosp_installer_pxe_interface}, shell=True)
             subprocess.call(r'''iptables -A FORWARD -i %(internal)s -o %(external)s -j ACCEPT''' %
                            {'external' : env.rhosp_installer_management_interface,
-                            'internal' : env.rhosp_installer_pxe_interface})
+                            'internal' : env.rhosp_installer_pxe_interface}, shell=True)
 
 
     @staticmethod
     def run_command_on_remote_without_timeout(node, command):
-        if node.fuel_cluster_id:
+        if node.rhosp:
+            return Helper.run_command_on_remote_with_key_without_timeout(node.hostname,
+                node.user, command)
+        elif node.fuel_cluster_id:
             return Helper.run_command_on_remote_with_key_without_timeout(node.hostname,
                 node.user, command)
         else:
@@ -1098,7 +1083,9 @@ class Helper(object):
 
     @staticmethod
     def run_command_on_remote(node, command):
-        if node.fuel_cluster_id:
+        if node.rhosp:
+            Helper.run_command_on_remote_with_key(node, command)
+        elif node.fuel_cluster_id:
             Helper.run_command_on_remote_with_key(node, command)
         else:
             Helper.run_command_on_remote_with_passwd(node, command)
@@ -1106,7 +1093,9 @@ class Helper(object):
 
     @staticmethod
     def copy_file_from_remote(node, src_dir, src_file, dst_dir, mode=777):
-        if node.fuel_cluster_id:
+        if node.rhosp:
+            Helper.copy_file_from_remote_with_key(node, src_dir, src_file, dst_dir, mode)
+        elif node.fuel_cluster_id:
             Helper.copy_file_from_remote_with_key(node, src_dir, src_file, dst_dir, mode)
         else:
             Helper.copy_file_from_remote_with_passwd(node, src_dir, src_file, dst_dir, mode)
@@ -1114,7 +1103,9 @@ class Helper(object):
 
     @staticmethod
     def copy_dir_to_remote(node, src_dir, dst_dir):
-        if node.fuel_cluster_id:
+        if node.rhosp:
+            Helper.copy_dir_to_remote_with_key(node, src_dir, dst_dir)
+        elif node.fuel_cluster_id:
             Helper.copy_dir_to_remote_with_key(node, src_dir, dst_dir)
         else:
             Helper.copy_dir_to_remote_with_passwd(node, src_dir, dst_dir)
@@ -1122,7 +1113,9 @@ class Helper(object):
 
     @staticmethod
     def copy_file_to_remote(node, src_file, dst_dir, dst_file, mode=777):
-        if node.fuel_cluster_id:
+        if node.rhosp:
+            Helper.copy_file_to_remote_with_key(node, src_file, dst_dir, dst_file, mode)
+        elif node.fuel_cluster_id:
             Helper.copy_file_to_remote_with_key(node, src_file, dst_dir, dst_file, mode)
         else:
             Helper.copy_file_to_remote_with_passwd(node, src_file, dst_dir, dst_file, mode)

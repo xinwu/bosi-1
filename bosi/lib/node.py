@@ -75,11 +75,11 @@ class Node(object):
         self.ivs_version           = None
         self.old_ivs_version       = node_config.get('old_ivs_version')
         if self.os in const.RPM_OS_SET:
-            self.ivs_pkg           = self.ivs_pkg_map['rpm']
-            self.ivs_debug_pkg     = self.ivs_pkg_map['debug_rpm']
+            self.ivs_pkg           = self.ivs_pkg_map.get('rpm')
+            self.ivs_debug_pkg     = self.ivs_pkg_map.get('debug_rpm')
         elif self.os in const.DEB_OS_SET:
-            self.ivs_pkg           = self.ivs_pkg_map['deb']
-            self.ivs_debug_pkg     = self.ivs_pkg_map['debug_deb']
+            self.ivs_pkg           = self.ivs_pkg_map.get('deb')
+            self.ivs_debug_pkg     = self.ivs_pkg_map.get('debug_deb')
         self.error                 = node_config.get('error')
 
         # check os compatability
