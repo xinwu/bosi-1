@@ -1,4 +1,4 @@
-# configuration won't be overrided by fuel
+# configuration won't be overrided by any openstack installer
 openstack_release: juno
 default_deploy_mode: t6
 default_skip: false
@@ -18,8 +18,17 @@ bcf_controllers:
 bcf_controller_user: admin
 bcf_controller_passwd: adminadmin
 bcf_openstack_management_tenant: os-mgmt
+installer_pxe_interface_ip: 192.168.1.1
 
-# configuration can be overrided by fuel
+# keys with rhosp prefix are specific to RHOSP7
+rhosp_automate_register: true
+rhosp_installer_management_interface: eno2
+rhosp_installer_pxe_interface: eno1
+rhosp_undercloud_dns: 8.8.8.8
+rhosp_register_username: bigswitch
+rhosp_register_passwd: bigswitch
+
+# configuration can be overrided by openstack installers
 # neutron_id is to let bcf ml2 plugin differenciate different openstack controller clusters
 neutron_id: neutron
 default_user: root

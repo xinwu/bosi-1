@@ -23,7 +23,6 @@ define ivs_internal_port_ip {
 # example ['storage,192.168.1.1/24', 'ex,192.168.2.1/24', 'management,192.168.3.1/24']
 class ivs_internal_port_ips {
     $port_ips = [%(port_ips)s]
-    $default_gw = "%(default_gw)s"
     file { "/etc/rc.d/rc.local":
         ensure  => file,
         mode    => 0777,
@@ -35,16 +34,6 @@ class ivs_internal_port_ips {
         match   => "^systemctl restart ivs$",
     }->
     ivs_internal_port_ip { $port_ips:
-    }->
-    file_line { "clear default gw":
-        path    => '/etc/rc.d/rc.local',
-        line    => "ip route del default",
-        match   => "^ip route del default$",
-    }->
-    file_line { "add default gw":
-        path    => '/etc/rc.d/rc.local',
-        line    => "ip route add default via ${default_gw}",
-        match   => "^ip route add default via ${default_gw}$",
     }
 }
 include ivs_internal_port_ips
