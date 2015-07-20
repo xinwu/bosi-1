@@ -118,6 +118,14 @@ exec { 'purge bcf key':
 }
 
 # config /etc/neutron/neutron.conf
+ini_setting { "neutron.conf debug":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'debug',
+  value             => 'True',
+}
 ini_setting { "neutron.conf report_interval":
   ensure            => present,
   path              => '/etc/neutron/neutron.conf',
