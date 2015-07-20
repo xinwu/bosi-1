@@ -80,7 +80,7 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
 
 
     # copy neutron config from neutron server to setup node
-    Helper.copy_neutron_config_from_controllers(controller_nodes)
+    Helper.copy_neutron_config_from_controllers(controller_nodes, env.deploy_mode)
     Helper.copy_dhcp_scheduler_from_controllers(controller_nodes)
 
     for hostname, node in node_dic.iteritems():

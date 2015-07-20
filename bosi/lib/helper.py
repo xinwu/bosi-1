@@ -487,11 +487,10 @@ class Helper(object):
 
     @staticmethod
     def generate_scripts_for_ubuntu(node):
-        if node.deploy_mode == t6:
+        if node.deploy_mode == const.T6:
           generate_t6_scripts_for_ubuntu(node)
-        elif node.deploy_mode is 't5':
+        elif node.deploy_mode == const.T5:
           generate_t5_scripts_for_ubuntu(node)
-
 
     @staticmethod
     def generate_scripts_for_centos(node):
@@ -1077,7 +1076,7 @@ class Helper(object):
 
 
     @staticmethod
-    def copy_neutron_config_from_controllers(controller_nodes):
+    def copy_neutron_config_from_controllers(controller_nodes, deploy_mode):
         if len(controller_nodes) and controller_nodes[0]:
             controller_node = controller_nodes[0]
             Helper.safe_print("Copy dhcp_agent.ini from openstack controller %(controller_node)s\n" %
@@ -1088,6 +1087,12 @@ class Helper(object):
                              {'controller_node' : controller_node.hostname})
             Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'metadata_agent.ini',
                                          controller_node.setup_node_dir)
+            if deploy_mode == const.T5 :
+               # copy L3 Agent config as well
+               Helper.safe_print("Copy l3_agent.ini from openstack controller %(controller_node)s\n" %
+                                {'controller_node' : controller_node.hostname})
+               Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'l3_agent.ini',
+                                            controller_node.setup_node_dir)
 
         rabbit_hosts = sets.Set()
         rabbit_port = None
