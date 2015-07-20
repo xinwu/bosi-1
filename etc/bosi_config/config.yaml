@@ -1,4 +1,4 @@
-# configuration won't be overrided by fuel
+# configuration won't be overrided by any openstack installer
 openstack_release: juno
 default_deploy_mode: t6
 default_skip: false
@@ -6,12 +6,13 @@ default_install_bsnstacklib: true
 default_install_ivs: true
 default_install_all: true
 default_deploy_dhcp_agent: true
+default_deploy_l3_agent: true
 default_deploy_haproxy: false
 ivs_packages:
-#- http://10.2.3.11/~bsn/xenon-bsn/trusty-amd64/latest/ivs_3.0.0_amd64.deb
-#- http://10.2.3.11/~bsn/xenon-bsn/trusty-amd64/latest/ivs-dbg_3.0.0_amd64.deb
-- http://10.2.3.11/~bsn/xenon-bsn/centos7-x86_64/latest/ivs-debuginfo-3.0.0-1.el7.centos.x86_64.rpm
-- http://10.2.3.11/~bsn/xenon-bsn/centos7-x86_64/latest/ivs-3.0.0-1.el7.centos.x86_64.rpm
+#- https://10.2.3.100/view/IVS/job/ivs-bsn-3.0.0/lastSuccessfulBuild/artifact/pkg/trusty-amd64/latest/ivs_3.0.0_amd64.deb
+#- https://10.2.3.100/view/IVS/job/ivs-bsn-3.0.0/lastSuccessfulBuild/artifact/pkg/trusty-amd64/latest/ivs-dbg_3.0.0_amd64.deb
+- https://10.2.3.100/view/IVS/job/ivs-bsn-3.0.0/lastSuccessfulBuild/artifact/pkg/centos7-x86_64/latest/ivs-3.0.0-1.el7.centos.x86_64.rpm
+- https://10.2.3.100/view/IVS/job/ivs-bsn-3.0.0/lastSuccessfulBuild/artifact/pkg/centos7-x86_64/latest/ivs-debuginfo-3.0.0-1.el7.centos.x86_64.rpm
 bcf_controllers:
 - 10.212.1.231:8000
 - 10.212.1.230:8000
@@ -19,7 +20,20 @@ bcf_controller_user: admin
 bcf_controller_passwd: adminadmin
 bcf_openstack_management_tenant: os-mgmt
 
-# configuration can be overrided by fuel
+# This is necessary for any installer that takes over pxe boot.
+# It will be the default gw for all nodes if external gw is
+# not specified. packstack can ignore this parameter.
+installer_pxe_interface_ip: 192.168.1.1
+
+# keys with rhosp prefix are specific to RHOSP7
+rhosp_automate_register: true
+rhosp_installer_management_interface: eno2
+rhosp_installer_pxe_interface: eno1
+rhosp_undercloud_dns: 8.8.8.8
+rhosp_register_username: bigswitch
+rhosp_register_passwd: bigswitch
+
+# configuration can be overrided by openstack installers
 # neutron_id is to let bcf ml2 plugin differenciate different openstack controller clusters
 neutron_id: neutron
 default_user: root

@@ -24,6 +24,10 @@ controller() {
     systemctl stop neutron-bsn-agent
     systemctl disable neutron-bsn-agent
 
+    # copy dhcp_reschedule.sh to /bin
+    cp %(dst_dir)s/dhcp_reschedule.sh /bin/
+    chmod 777 /bin/dhcp_reschedule.sh
+
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
@@ -80,7 +84,7 @@ compute() {
     systemctl disable neutron-metadata-agent
 
     # patch linux/dhcp.py to make sure static host route is pushed to instances
-    adhcp_py=$(find /usr -name dhcp.py | grep linux)
+    dhcp_py=$(find /usr -name dhcp.py | grep linux)
     dhcp_dir=$(dirname "${dhcp_py}")
     sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
     find $dhcp_dir -name "*.pyc" | xargs rm
@@ -214,8 +218,8 @@ easy_install pip
 puppet module install --force puppetlabs-inifile
 puppet module install --force puppetlabs-stdlib
 puppet module install jfryman-selinux
-mkdir -p /etc/puppet/modules/selinux/files
-cp %(dst_dir)s/%(hostname)s.te /etc/puppet/modules/selinux/files/centos.te
+#mkdir -p /etc/puppet/modules/selinux/files
+#cp %(dst_dir)s/%(hostname)s.te /etc/puppet/modules/selinux/files/centos.te
 
 # install bsnstacklib
 if [[ $install_bsnstacklib == true ]]; then

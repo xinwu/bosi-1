@@ -1,6 +1,7 @@
 import re
 import constants as const
 
+
 class Node(object):
     def __init__(self, node_config, env):
         self.dst_dir                     = const.DST_DIR
@@ -12,6 +13,7 @@ class Node(object):
         self.dhcp_agent_scheduler_dir    = None
         self.log                   = const.LOG_FILE
         self.hostname              = node_config['hostname']
+        self.uname                 = node_config.get('uname')
         self.role                  = node_config['role'].lower()
         self.skip                  = node_config['skip']
         self.deploy_mode           = node_config['deploy_mode']
@@ -24,6 +26,7 @@ class Node(object):
         self.install_bsnstacklib   = node_config['install_bsnstacklib']
         self.install_all           = node_config['install_all']
         self.deploy_dhcp_agent     = node_config['deploy_dhcp_agent']
+        self.deploy_l3_agent       = node_config['deploy_l3_agent']
         self.bridges               = node_config.get('bridges')
         self.br_bond               = node_config.get('br_bond')
         self.bond                  = node_config.get('bond')
@@ -33,13 +36,19 @@ class Node(object):
         self.br_fw_admin_address   = node_config.get('br_fw_admin_address')
         self.tagged_intfs          = node_config.get('tagged_intfs')
         self.ex_gw                 = node_config.get('ex_gw')
-
         self.deploy_haproxy        = node_config.get('deploy_haproxy')
-
         self.tag                   = node_config.get('tag')
         self.env_tag               = env.tag
-
         self.cleanup               = env.cleanup
+
+        # rhosp related config
+        self.rhosp_automate_register              = env.rhosp_automate_register
+        self.rhosp_installer_management_interface = env.rhosp_installer_management_interface
+        self.rhosp_installer_pxe_interface        = env.rhosp_installer_pxe_interface
+        self.rhosp_undercloud_dns                 = env.rhosp_undercloud_dns
+        self.rhosp_register_username              = env.rhosp_register_username
+        self.rhosp_register_passwd                = env.rhosp_register_passwd
+        self.installer_pxe_interface_ip           = env.installer_pxe_interface_ip
 
         self.neutron_id            = env.neutron_id
         self.openstack_release     = env.openstack_release
@@ -57,6 +66,7 @@ class Node(object):
         self.setup_node_dir        = env.setup_node_dir
         self.selinux_mode          = env.selinux_mode
         self.fuel_cluster_id       = env.fuel_cluster_id
+        self.rhosp                 = env.rhosp
         self.deploy_horizon_patch  = env.deploy_horizon_patch
         self.horizon_patch_url     = env.horizon_patch_url
         self.horizon_patch         = env.horizon_patch
@@ -68,16 +78,17 @@ class Node(object):
         self.ivs_version           = None
         self.old_ivs_version       = node_config.get('old_ivs_version')
         if self.os in const.RPM_OS_SET:
-            self.ivs_pkg           = self.ivs_pkg_map['rpm']
-            self.ivs_debug_pkg     = self.ivs_pkg_map['debug_rpm']
+            self.ivs_pkg           = self.ivs_pkg_map.get('rpm')
+            self.ivs_debug_pkg     = self.ivs_pkg_map.get('debug_rpm')
         elif self.os in const.DEB_OS_SET:
-            self.ivs_pkg           = self.ivs_pkg_map['deb']
-            self.ivs_debug_pkg     = self.ivs_pkg_map['debug_deb']
+            self.ivs_pkg           = self.ivs_pkg_map.get('deb')
+            self.ivs_debug_pkg     = self.ivs_pkg_map.get('debug_deb')
         self.error                 = node_config.get('error')
 
         # check os compatability
         if (((self.os == const.CENTOS) and (self.os_version not in const.CENTOS_VERSIONS))
-           or ((self.os == const.UBUNTU) and (self.os_version not in const.UBUNTU_VERSIONS))):
+           or ((self.os == const.UBUNTU) and (self.os_version not in const.UBUNTU_VERSIONS))
+           or ((self.os == const.REDHAT) and (self.os_version not in const.REDHAT_VERSIONS))):
             self.skip = True
             self.error = (r'''%(os)s %(os_version)s is not supported''' %
                          {'os' : self.os, 'os_version' : self.os_version})
@@ -225,7 +236,7 @@ class Node(object):
 
     def get_all_bonds(self):
         bonds = []
-        if self.bond:
+        if self.bond and self.bridges:
             for br in self.bridges:
                 if (br.br_vlan) and (':' not in str(br.br_vlan)):
                     bonds.append(r'''%(bond)s.%(vlan)s''' %
@@ -239,7 +250,7 @@ class Node(object):
         if self.ex_gw:
             return self.ex_gw
         else:
-            return self.setup_node_ip
+            return self.installer_pxe_interface_ip
 
 
     def get_controllers_for_neutron(self):
@@ -247,10 +258,12 @@ class Node(object):
 
 
     def get_neutron_id(self):
-        if self.fuel_cluster_id:
+        if self.neutron_id and self.fuel_cluster_id:
+            return "%s-%s" % (self.neutron_id, str(self.fuel_cluster_id))
+        elif self.fuel_cluster_id:
             return "neutron-%s" % str(self.fuel_cluster_id)
         return self.neutron_id
-        
+
 
     def __str__(self):
         return (r'''
@@ -263,6 +276,7 @@ dhcp_reschedule_script_path : %(dhcp_reschedule_script_path)s,
 dhcp_agent_scheduler_dir    : %(dhcp_agent_scheduler_dir)s,
 log                    : %(log)s,
 hostname               : %(hostname)s,
+uname                  : %(uname)s,
 role                   : %(role)s,
 skip                   : %(skip)s,
 deploy_mode            : %(deploy_mode)s,
@@ -275,6 +289,7 @@ install_ivs            : %(install_ivs)s,
 install_bsnstacklib    : %(install_bsnstacklib)s,
 install_all            : %(install_all)s,
 deploy_dhcp_agent      : %(deploy_dhcp_agent)s,
+deploy_l3_agent        : %(deploy_l3_agent)s,
 bridges                : %(bridges)s,
 br_bond                : %(br_bond)s,
 bond                   : %(bond)s,
@@ -287,6 +302,13 @@ deploy_haproxy         : %(deploy_haproxy)s,
 tag                    : %(tag)s,
 env_tag                : %(env_tag)s,
 cleanup                : %(cleanup)s,
+rhosp_automate_register              : %(rhosp_automate_register)s,
+rhosp_installer_management_interface : %(rhosp_installer_management_interface)s,
+rhosp_installer_pxe_interface        : %(rhosp_installer_pxe_interface)s,
+rhosp_undercloud_dns                 : %(rhosp_undercloud_dns)s,
+rhosp_register_username              : %(rhosp_register_username)s,
+rhosp_register_passwd                : %(rhosp_register_passwd)s,
+installer_pxe_interface_ip           : %(installer_pxe_interface_ip)s,
 neutron_id             : %(neutron_id)s,
 openstack_release      : %(openstack_release)s,
 bsnstacklib_version    : %(bsnstacklib_version)s,
@@ -303,6 +325,7 @@ setup_node_ip          : %(setup_node_ip)s,
 setup_node_dir         : %(setup_node_dir)s,
 selinux_mode           : %(selinux_mode)s,
 fuel_cluster_id        : %(fuel_cluster_id)s,
+rhosp                  : %(rhosp)s,
 deploy_horizon_patch   : %(deploy_horizon_patch)s,
 horizon_patch_url      : %(horizon_patch_url)s,
 horizon_patch          : %(horizon_patch)s,
@@ -324,6 +347,7 @@ error                  : %(error)s,
 'dhcp_agent_scheduler_dir'    : self.dhcp_agent_scheduler_dir,
 'log'                   : self.log,
 'hostname'              : self.hostname,
+'uname'                 : self.uname,
 'role'                  : self.role,
 'skip'                  : self.skip,
 'deploy_mode'           : self.deploy_mode,
@@ -336,6 +360,7 @@ error                  : %(error)s,
 'install_bsnstacklib'   : self.install_bsnstacklib,
 'install_all'           : self.install_all,
 'deploy_dhcp_agent'     : self.deploy_dhcp_agent,
+'deploy_l3_agent'       : self.deploy_l3_agent,
 'bridges'               : str(self.bridges),
 'br_bond'               : self.br_bond,
 'bond'                  : self.bond,
@@ -348,6 +373,13 @@ error                  : %(error)s,
 'tag'                   : self.tag,
 'env_tag'               : self.env_tag,
 'cleanup'               : self.cleanup,
+'rhosp_automate_register'              : self.rhosp_automate_register,
+'rhosp_installer_management_interface' : self.rhosp_installer_management_interface,
+'rhosp_installer_pxe_interface'        : self.rhosp_installer_pxe_interface,
+'rhosp_undercloud_dns'                 : self.rhosp_undercloud_dns,
+'rhosp_register_username'              : self.rhosp_register_username,
+'rhosp_register_passwd'                : self.rhosp_register_passwd,
+'installer_pxe_interface_ip'           : self.installer_pxe_interface_ip,
 'neutron_id'            : self.neutron_id,
 'openstack_release'     : self.openstack_release,
 'bsnstacklib_version'   : self.bsnstacklib_version,
@@ -364,6 +396,7 @@ error                  : %(error)s,
 'setup_node_dir'        : self.setup_node_dir,
 'selinux_mode'          : self.selinux_mode,
 'fuel_cluster_id'       : self.fuel_cluster_id,
+'rhosp'                 : self.rhosp,
 'deploy_horizon_patch'  : self.deploy_horizon_patch,
 'horizon_patch_url'     : self.horizon_patch_url,
 'horizon_patch'         : self.horizon_patch,

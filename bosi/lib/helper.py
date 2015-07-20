@@ -65,7 +65,7 @@ class Helper(object):
         try:
             p = subprocess.Popen(
                 command, shell=True, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, close_fds=True, bufsize=1)
+                stderr=subprocess.PIPE)
         except Exception as e:
             msg = "Error opening process %s: %s\n" % (command, e)
             Helper.safe_print(msg)
@@ -156,7 +156,7 @@ class Helper(object):
                    'dst_file'   : dst_file
                   })
         Helper.run_command_on_local(scp_cmd)
-        chmod_cmd = (r'''chmod -R %(mode)d %(dst_dir)s/%(dst_file)s''' %
+        chmod_cmd = (r'''sudo chmod -R %(mode)d %(dst_dir)s/%(dst_file)s''' %
                     {'mode'     : mode,
                      'dst_dir'  : dst_dir,
                      'dst_file' : dst_file
@@ -183,7 +183,7 @@ class Helper(object):
                    'src_file'   : src_file
                   })
         Helper.run_command_on_local(scp_cmd)
-        chmod_cmd = (r'''chmod -R %(mode)d %(dst_dir)s/%(src_file)s''' %
+        chmod_cmd = (r'''sudo chmod -R %(mode)d %(dst_dir)s/%(src_file)s''' %
                     {'mode'     : mode,
                      'dst_dir'  : dst_dir,
                      'src_file' : src_file
@@ -209,11 +209,12 @@ class Helper(object):
     def copy_dir_to_remote_with_key(node, src_dir, dst_dir):
         mkdir_cmd = (r'''mkdir -p %(dst_dir)s''' % {'dst_dir' : dst_dir})
         Helper.run_command_on_remote_with_key(node, mkdir_cmd)
-        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_dir)s %(hostname)s:%(dst_dir)s/ >> %(log)s 2>&1''' %
+        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_dir)s %(user)s@%(hostname)s:%(dst_dir)s/ >> %(log)s 2>&1''' %
                   {'hostname'   : node.hostname,
                    'log'        : node.log,
                    'src_dir'    : src_dir,
-                   'dst_dir'    : dst_dir
+                   'dst_dir'    : dst_dir,
+                   'user'       : node.user,
                   })
         Helper.run_command_on_local(scp_cmd)
 
@@ -227,15 +228,16 @@ class Helper(object):
         """
         mkdir_cmd = (r'''mkdir -p %(dst_dir)s''' % {'dst_dir' : dst_dir})
         Helper.run_command_on_remote_with_key(node, mkdir_cmd)
-        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_file)s %(hostname)s:%(dst_dir)s/%(dst_file)s >> %(log)s 2>&1''' %
+        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet -r %(src_file)s %(user)s@%(hostname)s:%(dst_dir)s/%(dst_file)s >> %(log)s 2>&1''' %
                   {'hostname'   : node.hostname,
                    'log'        : node.log,
                    'src_file'   : src_file,
                    'dst_dir'    : dst_dir,
-                   'dst_file'   : dst_file
+                   'dst_file'   : dst_file,
+                   'user'       : node.user,
                   })
         Helper.run_command_on_local(scp_cmd)
-        chmod_cmd = (r'''chmod -R %(mode)d %(dst_dir)s/%(dst_file)s''' %
+        chmod_cmd = (r'''sudo chmod -R %(mode)d %(dst_dir)s/%(dst_file)s''' %
                     {'mode'     : mode,
                      'dst_dir'  : dst_dir,
                      'dst_file' : dst_file
@@ -252,15 +254,16 @@ class Helper(object):
         """
         mkdir_cmd = (r'''mkdir -p %(dst_dir)s''' % {'dst_dir' : dst_dir})
         Helper.run_command_on_local(mkdir_cmd)
-        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet %(hostname)s:%(src_dir)s/%(src_file)s %(dst_dir)s/%(src_file)s >> %(log)s 2>&1''' %
+        scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s:%(src_dir)s/%(src_file)s %(dst_dir)s/%(src_file)s >> %(log)s 2>&1''' %
                   {'hostname'   : node.hostname,
                    'log'        : node.log,
                    'src_dir'    : src_dir,
                    'dst_dir'    : dst_dir,
-                   'src_file'   : src_file
+                   'src_file'   : src_file,
+                   'user'       : node.user,
                   })
         Helper.run_command_on_local(scp_cmd)
-        chmod_cmd = (r'''chmod -R %(mode)d %(dst_dir)s/%(src_file)s''' %
+        chmod_cmd = (r'''sudo chmod -R %(mode)d %(dst_dir)s/%(src_file)s''' %
                     {'mode'     : mode,
                      'dst_dir'  : dst_dir,
                      'src_file' : src_file
@@ -271,7 +274,9 @@ class Helper(object):
     @staticmethod
     def generate_dhcp_reschedule_script(node):
         openrc = const.PACKSTACK_OPENRC
-        if node.fuel_cluster_id:
+        if node.rhosp:
+            openrc = const.RHOSP_OVERCLOUD_OPENRC
+        elif node.fuel_cluster_id:
             openrc = const.FUEL_OPENRC
         dhcp_reschedule_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/dhcp_reschedule.sh''' %
                                       {'setup_node_dir'       : node.setup_node_dir,
@@ -294,7 +299,9 @@ class Helper(object):
     @staticmethod
     def generate_ospurge_script(node):
         openrc = const.PACKSTACK_OPENRC
-        if node.fuel_cluster_id:
+        if node.rhosp:
+            openrc = const.RHOSP_OVERCLOUD_OPENRC
+        elif node.fuel_cluster_id:
             openrc = const.FUEL_OPENRC
         with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(ospurge_template_dir)s/%(ospurge_template)s.sh''' %
                   {'setup_node_dir'       : node.setup_node_dir,
@@ -311,14 +318,15 @@ class Helper(object):
             ospurge_file.write(ospurge)
         node.set_ospurge_script_path(ospurge_script_path)
 
+
     @staticmethod
-    def generate_t5_scripts_for_ubuntu(node):
+    def generate_scripts_for_redhat(node):
         # generate bash script
         with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(bash_template_dir)s/%(bash_template)s_%(os_version)s.sh''' %
                   {'setup_node_dir'    : node.setup_node_dir,
                    'deploy_mode'       : node.deploy_mode,
                    'bash_template_dir' : const.BASH_TEMPLATE_DIR,
-                   'bash_template'     : const.UBUNTU,
+                   'bash_template'     : const.REDHAT,
                    'os_version'        : node.os_version}), "r") as bash_template_file:
             bash_template = bash_template_file.read()
             is_controller = False
@@ -329,6 +337,7 @@ class Helper(object):
                     'install_bsnstacklib' : str(node.install_bsnstacklib).lower(),
                     'install_all'         : str(node.install_all).lower(),
                     'deploy_dhcp_agent'   : str(node.deploy_dhcp_agent).lower(),
+                    'deploy_l3_agent'     : str(node.deploy_l3_agent).lower(),
                     'is_controller'       : str(is_controller).lower(),
                     'deploy_horizon_patch': str(node.deploy_horizon_patch).lower(),
                     'ivs_version'         : node.ivs_version,
@@ -351,7 +360,13 @@ class Helper(object):
                     'br_fw_admin_address' : node.br_fw_admin_address,
                     'default_gw'          : node.get_default_gw(),
                     'uplinks'             : node.get_all_uplinks(),
-                    'deploy_haproxy'      : str(node.deploy_haproxy).lower()})
+                    'deploy_haproxy'      : str(node.deploy_haproxy).lower(),
+                    'rhosp_automate_register'  : str(node.rhosp_automate_register).lower(),
+                    'rhosp_undercloud_dns'     : str(node.rhosp_undercloud_dns),
+                    'rhosp_register_username'  : str(node.rhosp_register_username),
+                    'rhosp_register_passwd'    : str(node.rhosp_register_passwd),
+                    'bond'                     : node.bond,
+                    'br_bond'                  : node.br_bond})
         bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh''' %
                            {'setup_node_dir'       : node.setup_node_dir,
                             'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -369,7 +384,7 @@ class Helper(object):
                   {'setup_node_dir'      : node.setup_node_dir,
                    'deploy_mode'         : node.deploy_mode,
                    'puppet_template_dir' : const.PUPPET_TEMPLATE_DIR,
-                   'puppet_template'     : const.UBUNTU,
+                   'puppet_template'     : const.REDHAT,
                    'role'                : node.role}), "r") as puppet_template_file:
             puppet_template = puppet_template_file.read()
             puppet = (puppet_template %
@@ -382,8 +397,11 @@ class Helper(object):
                       'default_gw'            : node.get_default_gw(),
                       'uplinks'               : node.get_comma_separated_uplinks(),
                       'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
+                      'deploy_l3_agent'       : str(node.deploy_l3_agent).lower(),
                       'neutron_id'            : node.get_neutron_id(),
-                      'deploy_haproxy'        : str(node.deploy_haproxy).lower()})
+                      'deploy_haproxy'        : str(node.deploy_haproxy).lower(),
+                      'uname'                 : node.uname,
+                      'bond'                  : node.bond})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -398,99 +416,100 @@ class Helper(object):
         Helper.generate_ospurge_script(node)
         Helper.generate_dhcp_reschedule_script(node)
 
-    @staticmethod
-    def generate_t6_scripts_for_ubuntu(node):
-        # generate bash script
-        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(bash_template_dir)s/%(bash_template)s_%(os_version)s.sh''' %
-                  {'setup_node_dir'    : node.setup_node_dir,
-                   'deploy_mode'       : node.deploy_mode,
-                   'bash_template_dir' : const.BASH_TEMPLATE_DIR,
-                   'bash_template'     : const.UBUNTU,
-                   'os_version'        : node.os_version}), "r") as bash_template_file:
-            bash_template = bash_template_file.read()
-            is_controller = False
-            if node.role == const.ROLE_NEUTRON_SERVER:
-                is_controller = True
-            bash = (bash_template %
-                   {'install_ivs'         : str(node.install_ivs).lower(),
-                    'install_bsnstacklib' : str(node.install_bsnstacklib).lower(),
-                    'install_all'         : str(node.install_all).lower(),
-                    'deploy_dhcp_agent'   : str(node.deploy_dhcp_agent).lower(),
-                    'is_controller'       : str(is_controller).lower(),
-                    'deploy_horizon_patch': str(node.deploy_horizon_patch).lower(),
-                    'ivs_version'         : node.ivs_version,
-                    'bsnstacklib_version' : node.bsnstacklib_version,
-                    'openstack_release'   : node.openstack_release,
-                    'dst_dir'             : node.dst_dir,
-                    'hostname'            : node.hostname,
-                    'ivs_pkg'             : node.ivs_pkg,
-                    'horizon_patch'       : node.horizon_patch,
-                    'horizon_patch_dir'   : node.horizon_patch_dir,
-                    'horizon_base_dir'    : node.horizon_base_dir,
-                    'ivs_debug_pkg'       : node.ivs_debug_pkg,
-                    'ovs_br'              : node.get_all_ovs_brs(),
-                    'bonds'               : node.get_all_bonds(),
-                    'br-int'              : const.BR_NAME_INT,
-                    'fuel_cluster_id'     : str(node.fuel_cluster_id),
-                    'interfaces'          : node.get_all_interfaces(),
-                    'br_fw_admin'         : node.br_fw_admin,
-                    'pxe_interface'       : node.pxe_interface,
-                    'br_fw_admin_address' : node.br_fw_admin_address,
-                    'default_gw'          : node.get_default_gw(),
-                    'uplinks'             : node.get_all_uplinks(),
-                    'deploy_haproxy'      : str(node.deploy_haproxy).lower()})
-        bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh''' %
-                           {'setup_node_dir'       : node.setup_node_dir,
-                            'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
-                            'hostname'             : node.hostname})
-        with open(bash_script_path, "w") as bash_file:
-            bash_file.write(bash)
-        node.set_bash_script_path(bash_script_path)
-
-        # generate puppet script
-        ivs_daemon_args = (const.IVS_DAEMON_ARGS %
-                          {'inband_vlan'       : const.INBAND_VLAN,
-                           'internal_ports'    : node.get_ivs_internal_ports(),
-                           'uplink_interfaces' : node.get_uplink_intfs_for_ivs()})
-        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(puppet_template_dir)s/%(puppet_template)s_%(role)s.pp''' %
-                  {'setup_node_dir'      : node.setup_node_dir,
-                   'deploy_mode'         : node.deploy_mode,
-                   'puppet_template_dir' : const.PUPPET_TEMPLATE_DIR,
-                   'puppet_template'     : const.UBUNTU,
-                   'role'                : node.role}), "r") as puppet_template_file:
-            puppet_template = puppet_template_file.read()
-            puppet = (puppet_template %
-                     {'ivs_daemon_args'       : ivs_daemon_args,
-                      'network_vlan_ranges'   : node.get_network_vlan_ranges(),
-                      'bcf_controllers'       : node.get_controllers_for_neutron(),
-                      'bcf_controller_user'   : node.bcf_controller_user,
-                      'bcf_controller_passwd' : node.bcf_controller_passwd,
-                      'port_ips'              : node.get_ivs_internal_port_ips(),
-                      'default_gw'            : node.get_default_gw(),
-                      'uplinks'               : node.get_comma_separated_uplinks(),
-                      'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
-                      'neutron_id'            : node.get_neutron_id(),
-                      'deploy_haproxy'        : str(node.deploy_haproxy).lower()})
-        puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
-                             {'setup_node_dir'       : node.setup_node_dir,
-                              'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
-                              'hostname'             : node.hostname})
-        with open(puppet_script_path, "w") as puppet_file:
-            puppet_file.write(puppet)
-        node.set_puppet_script_path(puppet_script_path)
-
-        if node.role != const.ROLE_NEUTRON_SERVER:
-            return
-
-        Helper.generate_ospurge_script(node)
-        Helper.generate_dhcp_reschedule_script(node)
 
     @staticmethod
     def generate_scripts_for_ubuntu(node):
-        if node.deploy_mode == const.T6:
-          generate_t6_scripts_for_ubuntu(node)
-        elif node.deploy_mode == const.T5:
-          generate_t5_scripts_for_ubuntu(node)
+        # generate bash script
+        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(bash_template_dir)s/%(bash_template)s_%(os_version)s.sh''' %
+                  {'setup_node_dir'    : node.setup_node_dir,
+                   'deploy_mode'       : node.deploy_mode,
+                   'bash_template_dir' : const.BASH_TEMPLATE_DIR,
+                   'bash_template'     : const.UBUNTU,
+                   'os_version'        : node.os_version}), "r") as bash_template_file:
+            bash_template = bash_template_file.read()
+            is_controller = False
+            if node.role == const.ROLE_NEUTRON_SERVER:
+                is_controller = True
+            bash = (bash_template %
+                   {'install_ivs'         : str(node.install_ivs).lower(),
+                    'install_bsnstacklib' : str(node.install_bsnstacklib).lower(),
+                    'install_all'         : str(node.install_all).lower(),
+                    'deploy_dhcp_agent'   : str(node.deploy_dhcp_agent).lower(),
+                    'deploy_l3_agent'     : str(node.deploy_l3_agent).lower(),
+                    'is_controller'       : str(is_controller).lower(),
+                    'deploy_horizon_patch': str(node.deploy_horizon_patch).lower(),
+                    'ivs_version'         : node.ivs_version,
+                    'bsnstacklib_version' : node.bsnstacklib_version,
+                    'openstack_release'   : node.openstack_release,
+                    'dst_dir'             : node.dst_dir,
+                    'hostname'            : node.hostname,
+                    'ivs_pkg'             : node.ivs_pkg,
+                    'horizon_patch'       : node.horizon_patch,
+                    'horizon_patch_dir'   : node.horizon_patch_dir,
+                    'horizon_base_dir'    : node.horizon_base_dir,
+                    'ivs_debug_pkg'       : node.ivs_debug_pkg,
+                    'ovs_br'              : node.get_all_ovs_brs(),
+                    'bonds'               : node.get_all_bonds(),
+                    'br-int'              : const.BR_NAME_INT,
+                    'fuel_cluster_id'     : str(node.fuel_cluster_id),
+                    'interfaces'          : node.get_all_interfaces(),
+                    'br_fw_admin'         : node.br_fw_admin,
+                    'pxe_interface'       : node.pxe_interface,
+                    'br_fw_admin_address' : node.br_fw_admin_address,
+                    'default_gw'          : node.get_default_gw(),
+                    'uplinks'             : node.get_all_uplinks(),
+                    'deploy_haproxy'      : str(node.deploy_haproxy).lower(),
+                    'bond'                : node.bond,
+                    'br_bond'             : node.br_bond})
+        bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh''' %
+                           {'setup_node_dir'       : node.setup_node_dir,
+                            'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
+                            'hostname'             : node.hostname})
+        with open(bash_script_path, "w") as bash_file:
+            bash_file.write(bash)
+        node.set_bash_script_path(bash_script_path)
+
+        # generate puppet script
+        ivs_daemon_args = (const.IVS_DAEMON_ARGS %
+                          {'inband_vlan'       : const.INBAND_VLAN,
+                           'internal_ports'    : node.get_ivs_internal_ports(),
+                           'uplink_interfaces' : node.get_uplink_intfs_for_ivs()})
+        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/%(puppet_template_dir)s/%(puppet_template)s_%(role)s.pp''' %
+                  {'setup_node_dir'      : node.setup_node_dir,
+                   'deploy_mode'         : node.deploy_mode,
+                   'puppet_template_dir' : const.PUPPET_TEMPLATE_DIR,
+                   'puppet_template'     : const.UBUNTU,
+                   'role'                : node.role}), "r") as puppet_template_file:
+            puppet_template = puppet_template_file.read()
+            puppet = (puppet_template %
+                     {'ivs_daemon_args'       : ivs_daemon_args,
+                      'network_vlan_ranges'   : node.get_network_vlan_ranges(),
+                      'bcf_controllers'       : node.get_controllers_for_neutron(),
+                      'bcf_controller_user'   : node.bcf_controller_user,
+                      'bcf_controller_passwd' : node.bcf_controller_passwd,
+                      'port_ips'              : node.get_ivs_internal_port_ips(),
+                      'default_gw'            : node.get_default_gw(),
+                      'uplinks'               : node.get_comma_separated_uplinks(),
+                      'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
+                      'deploy_l3_agent'       : str(node.deploy_l3_agent).lower(),
+                      'neutron_id'            : node.get_neutron_id(),
+                      'deploy_haproxy'        : str(node.deploy_haproxy).lower(),
+                      'uname'                 : node.uname,
+                      'bond'                  : node.bond})
+        puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
+                             {'setup_node_dir'       : node.setup_node_dir,
+                              'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
+                              'hostname'             : node.hostname})
+        with open(puppet_script_path, "w") as puppet_file:
+            puppet_file.write(puppet)
+        node.set_puppet_script_path(puppet_script_path)
+
+        if node.role != const.ROLE_NEUTRON_SERVER:
+            return
+
+        Helper.generate_ospurge_script(node)
+        Helper.generate_dhcp_reschedule_script(node)
+
 
     @staticmethod
     def generate_scripts_for_centos(node):
@@ -511,6 +530,7 @@ class Helper(object):
                     'install_bsnstacklib' : str(node.install_bsnstacklib).lower(),
                     'install_all'         : str(node.install_all).lower(),
                     'deploy_dhcp_agent'   : str(node.deploy_dhcp_agent).lower(),
+                    'deploy_l3_agent'     : str(node.deploy_l3_agent).lower(),
                     'is_controller'       : str(is_controller).lower(),
                     'deploy_horizon_patch': str(node.deploy_horizon_patch).lower(),
                     'ivs_version'         : node.ivs_version,
@@ -533,7 +553,9 @@ class Helper(object):
                     'br_fw_admin_address' : node.br_fw_admin_address,
                     'default_gw'          : node.get_default_gw(),
                     'uplinks'             : node.get_all_uplinks(),
-                    'deploy_haproxy'      : str(node.deploy_haproxy).lower()})
+                    'deploy_haproxy'      : str(node.deploy_haproxy).lower(),
+                    'bond'                : node.bond,
+                    'br_bond'             : node.br_bond})
         bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh''' %
                            {'setup_node_dir'       : node.setup_node_dir,
                             'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -566,7 +588,9 @@ class Helper(object):
                       'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
                       'neutron_id'            : node.get_neutron_id(),
                       'selinux_mode'          : node.selinux_mode,
-                      'deploy_haproxy'        : str(node.deploy_haproxy).lower()})
+                      'deploy_haproxy'        : str(node.deploy_haproxy).lower(),
+                      'uname'                 : node.uname,
+                      'bond'                  : node.bond})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -622,6 +646,8 @@ class Helper(object):
             node_config['install_all'] = env.install_all
         if 'deploy_dhcp_agent' not in node_config:
             node_config['deploy_dhcp_agent'] = env.deploy_dhcp_agent
+        if 'deploy_l3_agent' not in node_config:
+            node_config['deploy_l3_agent'] = env.deploy_l3_agent
         if 'deploy_haproxy' not in node_config:
             node_config['deploy_haproxy'] = env.deploy_haproxy
         return node_config
@@ -682,6 +708,80 @@ class Helper(object):
             raise Exception("Error parsing fuel json settings.\n%(e)s\n"
                             % {'e' : e})
         return fuel_settings
+
+
+    @staticmethod
+    def __load_rhosp_node__(hostname, role, node_yaml_config_map, env):
+        node_config = {}
+        node_yaml_config = node_yaml_config_map.get(hostname)
+        if node_yaml_config:
+            node_config = Helper.__load_node_yaml_config__(node_yaml_config, env)
+        elif not len(node_yaml_config_map):
+            node_config = Helper.__load_node_yaml_config__(node_config, env)
+        else:
+            return None
+        node_config['hostname'] = hostname
+        node_config['role'] = role
+
+        #parse /etc/os-net-config/config.json
+        node = Node(node_config, env)
+        subprocess.call("rm -f /tmp/config.json", shell=True)
+        Helper.copy_file_from_remote(node, "/etc/os-net-config", "config.json", "/tmp")
+        if not os.path.isfile("/tmp/config.json"):
+            Helper.safe_print("Error retrieving config for node %(hostname)s:\n"
+                              % {'hostname' : node_config['hostname']})
+            return None
+        try:
+            data=open("/tmp/config.json").read()
+            node_json_config = json.loads(data)
+        except Exception as e:
+            Helper.safe_print("Error parsing node %(hostname)s json file:\n%(e)s\n"
+                              % {'hostname' : node_config['hostname'], 'e' : e})
+            return None
+
+        # get ovs bridge and bond
+        node_config['br_bond'] = str(node_json_config['network_config'][0]['name'])
+        members = node_json_config['network_config'][0]['members']
+        for member in members:
+            if 'name' in member:
+                node_config['bond'] = member['name']
+                break
+
+        # get ovs uplinks
+        uplink_cmd = (r'''sudo ovs-appctl bond/list | grep -v slaves | grep %(bond)s''' %
+                     {'bond' : node_config['bond']})
+        output, error = Helper.run_command_on_remote_without_timeout(node, uplink_cmd)
+        if error:
+            Helper.safe_print("Error getting node %(hostname)s uplinks:\n%(error)s\n"
+                             % {'hostname' : node_config['hostname'], 'error' : error})
+            return None
+        elif output:
+            node_config['uplink_interfaces'] = output.replace(',', ' ').split()[3:]
+        else:
+            # ovs bond has been removed, not the first time running this script
+            uplink_cmd = (r'''sudo cat /proc/net/bonding/%(bond)s | grep Slave | grep Interface | cut -c18-''' %
+                         {'bond' : node_config['bond']})
+            output, error = Helper.run_command_on_remote_without_timeout(node, uplink_cmd)
+            if error:
+                Helper.safe_print("Error getting node %(hostname)s uplinks:\n%(error)s\n"
+                             % {'hostname' : node_config['hostname'], 'error' : error})
+                return None
+            node_config['uplink_interfaces'] = output.split()
+
+
+        # get uname
+        output, error = Helper.run_command_on_remote_without_timeout(node, "uname -n")
+        if output and not error:
+            node_config['uname'] = output.strip()
+        else:
+            Helper.safe_print("Error getting node %(hostname)s uname:\n%(error)s\n"
+                             % {'hostname' : node_config['hostname'], 'error' : error})
+            return None
+
+        # TODO parse other vlans and bridges
+        # TODO get ivs version for t6
+        node = Node(node_config, env)
+        return node
 
 
     @staticmethod
@@ -875,6 +975,8 @@ class Helper(object):
                 node_dic[node.hostname] = node
                 
                 # get node bridges
+                if node.deploy_mode == const.T5:
+                    continue
                 for br in node.bridges:
                     if (not br.br_vlan) or (br.br_key == const.BR_KEY_PRIVATE):
                         continue
@@ -890,6 +992,48 @@ class Helper(object):
 
 
     @staticmethod
+    def load_nodes_from_rhosp(node_yaml_config_map, env):
+        Helper.safe_print("Retrieving list of rhosp nodes\n")
+        cmd = (r'''source %(stackrc)s; nova list'''
+               % {'stackrc' : const.RHOSP_UNDERCLOUD_OPENRC})
+        node_list, errors = Helper.run_command_on_local_without_timeout(cmd)
+        if errors:
+            raise Exception("Error Loading node list from rhosp:\n%(errors)s\n"
+                            % {'errors' : errors})
+
+        node_dic = {}
+        membership_rules = {}
+        try:
+            lines = [l for l in node_list.splitlines()
+                     if '----' not in l and 'Status' not in l]
+            for line in lines:
+                hostname = str(netaddr.IPAddress(line.split('|')[6].strip().split('=')[1]))
+                role = str(line.split('|')[2].strip().split('-')[1]).lower()
+                online = str(line.split('|')[3].strip())
+                if online.lower() != 'active':
+                    continue
+                node = Helper.__load_rhosp_node__(hostname, role, node_yaml_config_map, env)
+                if (not node) or (not node.hostname):
+                    continue
+                node_dic[node.hostname] = node
+
+                # get node bridges
+                if node.deploy_mode == const.T5:
+                    continue
+                for br in node.bridges:
+                    if (not br.br_vlan) or (br.br_key == const.BR_KEY_PRIVATE):
+                        continue
+                    rule = MembershipRule(br.br_key, br.br_vlan,
+                                          node.bcf_openstack_management_tenant,
+                                          node.fuel_cluster_id)
+                    membership_rules[rule.segment] = rule
+        except IndexError:
+            raise Exception("Could not parse node list:\n%(node_list)s\n"
+                            % {'node_list' : node_list})
+        return node_dic, membership_rules
+
+
+    @staticmethod
     def load_nodes(nodes_yaml_config, env):
         node_yaml_config_map = {}
         if nodes_yaml_config != None:
@@ -897,10 +1041,16 @@ class Helper(object):
                 # we always use ip address as the hostname
                 node_yaml_config['hostname'] = socket.gethostbyname(node_yaml_config['hostname'])
                 node_yaml_config_map[node_yaml_config['hostname']] = node_yaml_config
-        if env.fuel_cluster_id == None:
+        if env.fuel_cluster_id == None and env.rhosp == False:
             return Helper.load_nodes_from_yaml(node_yaml_config_map, env)
-        else:
+        elif env.fuel_cluster_id:
             node_dic, membership_rules = Helper.load_nodes_from_fuel(node_yaml_config_map, env)
+            for br_key, rule in membership_rules.iteritems():
+                RestLib.program_segment_and_membership_rule(env.bcf_master, env.bcf_cookie, rule,
+                                                            env.bcf_openstack_management_tenant)
+            return node_dic
+        elif env.rhosp:
+            node_dic, membership_rules = Helper.load_nodes_from_rhosp(node_yaml_config_map, env)
             for br_key, rule in membership_rules.iteritems():
                 RestLib.program_segment_and_membership_rule(env.bcf_master, env.bcf_cookie, rule,
                                                             env.bcf_openstack_management_tenant)
@@ -911,19 +1061,25 @@ class Helper(object):
     def common_setup_node_preparation(env):
         # clean up from previous installation
         setup_node_dir = env.setup_node_dir
-        subprocess.call("mkdir -p %(setup_node_dir)s/%(generated_script)s" %
+        subprocess.call("sudo mkdir -p %(setup_node_dir)s/%(generated_script)s" %
                        {'setup_node_dir'   : setup_node_dir,
                         'generated_script' : const.GENERATED_SCRIPT_DIR}, shell=True)
+        subprocess.call("sudo chmod -R 777 %(setup_node_dir)s" %
+                       {'setup_node_dir'   : setup_node_dir}, shell=True)
         subprocess.call("rm -rf ~/.ssh/known_hosts", shell=True)
-        subprocess.call("rm -rf %(log)s" %
+        subprocess.call("sudo rm -rf %(log)s" %
                        {'log' : const.LOG_FILE}, shell=True)
-        subprocess.call("rm -rf %(setup_node_dir)s/*ivs*.rpm" %
+        subprocess.call("sudo touch %(log)s" %
+                       {'log' : const.LOG_FILE}, shell=True)
+        subprocess.call("sudo chmod 777 %(log)s" %
+                       {'log' : const.LOG_FILE}, shell=True)
+        subprocess.call("sudo rm -rf %(setup_node_dir)s/*ivs*.rpm" %
                        {'setup_node_dir' : setup_node_dir}, shell=True)
-        subprocess.call("rm -rf %(setup_node_dir)s/*ivs*.deb" %
+        subprocess.call("sudo rm -rf %(setup_node_dir)s/*ivs*.deb" %
                        {'setup_node_dir' : setup_node_dir}, shell=True)
-        subprocess.call("rm -rf %(setup_node_dir)s/*.tar.gz" %
+        subprocess.call("sudo rm -rf %(setup_node_dir)s/*.tar.gz" %
                        {'setup_node_dir' : setup_node_dir}, shell=True)
-        subprocess.call("rm -rf %(setup_node_dir)s/%(generated_script)s/*" %
+        subprocess.call("sudo rm -rf %(setup_node_dir)s/%(generated_script)s/*" %
                        {'setup_node_dir'   : setup_node_dir,
                         'generated_script' : const.GENERATED_SCRIPT_DIR}, shell=True)
 
@@ -943,7 +1099,6 @@ class Helper(object):
         if env.deploy_mode == const.T6 and code_web != 0 and code_local != 0:
             Helper.safe_print("Required ivs packages are not correctly downloaded.\n")
             exit(1)
-        # TODO: deal with tarball
 
         # wget horizon patch
         code_web = 1
@@ -961,10 +1116,25 @@ class Helper(object):
             Helper.safe_print("Required horizon packages are not correctly downloaded.\n")
             exit(1)
 
+        # prepare for rhosp7
+        if env.rhosp:
+            subprocess.call("sudo sysctl -w net.ipv4.ip_forward=1", shell=True)
+            subprocess.call(r'''sudo iptables -t nat -A POSTROUTING -o %(external)s -j MASQUERADE''' %
+                           {'external' : env.rhosp_installer_management_interface}, shell=True)
+            subprocess.call(r'''sudo iptables -A FORWARD -i %(external)s -o %(internal)s -m state --state RELATED,ESTABLISHED -j ACCEPT''' %
+                           {'external' : env.rhosp_installer_management_interface,
+                            'internal' : env.rhosp_installer_pxe_interface}, shell=True)
+            subprocess.call(r'''sudo iptables -A FORWARD -i %(internal)s -o %(external)s -j ACCEPT''' %
+                           {'external' : env.rhosp_installer_management_interface,
+                            'internal' : env.rhosp_installer_pxe_interface}, shell=True)
+
 
     @staticmethod
     def run_command_on_remote_without_timeout(node, command):
-        if node.fuel_cluster_id:
+        if node.rhosp:
+            return Helper.run_command_on_remote_with_key_without_timeout(node.hostname,
+                node.user, command)
+        elif node.fuel_cluster_id:
             return Helper.run_command_on_remote_with_key_without_timeout(node.hostname,
                 node.user, command)
         else:
@@ -974,7 +1144,9 @@ class Helper(object):
 
     @staticmethod
     def run_command_on_remote(node, command):
-        if node.fuel_cluster_id:
+        if node.rhosp:
+            Helper.run_command_on_remote_with_key(node, command)
+        elif node.fuel_cluster_id:
             Helper.run_command_on_remote_with_key(node, command)
         else:
             Helper.run_command_on_remote_with_passwd(node, command)
@@ -982,7 +1154,9 @@ class Helper(object):
 
     @staticmethod
     def copy_file_from_remote(node, src_dir, src_file, dst_dir, mode=777):
-        if node.fuel_cluster_id:
+        if node.rhosp:
+            Helper.copy_file_from_remote_with_key(node, src_dir, src_file, dst_dir, mode)
+        elif node.fuel_cluster_id:
             Helper.copy_file_from_remote_with_key(node, src_dir, src_file, dst_dir, mode)
         else:
             Helper.copy_file_from_remote_with_passwd(node, src_dir, src_file, dst_dir, mode)
@@ -990,7 +1164,9 @@ class Helper(object):
 
     @staticmethod
     def copy_dir_to_remote(node, src_dir, dst_dir):
-        if node.fuel_cluster_id:
+        if node.rhosp:
+            Helper.copy_dir_to_remote_with_key(node, src_dir, dst_dir)
+        elif node.fuel_cluster_id:
             Helper.copy_dir_to_remote_with_key(node, src_dir, dst_dir)
         else:
             Helper.copy_dir_to_remote_with_passwd(node, src_dir, dst_dir)
@@ -998,7 +1174,9 @@ class Helper(object):
 
     @staticmethod
     def copy_file_to_remote(node, src_file, dst_dir, dst_file, mode=777):
-        if node.fuel_cluster_id:
+        if node.rhosp:
+            Helper.copy_file_to_remote_with_key(node, src_file, dst_dir, dst_file, mode)
+        elif node.fuel_cluster_id:
             Helper.copy_file_to_remote_with_key(node, src_file, dst_dir, dst_file, mode)
         else:
             Helper.copy_file_to_remote_with_passwd(node, src_file, dst_dir, dst_file, mode)
@@ -1039,7 +1217,8 @@ class Helper(object):
             sorted_count_dict = OrderedDict(sorted(count_dict.items(), key=lambda x: x[1]))
             active_dhcp_agents = []
             for id, count in sorted_count_dict.items():
-                active_dhcp_agents.append(agent_dict[id])
+                if count < 400:
+                    active_dhcp_agents.append(agent_dict[id])
             LOG.debug(_('After sorting dhcp agent subnets: %s'),
                       active_dhcp_agents)
             chosen_agents = active_dhcp_agents[:n_agents]
@@ -1076,7 +1255,7 @@ class Helper(object):
 
 
     @staticmethod
-    def copy_neutron_config_from_controllers(controller_nodes, deploy_mode):
+    def copy_neutron_config_from_controllers(controller_nodes):
         if len(controller_nodes) and controller_nodes[0]:
             controller_node = controller_nodes[0]
             Helper.safe_print("Copy dhcp_agent.ini from openstack controller %(controller_node)s\n" %
@@ -1087,12 +1266,6 @@ class Helper(object):
                              {'controller_node' : controller_node.hostname})
             Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'metadata_agent.ini',
                                          controller_node.setup_node_dir)
-            if deploy_mode == const.T5 :
-               # copy L3 Agent config as well
-               Helper.safe_print("Copy l3_agent.ini from openstack controller %(controller_node)s\n" %
-                                {'controller_node' : controller_node.hostname})
-               Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'l3_agent.ini',
-                                            controller_node.setup_node_dir)
 
         rabbit_hosts = sets.Set()
         rabbit_port = None
@@ -1177,6 +1350,17 @@ class Helper(object):
                     node.dst_dir,
                     node.ivs_debug_pkg)
 
+        if node.deploy_mode == const.T5 and node.role == const.ROLE_COMPUTE:
+            # copy send_lldp to t5 compute nodes
+            Helper.safe_print("Copy send_lldp to %(hostname)s\n" %
+                             {'hostname' : node.hostname})
+            Helper.copy_file_to_remote(node,
+                r'''%(setup_node_dir)s/%(deploy_mode)s/%(python_template_dir)s/send_lldp''' %
+                {'setup_node_dir'      : node.setup_node_dir,
+                 'deploy_mode'         : node.deploy_mode,
+                 'python_template_dir' : const.PYTHON_TEMPLATE_DIR},
+                 node.dst_dir, 'send_lldp')
+
         # copy bash script to node
         Helper.safe_print("Copy bash script to %(hostname)s\n" %
                          {'hostname' : node.hostname})
@@ -1193,14 +1377,14 @@ class Helper(object):
            node.dst_dir,
            "%(hostname)s.pp" % {'hostname' : node.hostname})
 
-        # copy selinux script to node
-        if node.os in const.RPM_OS_SET:
-            Helper.safe_print("Copy bsn selinux policy to %(hostname)s\n" %
-                             {'hostname' : node.hostname})
-            Helper.copy_file_to_remote(node,
-               node.selinux_script_path,
-               node.dst_dir,
-               "%(hostname)s.te" % {'hostname' : node.hostname})
+        # TODO: copy selinux script to node
+        #if node.os in const.RPM_OS_SET:
+        #    Helper.safe_print("Copy bsn selinux policy to %(hostname)s\n" %
+        #                     {'hostname' : node.hostname})
+        #    Helper.copy_file_to_remote(node,
+        #       node.selinux_script_path,
+        #       node.dst_dir,
+        #       "%(hostname)s.te" % {'hostname' : node.hostname})
 
         if node.role == const.ROLE_NEUTRON_SERVER:
             # copy ospurge script to node
@@ -1216,17 +1400,7 @@ class Helper(object):
                              {'hostname' : node.hostname})
             Helper.copy_file_to_remote(node,
                node.dhcp_reschedule_script_path,
-               '/bin', 'dhcp_reschedule.sh')
-
-            # copy send_lldp to controller nodes
-            Helper.safe_print("Copy send_lldp to %(hostname)s\n" %
-                             {'hostname' : node.hostname})
-            Helper.copy_file_to_remote(node,
-                r'''%(setup_node_dir)s/%(deploy_mode)s/%(python_template_dir)s/send_lldp''' %
-                {'setup_node_dir'      : node.setup_node_dir,
-                 'deploy_mode'         : node.deploy_mode,
-                 'python_template_dir' : const.PYTHON_TEMPLATE_DIR},
-                 '/bin', 'send_lldp')
+               node.dst_dir, 'dhcp_reschedule.sh')
 
             # patch dhcp scheduler for juno
             if node.openstack_release == 'juno':
@@ -1255,5 +1429,4 @@ class Helper(object):
                 (r'''%(src_dir)s/rootwrap''' %
                 {'src_dir' : node.setup_node_dir}),
                 node.dst_dir)
-
 

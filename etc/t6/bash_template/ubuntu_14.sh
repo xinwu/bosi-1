@@ -13,6 +13,11 @@ deploy_haproxy=%(deploy_haproxy)s
 
 
 controller() {
+
+    # copy dhcp_reschedule.sh to /bin
+    cp %(dst_dir)s/dhcp_reschedule.sh /bin/
+    chmod 777 /bin/dhcp_reschedule.sh
+
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
@@ -228,12 +233,8 @@ compute() {
         update-rc.d neutron-dhcp-agent defaults
     fi
 
-    echo 'Restart libvirtd and openstack-nova-compute'
-    service libvirt-bin restart
-    update-rc.d libvirt-bin defaults
+    echo 'Restart openstack-nova-compute and neutron-bsn-agent'
     service nova-compute restart
-    update-rc.d nova-compute defaults
-    # restart bsn-agent
     service neutron-bsn-agent restart
 }
 

@@ -16,6 +16,13 @@ controller_node_q = Queue.Queue()
 node_q = Queue.Queue()
 
 
+def chmod_node(node):
+    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /etc/neutron")
+    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.dst_dir)
+    Helper.run_command_on_remote_without_timeout(node, "sudo touch %s" % node.log)
+    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
+
+
 def worker_setup_node(q):
     while True:
         node = q.get()
@@ -27,12 +34,12 @@ def worker_setup_node(q):
                          {'hostname' : node.hostname})
         if node.cleanup and node.role == const.ROLE_NEUTRON_SERVER:
             Helper.run_command_on_remote(node,
-                (r'''/bin/bash %(dst_dir)s/%(hostname)s_ospurge.sh >> %(log)s 2>&1''' %
+                (r'''sudo bash %(dst_dir)s/%(hostname)s_ospurge.sh >> %(log)s 2>&1''' %
                 {'dst_dir'  : node.dst_dir,
                  'hostname' : node.hostname,
                  'log'      : node.log}))
         Helper.run_command_on_remote(node,
-            (r'''/bin/bash %(dst_dir)s/%(hostname)s.sh >> %(log)s 2>&1''' %
+            (r'''sudo bash %(dst_dir)s/%(hostname)s.sh >> %(log)s 2>&1''' %
             {'dst_dir'  : node.dst_dir,
              'hostname' : node.hostname,
              'log'      : node.log}))
@@ -41,10 +48,10 @@ def worker_setup_node(q):
         q.task_done()
 
 
-def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
+def deploy_bcf(config, fuel_cluster_id, rhosp, tag, cleanup):
     # Deploy setup node
     Helper.safe_print("Start to prepare setup node\n")
-    env = Environment(config, fuel_cluster_id, tag, cleanup)
+    env = Environment(config, fuel_cluster_id, rhosp, tag, cleanup)
     Helper.common_setup_node_preparation(env)
     controller_nodes = []
 
@@ -61,6 +68,8 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
             Helper.generate_scripts_for_centos(node)
         elif node.os == const.UBUNTU:
             Helper.generate_scripts_for_ubuntu(node)
+        elif node.os == const.REDHAT:
+            Helper.generate_scripts_for_redhat(node)
 
         if node.skip:
             Helper.safe_print("skip node %(hostname)s due to %(error)s\n" %
@@ -78,6 +87,8 @@ def deploy_bcf(config, fuel_cluster_id, tag, cleanup):
         else:
             node_q.put(node)
 
+        if node.rhosp:
+            chmod_node(node)
 
     # copy neutron config from neutron server to setup node
     Helper.copy_neutron_config_from_controllers(controller_nodes, env.deploy_mode)
@@ -118,14 +129,19 @@ def main():
                         help="BCF YAML configuration file")
     parser.add_argument('-f', "--fuel-cluster-id", required=False,
                         help="Fuel cluster ID. Fuel settings may override YAML configuration. Please refer to config.yaml")
+    parser.add_argument('-r', "--rhosp", action='store_true', default=False,
+                        help="red hat openstack director is the installer.")
     parser.add_argument('-t', "--tag", required=False,
                         help="Deploy to tagged nodes only.")
     parser.add_argument('--cleanup', action='store_true', default=False,
                         help="Clean up existing routers, networks and projects.")
     args = parser.parse_args()
+    if args.fuel_cluster_id and args.rhosp:
+        Helper.safe_print("Cannot have both fuel and rhosp as openstack installer")
+        return
     with open(args.config_file, 'r') as config_file:
         config = yaml.load(config_file)
-    deploy_bcf(config, args.fuel_cluster_id, args.tag, args.cleanup)
+    deploy_bcf(config, args.fuel_cluster_id, args.rhosp, args.tag, args.cleanup)
 
 
 if __name__=='__main__':

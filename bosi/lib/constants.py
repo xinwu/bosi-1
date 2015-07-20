@@ -23,9 +23,11 @@ OS_RELEASE_TO_BSN_LIB = { 'juno' : '2015.1',
 DEPLOY_HORIZON_PATCH = True
 HORIZON_PATCH_URL = {
     'juno' : 'https://github.com/bigswitch/horizon/archive/juno-bcf-3.0-beta1.tar.gz',
+    'kilo' : 'https://github.com/bigswitch/horizon/archive/master.tar.gz',
 }
 HORIZON_PATCH_DIR = {
     'juno' : 'horizon-juno-bcf-3.0-beta1',
+    'kilo' : 'horizon-master',
 }
 HORIZON_BASE_DIR = '/usr/share/openstack-dashboard'
 
@@ -49,9 +51,11 @@ CENTOS          = 'centos'
 CENTOS_VERSIONS = ['7']
 UBUNTU          = 'ubuntu'
 UBUNTU_VERSIONS = ['14']
+REDHAT          = 'redhat'
+REDHAT_VERSIONS = ['7']
 
 # OSes that uses rpm or deb packages
-RPM_OS_SET = [CENTOS]
+RPM_OS_SET = [CENTOS, REDHAT]
 DEB_OS_SET = [UBUNTU]
 
 # regular expressions
@@ -63,9 +67,11 @@ SELINUX_CONFIG_PATH             = '/etc/selinux/config'
 
 
 # openrc
-FUEL_OPENRC            = '/root/openrc'
-PACKSTACK_OPENRC       = '/root/keystonerc_admin'
-MANUAL_OPENRC          = '/root/admin-openrc.sh'
+FUEL_OPENRC             = '/root/openrc'
+PACKSTACK_OPENRC        = '/root/keystonerc_admin'
+MANUAL_OPENRC           = '/root/admin-openrc.sh'
+RHOSP_UNDERCLOUD_OPENRC = '/home/stack/stackrc'
+RHOSP_OVERCLOUD_OPENRC  = '/home/stack/overcloudrc'
 
 # fuel constants
 NONE_IP                = 'none'

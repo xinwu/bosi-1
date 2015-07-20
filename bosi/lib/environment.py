@@ -6,9 +6,12 @@ from helper import Helper
 from rest import RestLib
 
 class Environment(object):
-    def __init__(self, config, fuel_cluster_id, tag, cleanup):
+    def __init__(self, config, fuel_cluster_id, rhosp, tag, cleanup):
         # fuel cluster id
         self.fuel_cluster_id = fuel_cluster_id
+
+        # rhosp as installer
+        self.rhosp = rhosp
 
         # tag, only deploy nodes with this tag
         self.tag = tag
@@ -19,6 +22,9 @@ class Environment(object):
         # neutron_id for ml2 plugin restproxy
         self.neutron_id = config.get('neutron_id')
 
+        # installer pxe interface ip
+        self.installer_pxe_interface_ip = config.get('installer_pxe_interface_ip')
+
         # flags for upgrade
         self.install_ivs = config.get('default_install_ivs')
         self.install_bsnstacklib = config.get('default_install_bsnstacklib')
@@ -26,6 +32,9 @@ class Environment(object):
 
         # flags for dhcp and metadata agent
         self.deploy_dhcp_agent = config.get('default_deploy_dhcp_agent')
+
+        # flags for l3 agent
+        self.deploy_l3_agent = config.get('default_deploy_l3_agent')
 
         # flags for haproxy
         self.deploy_haproxy = config.get('default_deploy_haproxy')
@@ -85,20 +94,21 @@ class Environment(object):
         # ivs pkg and debug pkg
         self.ivs_pkg_map = {}
         self.ivs_url_map = {}
-        for ivs_url in config['ivs_packages']:
-            ivs_pkg = os.path.basename(ivs_url)
-            if '.rpm' in ivs_pkg and 'debuginfo' not in ivs_pkg:
-                self.ivs_url_map['rpm'] = ivs_url
-                self.ivs_pkg_map['rpm'] = ivs_pkg
-            elif '.rpm' in ivs_pkg and 'debuginfo' in ivs_pkg:
-                self.ivs_url_map['debug_rpm'] = ivs_url
-                self.ivs_pkg_map['debug_rpm'] = ivs_pkg
-            elif '.deb' in ivs_pkg and 'dbg' not in ivs_pkg:
-                self.ivs_url_map['deb'] = ivs_url
-                self.ivs_pkg_map['deb'] = ivs_pkg
-            elif '.deb' in ivs_pkg and 'dbg' in ivs_pkg:
-                self.ivs_url_map['debug_deb'] = ivs_url
-                self.ivs_pkg_map['debug_deb'] = ivs_pkg
+        if config['ivs_packages']:
+            for ivs_url in config['ivs_packages']:
+                ivs_pkg = os.path.basename(ivs_url)
+                if '.rpm' in ivs_pkg and 'debuginfo' not in ivs_pkg:
+                    self.ivs_url_map['rpm'] = ivs_url
+                    self.ivs_pkg_map['rpm'] = ivs_pkg
+                elif '.rpm' in ivs_pkg and 'debuginfo' in ivs_pkg:
+                    self.ivs_url_map['debug_rpm'] = ivs_url
+                    self.ivs_pkg_map['debug_rpm'] = ivs_pkg
+                elif '.deb' in ivs_pkg and 'dbg' not in ivs_pkg:
+                    self.ivs_url_map['deb'] = ivs_url
+                    self.ivs_pkg_map['deb'] = ivs_pkg
+                elif '.deb' in ivs_pkg and 'dbg' in ivs_pkg:
+                    self.ivs_url_map['debug_deb'] = ivs_url
+                    self.ivs_pkg_map['debug_deb'] = ivs_pkg
 
         # information will be passed on to nodes
         self.skip = False
@@ -128,6 +138,16 @@ class Environment(object):
                 self.bcf_controller_user, self.bcf_controller_passwd)
             if (not self.bcf_master) or (not self.bcf_cookie):
                 raise Exception("Failed to connect to master BCF controller, quit setup.")
+
+        # RHOSP 7 related config
+        self.rhosp_automate_register = False
+        if 'rhosp_automate_register' in config:
+            self.rhosp_automate_register = config['rhosp_automate_register']
+        self.rhosp_installer_management_interface = config.get('rhosp_installer_management_interface')
+        self.rhosp_installer_pxe_interface = config.get('rhosp_installer_pxe_interface')
+        self.rhosp_undercloud_dns = config.get('rhosp_undercloud_dns')
+        self.rhosp_register_username = config.get('rhosp_register_username')
+        self.rhosp_register_passwd = config.get('rhosp_register_passwd')
 
 
     def set_physnet(self, physnet):
