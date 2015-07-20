@@ -4,6 +4,15 @@ $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 # comment out heat domain related configurations
 $heat_config = file('/etc/heat/heat.conf','/dev/null')
 if($heat_config != '') {
+    ini_setting { "heat debug":
+        ensure            => present,
+        path              => '/etc/heat/heat.conf',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'debug',
+        value             => 'True',
+        notify            => Service['openstack-heat-engine'],
+    }
     ini_setting { "heat stack_domain_admin_password":
         ensure            => absent,
         path              => '/etc/heat/heat.conf',
@@ -155,6 +164,7 @@ ini_setting { "neutron.conf debug":
   key_val_separator => '=',
   setting           => 'debug',
   value             => 'True',
+  notify            => Service['neutron-server'],
 }
 ini_setting { "neutron.conf report_interval":
   ensure            => present,
@@ -163,6 +173,7 @@ ini_setting { "neutron.conf report_interval":
   key_val_separator => '=',
   setting           => 'report_interval',
   value             => '60',
+  notify            => Service['neutron-server'],
 }
 ini_setting { "neutron.conf agent_down_time":
   ensure            => present,
@@ -171,6 +182,7 @@ ini_setting { "neutron.conf agent_down_time":
   key_val_separator => '=',
   setting           => 'agent_down_time',
   value             => '150',
+  notify            => Service['neutron-server'],
 }
 ini_setting { "neutron.conf service_plugins":
   ensure            => present,

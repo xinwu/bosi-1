@@ -125,6 +125,7 @@ ini_setting { "neutron.conf debug":
   key_val_separator => '=',
   setting           => 'debug',
   value             => 'True',
+  notify            => Service['neutron-server'],
 }
 ini_setting { "neutron.conf report_interval":
   ensure            => present,
@@ -133,6 +134,7 @@ ini_setting { "neutron.conf report_interval":
   key_val_separator => '=',
   setting           => 'report_interval',
   value             => '60',
+  notify            => Service['neutron-server'],
 }
 ini_setting { "neutron.conf agent_down_time":
   ensure            => present,
@@ -141,6 +143,7 @@ ini_setting { "neutron.conf agent_down_time":
   key_val_separator => '=',
   setting           => 'agent_down_time',
   value             => '150',
+  notify            => Service['neutron-server'],
 }
 ini_setting { "neutron.conf service_plugins":
   ensure            => present,
@@ -345,10 +348,20 @@ file { '/etc/neutron/plugins/ml2':
 }
 
 # heat-engine, neutron-server, neutron-dhcp-agent and neutron-metadata-agent
+ini_setting { "heat debug":
+    ensure            => present,
+    path              => '/etc/heat/heat.conf',
+    section           => 'DEFAULT',
+    key_val_separator => '=',
+    setting           => 'debug',
+    value             => 'True',
+    notify            => Service['heat-engine'],
+}
 service { 'heat-engine':
   ensure  => running,
   enable  => true,
 }
+
 service { 'neutron-server':
   ensure  => running,
   enable  => true,
