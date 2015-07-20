@@ -65,7 +65,7 @@ class Helper(object):
         try:
             p = subprocess.Popen(
                 command, shell=True, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, close_fds=True, bufsize=1)
+                stderr=subprocess.PIPE)
         except Exception as e:
             msg = "Error opening process %s: %s\n" % (command, e)
             Helper.safe_print(msg)
@@ -1011,6 +1011,10 @@ class Helper(object):
                         'generated_script' : const.GENERATED_SCRIPT_DIR}, shell=True)
         subprocess.call("rm -rf ~/.ssh/known_hosts", shell=True)
         subprocess.call("rm -rf %(log)s" %
+                       {'log' : const.LOG_FILE}, shell=True)
+        subprocess.call("touch %(log)s" %
+                       {'log' : const.LOG_FILE}, shell=True)
+        subprocess.call("chmod 777 %(log)s" %
                        {'log' : const.LOG_FILE}, shell=True)
         subprocess.call("rm -rf %(setup_node_dir)s/*ivs*.rpm" %
                        {'setup_node_dir' : setup_node_dir}, shell=True)
