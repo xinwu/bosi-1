@@ -1160,7 +1160,8 @@ class Helper(object):
             sorted_count_dict = OrderedDict(sorted(count_dict.items(), key=lambda x: x[1]))
             active_dhcp_agents = []
             for id, count in sorted_count_dict.items():
-                active_dhcp_agents.append(agent_dict[id])
+                if count < 400:
+                    active_dhcp_agents.append(agent_dict[id])
             LOG.debug(_('After sorting dhcp agent subnets: %s'),
                       active_dhcp_agents)
             chosen_agents = active_dhcp_agents[:n_agents]
