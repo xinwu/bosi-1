@@ -88,6 +88,12 @@ controller() {
 }
 
 compute() {
+    # update bond mode to balance-xor
+    ifdown %(bond)s
+    sed -n 's/bond-mode.*/bond-mode balance-xor/' /etc/network/interfaces.d/ifcfg-%(bond)s
+    # ifup bond0 doesn't bring up slave interfaces. ifup -a applies to all auto interfaces
+    ifup -a
+
     # patch linux/dhcp.py to make sure static host route is pushed to instances
     apt-get install -o Dpkg::Options::="--force-confold" -y neutron-metadata-agent
     apt-get install -o Dpkg::Options::="--force-confold" -y neutron-dhcp-agent
