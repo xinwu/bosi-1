@@ -13,14 +13,14 @@ openstack_release=%(openstack_release)s
 deploy_haproxy=%(deploy_haproxy)s
 default_gw=%(default_gw)s
 
-rhosp_automate_register=%(rhosp_automate_register)
-rhosp_undercloud_dns=%(rhosp_undercloud_dns)
-rhosp_register_username=%(rhosp_register_username)
-rhosp_register_passwd=%(rhosp_register_passwd)
+rhosp_automate_register=%(rhosp_automate_register)s
+rhosp_undercloud_dns=%(rhosp_undercloud_dns)s
+rhosp_register_username=%(rhosp_register_username)s
+rhosp_register_passwd=%(rhosp_register_passwd)s
 
 
 controller() {
-    echo 'Stop and disable metadata agent, dhcp agent, l3 agent'
+    echo "Stop and disable metadata agent, dhcp agent, l3 agent"
     sudo pcs resource disable neutron-metadata-agent-clone
     sudo pcs resource disable neutron-metadata-agent
     sudo pcs resource delete neutron-metadata-agent-clone
@@ -49,7 +49,7 @@ controller() {
     sudo systemctl restart openstack-keystone
     sudo systemctl restart httpd
 
-    echo 'Restart neutron-server'
+    echo "Restart neutron-server"
     sudo rm -rf /etc/neutron/plugins/ml2/host_certs/*
     sudo systemctl restart neutron-server
 }
