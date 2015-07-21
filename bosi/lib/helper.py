@@ -1353,7 +1353,7 @@ class Helper(object):
                              {'hostname' : node.hostname})
             Helper.copy_file_to_remote(node,
                node.dhcp_reschedule_script_path,
-               '/bin', 'dhcp_reschedule.sh')
+               node.dst_dir, 'dhcp_reschedule.sh')
 
             # patch dhcp scheduler for juno
             if node.openstack_release == 'juno':

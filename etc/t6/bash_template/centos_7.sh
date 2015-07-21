@@ -24,6 +24,10 @@ controller() {
     systemctl stop neutron-bsn-agent
     systemctl disable neutron-bsn-agent
 
+    # copy dhcp_reschedule.sh to /bin
+    cp %(dst_dir)s/dhcp_reschedule.sh /bin/
+    chmod 777 /bin/dhcp_reschedule.sh
+
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
