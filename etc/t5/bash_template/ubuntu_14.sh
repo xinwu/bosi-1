@@ -16,12 +16,12 @@ controller() {
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
-    echo 'Stop and disable neutron-metadata-agent and neutron-dhcp-agent'
+    echo 'Stop and disable neutron-metadata-agent, neutron-dhcp-agent and neutron-l3-agent'
     if [[ ${fuel_cluster_id} != 'None' ]]; then
         crm resource stop p_neutron-dhcp-agent
         crm resource stop p_neutron-metadata-agent
         crm resource stop p_neutron-l3-agent
-        sleep 10
+        sleep 15
         crm configure delete p_neutron-dhcp-agent
         crm configure delete p_neutron-metadata-agent
         crm configure delete p_neutron-l3-agent
@@ -32,8 +32,6 @@ controller() {
     update-rc.d neutron-dhcp-agent disable
     service neutron-l3-agent stop
     update-rc.d neutron-l3-agent disable
-    service neutron-bsn-agent stop
-    update-rc.d neutron-bsn-agent disable
     
 
     if [[ $deploy_horizon_patch == true ]]; then
@@ -41,8 +39,6 @@ controller() {
         sed -i 's/'"'"'enable_lb'"'"': False/'"'"'enable_lb'"'"': True/g' %(horizon_base_dir)s/openstack_dashboard/local/local_settings.py
 
         # chmod neutron config since bigswitch horizon patch reads neutron config as well
-        chmod -R a+r /usr/share/neutron
-        chmod -R a+x /usr/share/neutron
         chmod -R a+r /etc/neutron
         chmod -R a+x /etc/neutron
 
