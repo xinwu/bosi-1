@@ -56,8 +56,8 @@ controller() {
                     yes | cp -rfp %(dst_dir)s/%(horizon_patch_dir)s/$f/* %(horizon_base_dir)s/$f
                 fi
             done
-            find "%(horizon_base_dir)s" -name "*.pyc" | xargs rm
-            find "%(horizon_base_dir)s" -name "*.pyo" | xargs rm
+            find "%(horizon_base_dir)s" -name "*.pyc" | xargs -0 /bin/rm -f
+            find "%(horizon_base_dir)s" -name "*.pyo" | xargs -0 /bin/rm -f
 
             # patch neutron api.py to work around oslo bug
             # https://bugs.launchpad.net/oslo-incubator/+bug/1328247
