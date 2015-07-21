@@ -731,8 +731,15 @@ class Helper(object):
                 node_config['bond'] = member['name']
                 break
 
-        # TODO parse other vlans
-        # TODO get ivs version
+        # get ovs uplinks
+        uplink_cmd = (r'''sudo ovs-appctl bond/list | grep -v slaves | grep %(bond)s''' %
+                     {'bond' : node_config['bond']})
+        output, error = Helper.run_command_on_remote_without_timeout(node, uplink_cmd)
+        if output and not error:
+            node_config['uplink_interfaces'] = output.replace(',', ' ').split()[3:]
+
+        # TODO parse other vlans and bridges
+        # TODO get ivs version for t6
         node = Node(node_config, env)
         return node
 
