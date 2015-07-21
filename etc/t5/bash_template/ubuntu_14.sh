@@ -114,6 +114,9 @@ compute() {
     find $dhcp_dir -name "*.pyc" | xargs rm
     find $dhcp_dir -name "*.pyo" | xargs rm
 
+    # deploy bcf
+    puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
+
     if [[ $deploy_dhcp_agent == true ]]; then
         echo 'Restart neutron-metadata-agent and neutron-dhcp-agent'
         service neutron-metadata-agent restart
