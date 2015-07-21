@@ -1266,11 +1266,11 @@ class Helper(object):
                              {'controller_node' : controller_node.hostname})
             Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'metadata_agent.ini',
                                          controller_node.setup_node_dir)
-            if controller_node.deploy_mode == const.T5 :
-              Helper.safe_print("Copy l3_agent.ini from openstack controller %(controller_node)s\n" %
-                              {'controller_node' : controller_node.hostname})
-              Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'l3_agent.ini',
-                                           controller_node.setup_node_dir)
+            if controller_node.deploy_mode == const.T5:
+                Helper.safe_print("Copy l3_agent.ini from openstack controller %(controller_node)s\n" %
+                                 {'controller_node' : controller_node.hostname})
+                Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'l3_agent.ini',
+                                             controller_node.setup_node_dir)
 
         rabbit_hosts = sets.Set()
         rabbit_port = None
