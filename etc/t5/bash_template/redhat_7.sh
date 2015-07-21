@@ -79,7 +79,7 @@ compute() {
     # full installation
     if [[ $install_all == true ]]; then
         # copy send_lldp to /bin
-        sudo cp %(dst_dir)/send_lldp /bin/
+        sudo cp %(dst_dir)s/send_lldp /bin/
         sudo chmod 777 /bin/send_lldp
 
         # deploy bcf
