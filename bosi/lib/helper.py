@@ -1009,6 +1009,8 @@ class Helper(object):
         subprocess.call("mkdir -p %(setup_node_dir)s/%(generated_script)s" %
                        {'setup_node_dir'   : setup_node_dir,
                         'generated_script' : const.GENERATED_SCRIPT_DIR}, shell=True)
+        subprocess.call("sudo chmod -R 777 %(setup_node_dir)s" %
+                       {'setup_node_dir'   : setup_node_dir}, shell=True)
         subprocess.call("rm -rf ~/.ssh/known_hosts", shell=True)
         subprocess.call("rm -rf %(log)s" %
                        {'log' : const.LOG_FILE}, shell=True)
