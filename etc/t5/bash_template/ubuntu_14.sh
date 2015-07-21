@@ -4,6 +4,7 @@ install_bsnstacklib=%(install_bsnstacklib)s
 install_ivs=%(install_ivs)s
 install_all=%(install_all)s
 deploy_dhcp_agent=%(deploy_dhcp_agent)s
+deploy_l3_agent=%(deploy_l3_agent)s
 ivs_version=%(ivs_version)s
 is_controller=%(is_controller)s
 deploy_horizon_patch=%(deploy_horizon_patch)s
