@@ -90,9 +90,13 @@ controller() {
 compute() {
     # update bond mode to balance-xor
     ifdown %(bond)s
-    sed -n 's/bond-mode.*/bond-mode balance-xor/' /etc/network/interfaces.d/ifcfg-%(bond)s
+    sed -i 's/bond-mode.*/bond-mode balance-xor/' /etc/network/interfaces.d/ifcfg-%(bond)s
     # ifup bond0 doesn't bring up slave interfaces. ifup -a applies to all auto interfaces
     ifup -a
+
+    # copy send_lldp to /bin
+    sudo cp %(dst_dir)s/send_lldp /bin/
+    sudo chmod 777 /bin/send_lldp
 
     # patch linux/dhcp.py to make sure static host route is pushed to instances
     apt-get install -o Dpkg::Options::="--force-confold" -y neutron-metadata-agent
@@ -123,12 +127,6 @@ compute() {
         service neutron-l3-agent restart
         update-rc.d neutron-l3-agent defaults
     fi
-
-    echo 'Restart libvirtd and openstack-nova-compute'
-    service libvirt-bin restart
-    update-rc.d libvirt-bin defaults
-    service nova-compute restart
-    update-rc.d nova-compute defaults
 }
 
 

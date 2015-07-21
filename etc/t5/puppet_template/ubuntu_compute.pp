@@ -24,23 +24,6 @@ service { "send_lldp":
     require => [File['/bin/send_lldp'], File['/etc/init/send_lldp.conf']],
 }
 
-
-# load 8021q module on boot
-package { 'vlan':
-    ensure  => latest,
-}
-file_line {'load 8021q on boot':
-    path    => '/etc/modules',
-    line    => '8021q',
-    match   => '^8021q$',
-    require => Package['vlan'],
-}
-exec { "load 8021q":
-    command => "modprobe 8021q",
-    path    => $binpath,
-    require => Package['vlan'],
-}
-
 # config /etc/neutron/neutron.conf
 ini_setting { "neutron.conf report_interval":
   ensure            => present,
@@ -82,13 +65,6 @@ ini_setting { "neutron.conf notification driver":
   setting           => 'notification_driver',
   value             => 'messaging',
 }
-ini_setting { "ensure absent of neutron.conf service providers":
-  ensure            => absent,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'service_providers',
-  key_val_separator => '=',
-  setting           => 'service_provider',
-}
 
 # make sure neutron-bsn-agent is stopped
 service {'neutron-bsn-agent':
@@ -115,7 +91,7 @@ if %(deploy_l3_agent)s {
       section           => 'DEFAULT',
       key_val_separator => '=',
       setting           => 'enable_metadata_proxy',
-      value             => 'True',
+      value             => 'False',
     }
 }
 
@@ -132,7 +108,7 @@ if %(deploy_dhcp_agent)s {
         section           => 'DEFAULT',
         key_val_separator => '=',
         setting           => 'interface_driver',
-        value             => 'neutron.agent.linux.interface.IVSInterfaceDriver',
+        value             => 'neutron.agent.linux.interface.OVSInterfaceDriver',
     }
     ini_setting { "dhcp agent dhcp driver":
         ensure            => present,

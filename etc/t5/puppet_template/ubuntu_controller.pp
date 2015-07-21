@@ -87,17 +87,6 @@ file_line { "reserve keystone port":
     match => '^net.ipv4.ip_local_reserved_ports.*$',
 }
 
-# load 8021q module on boot
-package { 'vlan':
-    ensure  => latest,
-}
-file_line {'load 8021q on boot':
-    path    => '/etc/modules',
-    line    => '8021q',
-    match   => '^8021q$',
-    require => Package['vlan'],
-}
-
 # load bonding module
 file_line {'load bonding on boot':
     path    => '/etc/modules',
