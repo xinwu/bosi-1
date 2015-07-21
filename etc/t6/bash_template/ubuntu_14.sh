@@ -233,12 +233,8 @@ compute() {
         update-rc.d neutron-dhcp-agent defaults
     fi
 
-    echo 'Restart libvirtd and openstack-nova-compute'
-    service libvirt-bin restart
-    update-rc.d libvirt-bin defaults
+    echo 'Restart openstack-nova-compute and neutron-bsn-agent'
     service nova-compute restart
-    update-rc.d nova-compute defaults
-    # restart bsn-agent
     service neutron-bsn-agent restart
 }
 
