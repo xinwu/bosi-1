@@ -24,6 +24,7 @@ class Node(object):
         self.install_bsnstacklib   = node_config['install_bsnstacklib']
         self.install_all           = node_config['install_all']
         self.deploy_dhcp_agent     = node_config['deploy_dhcp_agent']
+        self.deploy_l3_agent       = node_config['deploy_l3_agent']
         self.bridges               = node_config.get('bridges')
         self.br_bond               = node_config.get('br_bond')
         self.bond                  = node_config.get('bond')
@@ -233,7 +234,7 @@ class Node(object):
 
     def get_all_bonds(self):
         bonds = []
-        if self.bond:
+        if self.bond and self.bridges:
             for br in self.bridges:
                 if (br.br_vlan) and (':' not in str(br.br_vlan)):
                     bonds.append(r'''%(bond)s.%(vlan)s''' %
@@ -283,6 +284,7 @@ install_ivs            : %(install_ivs)s,
 install_bsnstacklib    : %(install_bsnstacklib)s,
 install_all            : %(install_all)s,
 deploy_dhcp_agent      : %(deploy_dhcp_agent)s,
+deploy_l3_agent        : %(deploy_l3_agent)s,
 bridges                : %(bridges)s,
 br_bond                : %(br_bond)s,
 bond                   : %(bond)s,
@@ -352,6 +354,7 @@ error                  : %(error)s,
 'install_bsnstacklib'   : self.install_bsnstacklib,
 'install_all'           : self.install_all,
 'deploy_dhcp_agent'     : self.deploy_dhcp_agent,
+'deploy_l3_agent'       : self.deploy_l3_agent,
 'bridges'               : str(self.bridges),
 'br_bond'               : self.br_bond,
 'bond'                  : self.bond,

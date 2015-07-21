@@ -33,6 +33,9 @@ class Environment(object):
         # flags for dhcp and metadata agent
         self.deploy_dhcp_agent = config.get('default_deploy_dhcp_agent')
 
+        # flags for l3 agent
+        self.deploy_l3_agent = config.get('default_deploy_l3_agent')
+
         # flags for haproxy
         self.deploy_haproxy = config.get('default_deploy_haproxy')
 
@@ -141,10 +144,10 @@ class Environment(object):
         if 'rhosp_automate_register' in config:
             self.rhosp_automate_register = config['rhosp_automate_register']
         self.rhosp_installer_management_interface = config.get('rhosp_installer_management_interface')
-        self.rhosp_installer_pxe_interface = config['rhosp_installer_pxe_interface']
-        self.rhosp_undercloud_dns = config['rhosp_undercloud_dns']
-        self.rhosp_register_username = config['rhosp_register_username']
-        self.rhosp_register_passwd = config['rhosp_register_passwd']
+        self.rhosp_installer_pxe_interface = config.get('rhosp_installer_pxe_interface')
+        self.rhosp_undercloud_dns = config.get('rhosp_undercloud_dns')
+        self.rhosp_register_username = config.get('rhosp_register_username')
+        self.rhosp_register_passwd = config.get('rhosp_register_passwd')
 
 
     def set_physnet(self, physnet):
