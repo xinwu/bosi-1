@@ -56,19 +56,19 @@ controller() {
 
 compute() {
 
-    systemctl stop neutron-l3-agent
-    systemctl disable neutron-l3-agent
-    systemctl stop neutron-dhcp-agent
-    systemctl disable neutron-dhcp-agent
-    systemctl stop neutron-metadata-agent
-    systemctl disable neutron-metadata-agent
+    sudo systemctl stop neutron-l3-agent
+    sudo systemctl disable neutron-l3-agent
+    sudo systemctl stop neutron-dhcp-agent
+    sudo systemctl disable neutron-dhcp-agent
+    sudo systemctl stop neutron-metadata-agent
+    sudo systemctl disable neutron-metadata-agent
 
     # patch linux/dhcp.py to make sure static host route is pushed to instances
-    adhcp_py=$(find /usr -name dhcp.py | grep linux)
+    adhcp_py=$(sudo find /usr -name dhcp.py | grep linux)
     dhcp_dir=$(dirname "${dhcp_py}")
-    sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
-    find $dhcp_dir -name "*.pyc" | xargs rm
-    find $dhcp_dir -name "*.pyo" | xargs rm
+    sudo sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
+    sudo find $dhcp_dir -name "*.pyc" | xargs rm
+    sudo find $dhcp_dir -name "*.pyo" | xargs rm
 
     if [[ $deploy_haproxy == true ]]; then
         sudo groupadd nogroup
@@ -78,6 +78,10 @@ compute() {
 
     # full installation
     if [[ $install_all == true ]]; then
+        # copy send_lldp to /bin
+        sudo cp %(dst_dir)/send_lldp /bin
+        sudo chmod 777 /bin/send_lldp
+
         # deploy bcf
         sudo puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 

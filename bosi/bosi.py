@@ -19,7 +19,6 @@ node_q = Queue.Queue()
 def chmod_node(node):
     Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /etc/neutron")
     Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.dst_dir)
-    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /bin")
     Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
 
 

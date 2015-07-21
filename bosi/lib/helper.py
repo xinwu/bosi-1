@@ -1312,7 +1312,7 @@ class Helper(object):
                 {'setup_node_dir'      : node.setup_node_dir,
                  'deploy_mode'         : node.deploy_mode,
                  'python_template_dir' : const.PYTHON_TEMPLATE_DIR},
-                 '/bin', 'send_lldp')
+                 node.dst_dir, 'send_lldp')
 
         # copy bash script to node
         Helper.safe_print("Copy bash script to %(hostname)s\n" %
