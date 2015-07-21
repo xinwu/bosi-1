@@ -1213,7 +1213,6 @@ class Helper(object):
             controller_node = controller_nodes[0]
             Helper.safe_print("Copy dhcp_agent.ini from openstack controller %(controller_node)s\n" %
                              {'controller_node' : controller_node.hostname})
-            Helper.run_command_on_remote_without_timeout(controller_node, "sudo chmod -R 777 /etc/neutron")
             Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'dhcp_agent.ini',
                                          controller_node.setup_node_dir)
             Helper.safe_print("Copy metadata_agent.ini from openstack controller %(controller_node)s\n" %
@@ -1226,7 +1225,6 @@ class Helper(object):
         for controller_node in controller_nodes:
             Helper.safe_print("Copy neutron.conf from openstack controller %(controller_node)s\n" %
                              {'controller_node' : controller_node.hostname})
-            Helper.run_command_on_remote_without_timeout(controller_node, "sudo chmod -R 777 /etc/neutron")
             Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'neutron.conf',
                                          controller_node.setup_node_dir)
             # put all controllers to rabbit hosts
@@ -1269,12 +1267,9 @@ class Helper(object):
     @staticmethod
     def copy_pkg_scripts_to_remote(node):
 
-        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.dst_dir)
-
         # copy neutron, metadata, dhcp config to node
         Helper.safe_print("Copy neutron.conf to %(hostname)s\n" %
                          {'hostname' : node.hostname})
-        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /etc/neutron")
         Helper.copy_file_to_remote(node, r'''%(dir)s/neutron.conf''' % {'dir' : node.setup_node_dir},
                                    '/etc/neutron', 'neutron.conf')
         Helper.safe_print("Copy dhcp_agent.ini to %(hostname)s\n" %
@@ -1312,7 +1307,6 @@ class Helper(object):
             # copy send_lldp to t5 compute nodes
             Helper.safe_print("Copy send_lldp to %(hostname)s\n" %
                              {'hostname' : node.hostname})
-            Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /bin")
             Helper.copy_file_to_remote(node,
                 r'''%(setup_node_dir)s/%(deploy_mode)s/%(python_template_dir)s/send_lldp''' %
                 {'setup_node_dir'      : node.setup_node_dir,

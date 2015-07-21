@@ -16,6 +16,13 @@ controller_node_q = Queue.Queue()
 node_q = Queue.Queue()
 
 
+def chmod_node(node):
+    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /etc/neutron")
+    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.dst_dir)
+    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /bin")
+    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
+
+
 def worker_setup_node(q):
     while True:
         node = q.get()
@@ -80,6 +87,8 @@ def deploy_bcf(config, fuel_cluster_id, rhosp, tag, cleanup):
         else:
             node_q.put(node)
 
+        if node.rhosp:
+            chmod_node(node)
 
     # copy neutron config from neutron server to setup node
     Helper.copy_neutron_config_from_controllers(controller_nodes)

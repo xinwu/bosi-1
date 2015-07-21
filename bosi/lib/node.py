@@ -1,6 +1,7 @@
 import re
 import constants as const
 
+
 class Node(object):
     def __init__(self, node_config, env):
         self.dst_dir                     = const.DST_DIR
@@ -259,7 +260,7 @@ class Node(object):
         if self.fuel_cluster_id:
             return "neutron-%s" % str(self.fuel_cluster_id)
         return self.neutron_id
-        
+
 
     def __str__(self):
         return (r'''
