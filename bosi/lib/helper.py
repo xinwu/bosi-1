@@ -156,7 +156,7 @@ class Helper(object):
                    'dst_file'   : dst_file
                   })
         Helper.run_command_on_local(scp_cmd)
-        chmod_cmd = (r'''chmod -R %(mode)d %(dst_dir)s/%(dst_file)s''' %
+        chmod_cmd = (r'''sudo chmod -R %(mode)d %(dst_dir)s/%(dst_file)s''' %
                     {'mode'     : mode,
                      'dst_dir'  : dst_dir,
                      'dst_file' : dst_file
@@ -183,7 +183,7 @@ class Helper(object):
                    'src_file'   : src_file
                   })
         Helper.run_command_on_local(scp_cmd)
-        chmod_cmd = (r'''chmod -R %(mode)d %(dst_dir)s/%(src_file)s''' %
+        chmod_cmd = (r'''sudo chmod -R %(mode)d %(dst_dir)s/%(src_file)s''' %
                     {'mode'     : mode,
                      'dst_dir'  : dst_dir,
                      'src_file' : src_file
@@ -237,7 +237,7 @@ class Helper(object):
                    'user'       : node.user,
                   })
         Helper.run_command_on_local(scp_cmd)
-        chmod_cmd = (r'''chmod -R %(mode)d %(dst_dir)s/%(dst_file)s''' %
+        chmod_cmd = (r'''sudo chmod -R %(mode)d %(dst_dir)s/%(dst_file)s''' %
                     {'mode'     : mode,
                      'dst_dir'  : dst_dir,
                      'dst_file' : dst_file
@@ -263,7 +263,7 @@ class Helper(object):
                    'user'       : node.user,
                   })
         Helper.run_command_on_local(scp_cmd)
-        chmod_cmd = (r'''chmod -R %(mode)d %(dst_dir)s/%(src_file)s''' %
+        chmod_cmd = (r'''sudo chmod -R %(mode)d %(dst_dir)s/%(src_file)s''' %
                     {'mode'     : mode,
                      'dst_dir'  : dst_dir,
                      'src_file' : src_file

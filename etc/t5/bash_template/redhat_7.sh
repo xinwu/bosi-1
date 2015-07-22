@@ -14,7 +14,6 @@ deploy_haproxy=%(deploy_haproxy)s
 default_gw=%(default_gw)s
 
 rhosp_automate_register=%(rhosp_automate_register)s
-rhosp_undercloud_dns=%(rhosp_undercloud_dns)s
 rhosp_register_username=%(rhosp_register_username)s
 rhosp_register_passwd=%(rhosp_register_passwd)s
 
@@ -137,7 +136,7 @@ compute() {
 set +e
 
 # update dns
-sudo sed -i "s/^nameserver.*/nameserver ${rhosp_undercloud_dns}/" /etc/resolv.conf
+sudo sed -i "s/^nameserver.*/nameserver %(rhosp_undercloud_dns)s/" /etc/resolv.conf
 
 # assign default gw
 sudo ip route del default
