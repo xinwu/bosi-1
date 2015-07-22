@@ -362,7 +362,9 @@ class Helper(object):
                     'rhosp_automate_register'  : str(node.rhosp_automate_register).lower(),
                     'rhosp_undercloud_dns'     : str(node.rhosp_undercloud_dns),
                     'rhosp_register_username'  : str(node.rhosp_register_username),
-                    'rhosp_register_passwd'    : str(node.rhosp_register_passwd)})
+                    'rhosp_register_passwd'    : str(node.rhosp_register_passwd),
+                    'bond'                     : node.bond,
+                    'br_bond'                  : node.br_bond})
         bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh''' %
                            {'setup_node_dir'       : node.setup_node_dir,
                             'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -395,7 +397,9 @@ class Helper(object):
                       'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
                       'deploy_l3_agent'       : str(node.deploy_l3_agent).lower(),
                       'neutron_id'            : node.get_neutron_id(),
-                      'deploy_haproxy'        : str(node.deploy_haproxy).lower()})
+                      'deploy_haproxy'        : str(node.deploy_haproxy).lower(),
+                      'uname'                 : node.uname,
+                      'bond'                  : node.bond})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -451,7 +455,9 @@ class Helper(object):
                     'br_fw_admin_address' : node.br_fw_admin_address,
                     'default_gw'          : node.get_default_gw(),
                     'uplinks'             : node.get_all_uplinks(),
-                    'deploy_haproxy'      : str(node.deploy_haproxy).lower()})
+                    'deploy_haproxy'      : str(node.deploy_haproxy).lower(),
+                    'bond'                : node.bond,
+                    'br_bond'             : node.br_bond})
         bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh''' %
                            {'setup_node_dir'       : node.setup_node_dir,
                             'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -483,7 +489,9 @@ class Helper(object):
                       'uplinks'               : node.get_comma_separated_uplinks(),
                       'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
                       'neutron_id'            : node.get_neutron_id(),
-                      'deploy_haproxy'        : str(node.deploy_haproxy).lower()})
+                      'deploy_haproxy'        : str(node.deploy_haproxy).lower(),
+                      'uname'                 : node.uname,
+                      'bond'                  : node.bond})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -541,7 +549,9 @@ class Helper(object):
                     'br_fw_admin_address' : node.br_fw_admin_address,
                     'default_gw'          : node.get_default_gw(),
                     'uplinks'             : node.get_all_uplinks(),
-                    'deploy_haproxy'      : str(node.deploy_haproxy).lower()})
+                    'deploy_haproxy'      : str(node.deploy_haproxy).lower(),
+                    'bond'                : node.bond,
+                    'br_bond'             : node.br_bond})
         bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh''' %
                            {'setup_node_dir'       : node.setup_node_dir,
                             'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -574,7 +584,9 @@ class Helper(object):
                       'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
                       'neutron_id'            : node.get_neutron_id(),
                       'selinux_mode'          : node.selinux_mode,
-                      'deploy_haproxy'        : str(node.deploy_haproxy).lower()})
+                      'deploy_haproxy'        : str(node.deploy_haproxy).lower(),
+                      'uname'                 : node.uname,
+                      'bond'                  : node.bond})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,

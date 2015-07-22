@@ -50,17 +50,6 @@ file_line { "reserve keystone port":
     match => '^net.ipv4.ip_local_reserved_ports.*$',
 }
 
-# load bonding module
-file_line {'load bonding on boot':
-    path    => '/etc/modules',
-    line    => 'bonding',
-    match   => '^bonding$',
-}
-exec { "load bonding":
-    command => "modprobe bonding",
-    path    => $binpath,
-}
-
 # purge bcf controller public key
 exec { 'purge bcf key':
     command => "rm -rf /etc/neutron/plugins/ml2/host_certs/*",
@@ -105,7 +94,7 @@ ini_setting { "keystone.conf notification driver":
   key_val_separator => '=',
   setting           => 'notification_driver',
   value             => 'messaging',
-  notify            => Service['keystone'],
+  notify            => Service['openstack-keystone'],
 }
 
 # config /etc/neutron/plugin.ini
@@ -256,7 +245,7 @@ service { 'neutron-server':
   ensure     => running,
   enable     => true,
 }
-service { 'keystone':
+service { 'openstack-keystone':
   ensure     => running,
   enable     => true,
 }
