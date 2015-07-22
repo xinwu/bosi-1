@@ -258,7 +258,9 @@ class Node(object):
 
 
     def get_neutron_id(self):
-        if self.fuel_cluster_id:
+        if self.neutron_id and self.fuel_cluster_id:
+            return "%s-%s" % (self.neutron_id, str(self.fuel_cluster_id))
+        elif self.fuel_cluster_id:
             return "neutron-%s" % str(self.fuel_cluster_id)
         return self.neutron_id
 
