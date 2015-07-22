@@ -19,6 +19,10 @@ bcf_controllers:
 bcf_controller_user: admin
 bcf_controller_passwd: adminadmin
 bcf_openstack_management_tenant: os-mgmt
+
+# This is necessary for any installer that takes over pxe boot.
+# It will be the default gw for all nodes if external gw is
+# not specified. packstack can ignore this parameter.
 installer_pxe_interface_ip: 192.168.1.1
 
 # keys with rhosp prefix are specific to RHOSP7

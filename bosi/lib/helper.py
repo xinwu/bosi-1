@@ -274,7 +274,9 @@ class Helper(object):
     @staticmethod
     def generate_dhcp_reschedule_script(node):
         openrc = const.PACKSTACK_OPENRC
-        if node.fuel_cluster_id:
+        if node.rhosp:
+            openrc = const.RHOSP_OVERCLOUD_OPENRC
+        elif node.fuel_cluster_id:
             openrc = const.FUEL_OPENRC
         dhcp_reschedule_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/dhcp_reschedule.sh''' %
                                       {'setup_node_dir'       : node.setup_node_dir,
@@ -412,6 +414,7 @@ class Helper(object):
             return
 
         Helper.generate_ospurge_script(node)
+        Helper.generate_dhcp_reschedule_script(node)
 
 
     @staticmethod

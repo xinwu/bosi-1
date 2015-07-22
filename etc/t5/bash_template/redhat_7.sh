@@ -45,6 +45,7 @@ controller() {
     sudo puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
     # restart keystone and httpd
+    sudo systemctl daemon-reload
     sudo systemctl restart openstack-keystone
     sudo systemctl restart httpd
 
@@ -81,6 +82,7 @@ compute() {
 
     # update configure files and services
     sudo puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
+    sudo systemctl daemon-reload
 
     # remove bond from ovs
     sudo ovs-appctl bond/list | grep -v slaves | grep %(bond)s
