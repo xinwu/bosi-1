@@ -13,6 +13,7 @@ class Node(object):
         self.dhcp_agent_scheduler_dir    = None
         self.log                   = const.LOG_FILE
         self.hostname              = node_config['hostname']
+        self.uname                 = node_config.get('uname')
         self.role                  = node_config['role'].lower()
         self.skip                  = node_config['skip']
         self.deploy_mode           = node_config['deploy_mode']
@@ -273,6 +274,7 @@ dhcp_reschedule_script_path : %(dhcp_reschedule_script_path)s,
 dhcp_agent_scheduler_dir    : %(dhcp_agent_scheduler_dir)s,
 log                    : %(log)s,
 hostname               : %(hostname)s,
+uname                  : %(uname)s,
 role                   : %(role)s,
 skip                   : %(skip)s,
 deploy_mode            : %(deploy_mode)s,
@@ -343,6 +345,7 @@ error                  : %(error)s,
 'dhcp_agent_scheduler_dir'    : self.dhcp_agent_scheduler_dir,
 'log'                   : self.log,
 'hostname'              : self.hostname,
+'uname'                 : self.uname,
 'role'                  : self.role,
 'skip'                  : self.skip,
 'deploy_mode'           : self.deploy_mode,

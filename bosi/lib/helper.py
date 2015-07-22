@@ -735,8 +735,32 @@ class Helper(object):
         uplink_cmd = (r'''sudo ovs-appctl bond/list | grep -v slaves | grep %(bond)s''' %
                      {'bond' : node_config['bond']})
         output, error = Helper.run_command_on_remote_without_timeout(node, uplink_cmd)
-        if output and not error:
+        if error:
+            Helper.safe_print("Error getting node %(hostname)s uplinks:\n%(error)s\n"
+                             % {'hostname' : node_config['hostname'], 'error' : error})
+            return None
+        elif output:
             node_config['uplink_interfaces'] = output.replace(',', ' ').split()[3:]
+        else:
+            # ovs bond has been removed, not the first time running this script
+            uplink_cmd = (r'''sudo cat /proc/net/bonding/%(bond)s | grep Slave | grep Interface | cut -c18-''' %
+                         {'bond' : node_config['bond']})
+            output, error = Helper.run_command_on_remote_without_timeout(node, uplink_cmd)
+            if error:
+                Helper.safe_print("Error getting node %(hostname)s uplinks:\n%(error)s\n"
+                             % {'hostname' : node_config['hostname'], 'error' : error})
+                return None
+            node_config['uplink_interfaces'] = output.split()
+
+
+        # get uname
+        output, error = Helper.run_command_on_remote_without_timeout(node, "uname -n")
+        if output and not error:
+            node_config['uname'] = output.strip()
+        else:
+            Helper.safe_print("Error getting node %(hostname)s uname:\n%(error)s\n"
+                             % {'hostname' : node_config['hostname'], 'error' : error})
+            return None
 
         # TODO parse other vlans and bridges
         # TODO get ivs version for t6
