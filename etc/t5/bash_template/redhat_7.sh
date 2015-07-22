@@ -14,7 +14,6 @@ deploy_haproxy=%(deploy_haproxy)s
 default_gw=%(default_gw)s
 
 rhosp_automate_register=%(rhosp_automate_register)s
-rhosp_undercloud_dns=%(rhosp_undercloud_dns)s
 rhosp_register_username=%(rhosp_register_username)s
 rhosp_register_passwd=%(rhosp_register_passwd)s
 
@@ -64,7 +63,7 @@ compute() {
     sudo systemctl disable neutron-metadata-agent
 
     # patch linux/dhcp.py to make sure static host route is pushed to instances
-    adhcp_py=$(sudo find /usr -name dhcp.py | grep linux)
+    dhcp_py=$(sudo find /usr -name dhcp.py | grep linux)
     dhcp_dir=$(dirname "${dhcp_py}")
     sudo sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
     sudo find $dhcp_dir -name "*.pyc" | xargs rm
@@ -76,21 +75,43 @@ compute() {
         sudo sysctl -w net.ipv4.ip_nonlocal_bind=1
     fi
 
-    # full installation
-    if [[ $install_all == true ]]; then
-        # copy send_lldp to /bin
-        sudo cp %(dst_dir)s/send_lldp /bin/
-        sudo chmod 777 /bin/send_lldp
+    # copy send_lldp to /bin
+    sudo cp %(dst_dir)s/send_lldp /bin/
+    sudo chmod 777 /bin/send_lldp
 
-        # deploy bcf
-        sudo puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
+    # update configure files and services
+    sudo puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
-        #TODO: reset uplinks to move them out of bond
-
-        # assign default gw
-        sudo bash /etc/rc.d/rc.local
-
+    # remove bond from ovs
+    sudo ovs-appctl bond/list | grep -v slaves | grep %(bond)s
+    if [[ $? == 0 ]]; then
+        sudo ovs-vsctl --if-exists del-port %(bond)s
+        declare -a uplinks=(%(uplinks)s)
+        len=${#uplinks[@]}
+        for (( i=0; i<$len; i++ )); do
+            sudo ovs-vsctl --if-exists del-port ${uplinks[$i]}
+        done
     fi
+
+    # flip uplinks and bond
+    declare -a uplinks=(%(uplinks)s)
+    len=${#uplinks[@]}
+    sudo ifdown %(bond)s
+    for (( i=0; i<$len; i++ )); do
+        sudo ifdown ${uplinks[$i]}
+    done
+    for (( i=0; i<$len; i++ )); do
+        sudo ifup ${uplinks[$i]}
+    done
+    sudo ifup %(bond)s
+
+    # add bond to ovs
+    sudo ovs-vsctl --may-exist add-port %(br_bond)s %(bond)s
+    sleep 5
+    sudo systemctl restart send_lldp
+
+    # assign default gw
+    sudo bash /etc/rc.d/rc.local
 
     if [[ $deploy_dhcp_agent == true ]]; then
         echo 'Restart neutron-metadata-agent, neutron-dhcp-agent and neutron-l3-agent'
@@ -106,19 +127,16 @@ compute() {
     fi
 
     # restart nova compute on compute node
-    echo 'Restart openstack-nova-compute'
-    sudo systemctl restart openstack-nova-compute
-    sudo systemctl enable openstack-nova-compute
-
-    # stop bsn-agent
-    sudo systemctl stop neutron-bsn-agent
+    #echo 'Restart openstack-nova-compute'
+    #sudo systemctl restart openstack-nova-compute
+    #sudo systemctl enable openstack-nova-compute
 }
 
 
 set +e
 
 # update dns
-sudo sed -i "s/^nameserver.*/nameserver $rhosp_undercloud_dns/" /etc/resolv.conf
+sudo sed -i "s/^nameserver.*/nameserver %(rhosp_undercloud_dns)s/" /etc/resolv.conf
 
 # assign default gw
 sudo ip route del default

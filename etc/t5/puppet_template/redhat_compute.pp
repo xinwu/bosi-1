@@ -47,7 +47,7 @@ Description=send lldp
 After=syslog.target network.target
 [Service]
 Type=simple
-ExecStart=/bin/send_lldp --system-desc 5c:16:c7:00:00:00 --system-name $(uname -n) -i 10 --network_interface %(uplinks)s
+ExecStart=/bin/send_lldp --system-desc 5c:16:c7:00:00:00 --system-name %(uname)s -i 10 --network_interface %(uplinks)s
 Restart=always
 StartLimitInterval=60s
 StartLimitBurst=3
@@ -60,11 +60,44 @@ file { '/etc/systemd/system/multi-user.target.wants/send_lldp.service':
    target => '/usr/lib/systemd/system/send_lldp.service',
    notify => Service['send_lldp'],
 }
-#TODO
 service { "send_lldp":
-    ensure  => stopped,
-    enable  => false,
+    ensure  => running,
+    enable  => true,
     require => [File['/bin/send_lldp'], File['/etc/systemd/system/multi-user.target.wants/send_lldp.service']],
+}
+
+# bond configuration
+file { "/etc/sysconfig/network-scripts/ifcfg-%(bond)s":
+    ensure  => file,
+    content => "
+DEVICE=%(bond)s
+USERCTL=no
+BOOTPROTO=none
+ONBOOT=yes
+NM_CONTROLLED=no
+BONDING_OPTS='mode=2 miimon=50 updelay=15000 xmit_hash_policy=1'
+",
+}
+
+$uplinks=[%(uplinks)s]
+
+define bond_intf {
+    $uplink = split($name, ',')
+    file { "/etc/sysconfig/network-scripts/ifcfg-${uplink}":
+        ensure  => file,
+        content => "
+DEVICE=${uplink}
+ONBOOT=yes
+NM_CONTROLLED=no
+BOOTPROTO=none
+USERCTL=no
+MASTER=%(bond)s
+SLAVE=yes
+",
+    }
+}
+
+bond_intf { $uplinks:
 }
 
 # dhcp configuration

@@ -19,6 +19,7 @@ node_q = Queue.Queue()
 def chmod_node(node):
     Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /etc/neutron")
     Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.dst_dir)
+    Helper.run_command_on_remote_without_timeout(node, "sudo touch %s" % node.log)
     Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
 
 
@@ -33,12 +34,12 @@ def worker_setup_node(q):
                          {'hostname' : node.hostname})
         if node.cleanup and node.role == const.ROLE_NEUTRON_SERVER:
             Helper.run_command_on_remote(node,
-                (r'''/bin/bash %(dst_dir)s/%(hostname)s_ospurge.sh >> %(log)s 2>&1''' %
+                (r'''sudo bash %(dst_dir)s/%(hostname)s_ospurge.sh >> %(log)s 2>&1''' %
                 {'dst_dir'  : node.dst_dir,
                  'hostname' : node.hostname,
                  'log'      : node.log}))
         Helper.run_command_on_remote(node,
-            (r'''/bin/bash %(dst_dir)s/%(hostname)s.sh >> %(log)s 2>&1''' %
+            (r'''sudo bash %(dst_dir)s/%(hostname)s.sh >> %(log)s 2>&1''' %
             {'dst_dir'  : node.dst_dir,
              'hostname' : node.hostname,
              'log'      : node.log}))

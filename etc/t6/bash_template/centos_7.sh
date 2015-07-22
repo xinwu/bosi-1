@@ -84,7 +84,7 @@ compute() {
     systemctl disable neutron-metadata-agent
 
     # patch linux/dhcp.py to make sure static host route is pushed to instances
-    adhcp_py=$(find /usr -name dhcp.py | grep linux)
+    dhcp_py=$(find /usr -name dhcp.py | grep linux)
     dhcp_dir=$(dirname "${dhcp_py}")
     sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
     find $dhcp_dir -name "*.pyc" | xargs rm
