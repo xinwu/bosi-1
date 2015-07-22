@@ -137,7 +137,7 @@ compute() {
 set +e
 
 # update dns
-sudo sed -i "s/^nameserver.*/nameserver $rhosp_undercloud_dns/" /etc/resolv.conf
+sudo sed -i "s/^nameserver.*/nameserver ${rhosp_undercloud_dns}/" /etc/resolv.conf
 
 # assign default gw
 sudo ip route del default
