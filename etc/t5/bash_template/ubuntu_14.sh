@@ -121,16 +121,16 @@ compute() {
 
     if [[ $deploy_dhcp_agent == true ]]; then
         echo 'Restart neutron-metadata-agent and neutron-dhcp-agent'
-        service neutron-metadata-agent restart
         mv /etc/init/neutron-metadata-agent.conf.disabled /etc/init/neutron-metadata-agent.conf
-        service neutron-dhcp-agent restart
+        service neutron-metadata-agent restart
         mv /etc/init/neutron-dhcp-agent.conf.disabled /etc/init/neutron-dhcp-agent.conf
+        service neutron-dhcp-agent restart
     fi
 
     if [[ $deploy_l3_agent == true ]]; then
         echo "Restart neutron-l3-agent"
-        service neutron-l3-agent restart
         mv /etc/init/neutron-l3-agent.conf.disabled /etc/init/neutron-l3-agent.conf
+        service neutron-l3-agent restart
     fi
 
     # we install this before puppet so the conf files are present and restart after puppet
