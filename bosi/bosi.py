@@ -28,7 +28,7 @@ def reboot_compute_node(q):
         Helper.safe_print("Rebooting node %(hostname)s\n" %
                          {'hostname' : node.hostname})
         Helper.run_command_on_remote(node, r'''sudo reboot''')
-        Helper.safe_print("Finished rebooting node %(hostname)s\n" %
+        Helper.safe_print("Node %(hostname)s rebooted. Wait for it to come back up.\n" %
                          {'hostname' : node.hostname})
         q.task_done()
 
