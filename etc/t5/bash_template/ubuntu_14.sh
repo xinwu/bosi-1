@@ -111,6 +111,11 @@ compute() {
     find $dhcp_dir -name "*.pyc" | xargs rm
     find $dhcp_dir -name "*.pyo" | xargs rm
 
+    if [[ $deploy_haproxy == true ]]; then
+        apt-get install -y neutron-lbaas-agent haproxy
+        service neutron-lbaas-agent restart
+    fi
+
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
@@ -126,6 +131,12 @@ compute() {
         echo "Restart neutron-l3-agent"
         service neutron-l3-agent restart
         mv /etc/init/neutron-l3-agent.conf.disabled /etc/init/neutron-l3-agent.conf
+    fi
+
+    # we install this before puppet so the conf files are present and restart after puppet
+    # so that changes made by puppet are reflected correctly
+    if [[ $deploy_haproxy == true ]]; then
+        service neutron-lbaas-agent restart
     fi
 }
 
