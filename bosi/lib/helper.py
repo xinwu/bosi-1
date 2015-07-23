@@ -491,6 +491,7 @@ class Helper(object):
                       'default_gw'            : node.get_default_gw(),
                       'uplinks'               : node.get_comma_separated_uplinks(),
                       'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
+                      'deploy_l3_agent'       : str(node.deploy_l3_agent).lower(),
                       'neutron_id'            : node.get_neutron_id(),
                       'deploy_haproxy'        : str(node.deploy_haproxy).lower(),
                       'uname'                 : node.uname,
@@ -1265,6 +1266,11 @@ class Helper(object):
                              {'controller_node' : controller_node.hostname})
             Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'metadata_agent.ini',
                                          controller_node.setup_node_dir)
+            if controller_node.deploy_mode == const.T5 :
+              Helper.safe_print("Copy l3_agent.ini from openstack controller %(controller_node)s\n" %
+                              {'controller_node' : controller_node.hostname})
+              Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'l3_agent.ini',
+                                           controller_node.setup_node_dir)
 
         rabbit_hosts = sets.Set()
         rabbit_port = None
@@ -1428,5 +1434,4 @@ class Helper(object):
                 (r'''%(src_dir)s/rootwrap''' %
                 {'src_dir' : node.setup_node_dir}),
                 node.dst_dir)
-
 
