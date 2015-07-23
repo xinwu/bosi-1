@@ -67,10 +67,29 @@ ini_setting { "neutron.conf notification driver":
 }
 
 # make sure neutron-bsn-agent is stopped
+# config neutron-bsn-agent conf
+file { '/etc/init/neutron-bsn-agent.conf':
+    ensure => present,
+    content => "
+description \"Neutron BSN Agent\"
+start on runlevel [2345]
+stop on runlevel [!2345]
+respawn
+script
+    exec /usr/local/bin/neutron-bsn-agent --config-file=/etc/neutron/neutron.conf --config-file=/etc/neutron/plugins/ml2/ml2_conf.ini --log-file=/var/log/neutron/neutron-bsn-agent.log
+end script
+",
+}
+file { '/etc/init.d/neutron-bsn-agent':
+    ensure => link,
+    target => '/lib/init/upstart-job',
+    notify => Service['neutron-bsn-agent'],
+}
 service {'neutron-bsn-agent':
     ensure     => 'stopped',
     enable     => 'false',
     provider   => 'upstart',
+    subscribe  => [File['/etc/init/neutron-bsn-agent.conf'], File['/etc/init.d/neutron-bsn-agent']],
 }
 
 # ensure neutron-plugin-openvswitch-agent is running
