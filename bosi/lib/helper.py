@@ -715,7 +715,7 @@ class Helper(object):
         node_yaml_config = node_yaml_config_map.get(hostname)
         if node_yaml_config:
             node_config = Helper.__load_node_yaml_config__(node_yaml_config, env)
-        elif not len(node_yaml_config_map):
+        elif not env.deploy_to_specified_nodes_only:
             node_config = Helper.__load_node_yaml_config__(node_config, env)
         else:
             return None
@@ -789,7 +789,7 @@ class Helper(object):
         node_yaml_config = node_yaml_config_map.get(hostname)
         if node_yaml_config:
             node_config = Helper.__load_node_yaml_config__(node_yaml_config, env)
-        elif not len(node_yaml_config_map):
+        elif not env.deploy_to_specified_nodes_only:
             node_config = Helper.__load_node_yaml_config__(node_config, env)
         else:
             return None
