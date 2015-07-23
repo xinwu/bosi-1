@@ -223,6 +223,14 @@ file { '/etc/neutron/dnsmasq-neutron.conf':
 
 # dhcp configuration
 if %(deploy_dhcp_agent)s {
+    ini_setting { "dhcp agent resync_interval":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'resync_interval',
+        value             => '60',
+    }
     ini_setting { "dhcp agent interface driver":
         ensure            => present,
         path              => '/etc/neutron/dhcp_agent.ini',
