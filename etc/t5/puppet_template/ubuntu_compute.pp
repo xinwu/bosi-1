@@ -47,7 +47,7 @@ ini_setting { "neutron.conf service_plugins":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'service_plugins',
-  value             => 'router',
+  value             => 'router,lbaas',
 }
 ini_setting { "neutron.conf dhcp_agents_per_network":
   ensure            => present,
@@ -175,3 +175,52 @@ if %(deploy_dhcp_agent)s {
     }
 }
 
+# haproxy
+if %(deploy_haproxy)s {
+    package { "neutron-lbaas-agent":
+        ensure  => installed,
+    }
+    package { "haproxy":
+        ensure  => installed,
+    }
+    ini_setting { "haproxy agent periodic interval":
+        ensure            => present,
+        path              => '/etc/neutron/lbaas_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'periodic_interval',
+        value             => '10',
+        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
+        notify            => Service['neutron-lbaas-agent'],
+    }
+    ini_setting { "haproxy agent interface driver":
+        ensure            => present,
+        path              => '/etc/neutron/lbaas_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'interface_driver',
+        value             => 'neutron.agent.linux.interface.OVSInterfaceDriver',
+        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
+        notify            => Service['neutron-lbaas-agent'],
+    }
+    ini_setting { "haproxy agent device driver":
+        ensure            => present,
+        path              => '/etc/neutron/lbaas_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'device_driver',
+        value             => 'neutron.services.loadbalancer.drivers.haproxy.namespace_driver.HaproxyNSDriver',
+        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
+        notify            => Service['neutron-lbaas-agent'],
+    }
+    service { "haproxy":
+        ensure            => running,
+        enable            => true,
+        require           => Package['haproxy'],
+    }
+    service { "neutron-lbaas-agent":
+        ensure            => running,
+        enable            => true,
+        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
+    }
+}
