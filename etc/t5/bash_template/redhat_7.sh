@@ -35,12 +35,6 @@ controller() {
     sudo pcs resource delete neutron-l3-agent-clone
     sudo pcs resource delete neutron-l3-agent
 
-    # install bsnstacklib
-    if [[ $install_bsnstacklib == true ]]; then
-        sudo pip install --upgrade "bsnstacklib<%(bsnstacklib_version)s"
-    fi
-    sudo systemctl stop neutron-bsn-agent
-
     # deploy bcf
     sudo puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
@@ -165,6 +159,13 @@ sudo yum install -y python-devel puppet python-pip wget libffi-devel openssl-dev
 sudo easy_install pip
 sudo puppet module install --force puppetlabs-inifile
 sudo puppet module install --force puppetlabs-stdlib
+
+# install bsnstacklib
+if [[ $install_bsnstacklib == true ]]; then
+    sudo pip install --upgrade "bsnstacklib<%(bsnstacklib_version)s"
+fi
+sudo systemctl stop neutron-bsn-agent
+sudo systemctl disable neutron-bsn-agent
 
 if [[ $is_controller == true ]]; then
     controller
