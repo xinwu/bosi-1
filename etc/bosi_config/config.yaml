@@ -25,6 +25,12 @@ bcf_openstack_management_tenant: os-mgmt
 # not specified. packstack can ignore this parameter.
 installer_pxe_interface_ip: 192.168.1.1
 
+# bosi gets node list directly from installer and
+# deploys bcf patch to all of them by default.
+# If user wants to deploy bcf patch only on specified
+# nodes, this field needs to be true
+deploy_to_specified_nodes_only: false
+
 # keys with rhosp prefix are specific to RHOSP7
 rhosp_automate_register: true
 rhosp_installer_management_interface: eno2
