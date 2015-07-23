@@ -74,6 +74,10 @@ service {'neutron-bsn-agent':
 }
 
 # ensure neutron-plugin-openvswitch-agent is running
+file { "/etc/init/neutron-plugin-openvswitch-agent.conf":
+    ensure  => file,
+    mode    => 0644,
+}
 service { 'neutron-plugin-openvswitch-agent':
   ensure     => 'running',
   enable     => 'true',
@@ -93,11 +97,19 @@ if %(deploy_l3_agent)s {
       setting           => 'enable_metadata_proxy',
       value             => 'False',
     }
+    ini_setting { "l3 agent external network bridge":
+      ensure            => present,
+      path              => '/etc/neutron/l3_agent.ini',
+      section           => 'DEFAULT',
+      key_val_separator => '=',
+      setting           => 'external_network_bridge',
+      value             => '',
+    }
 }
 
 file { '/etc/neutron/dnsmasq-neutron.conf':
   ensure            => file,
-  content           => 'dhcp-option-force=26,1500',
+  content           => 'dhcp-option-force=26,1400',
 }
 
 # dhcp configuration
