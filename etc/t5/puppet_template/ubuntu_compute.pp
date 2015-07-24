@@ -24,6 +24,66 @@ service { "send_lldp":
     require => [File['/bin/send_lldp'], File['/etc/init/send_lldp.conf']],
 }
 
+# edit rc.local for cron job and default gw
+file { "/etc/rc.local":
+    ensure  => file,
+    mode    => 0777,
+}->
+file_line { "remove exit 0":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "exit 0",
+}->
+file_line { "remove crontab -r":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "crontab -r",
+}->
+file_line { "remove fuel-logrotate":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "(crontab -l; echo \"*/30 * * * * /usr/bin/fuel-logrotate\") | crontab -",
+}->
+file_line { "remove dhcp_reschedule.sh":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
+}->
+file_line { "remove clear default gw":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "ip route del default",
+}->
+file_line { "remove ip route add default":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "ip route add default via %(default_gw)s",
+}->
+file_line { "clear default gw":
+    path    => '/etc/rc.local',
+    line    => "ip route del default",
+}->
+file_line { "add default gw":
+    path    => '/etc/rc.local',
+    line    => "ip route add default via %(default_gw)s",
+}->
+file_line { "clean up cron job":
+    path    => '/etc/rc.local',
+    line    => "crontab -r",
+}->
+file_line { "add cron job to rotate log":
+    path    => '/etc/rc.local',
+    line    => "(crontab -l; echo \"*/30 * * * * /usr/bin/fuel-logrotate\") | crontab -",
+}->
+file_line { "add cron job to reschedule dhcp":
+    path    => '/etc/rc.local',
+    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
+}->
+file_line { "add exit 0":
+    path    => '/etc/rc.local',
+    line    => "exit 0",
+}
+
 # config /etc/neutron/neutron.conf
 ini_setting { "neutron.conf report_interval":
   ensure            => present,
@@ -55,7 +115,7 @@ ini_setting { "neutron.conf dhcp_agents_per_network":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'dhcp_agents_per_network',
-  value             => '2',
+  value             => '1',
 }
 ini_setting { "neutron.conf notification driver":
   ensure            => present,
@@ -177,29 +237,9 @@ file { '/etc/neutron/plugins/ml2':
 }
 
 # make sure neutron-bsn-agent is stopped
-# config neutron-bsn-agent conf
-file { '/etc/init/neutron-bsn-agent.conf':
-    ensure => present,
-    content => "
-description \"Neutron BSN Agent\"
-start on runlevel [2345]
-stop on runlevel [!2345]
-respawn
-script
-    exec /usr/local/bin/neutron-bsn-agent --config-file=/etc/neutron/neutron.conf --config-file=/etc/neutron/plugins/ml2/ml2_conf.ini --log-file=/var/log/neutron/neutron-bsn-agent.log
-end script
-",
-}
-file { '/etc/init.d/neutron-bsn-agent':
-    ensure => link,
-    target => '/lib/init/upstart-job',
-    notify => Service['neutron-bsn-agent'],
-}
 service {'neutron-bsn-agent':
-    ensure     => 'stopped',
-    enable     => 'false',
-    provider   => 'upstart',
-    subscribe  => [File['/etc/init/neutron-bsn-agent.conf'], File['/etc/init.d/neutron-bsn-agent']],
+  ensure  => stopped,
+  enable  => false,
 }
 
 # ensure neutron-plugin-openvswitch-agent is running

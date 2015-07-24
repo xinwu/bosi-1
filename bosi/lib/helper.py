@@ -1258,10 +1258,6 @@ class Helper(object):
     def copy_neutron_config_from_controllers(controller_nodes):
         if len(controller_nodes) and controller_nodes[0]:
             controller_node = controller_nodes[0]
-            Helper.safe_print("Copy ml2_conf.ini from openstack controller %(controller_node)s\n" %
-                             {'controller_node' : controller_node.hostname})
-            Helper.copy_file_from_remote(controller_node, '/etc/neutron/plugins/ml2', 'ml2_conf.ini',
-                                         controller_node.setup_node_dir)
             Helper.safe_print("Copy dhcp_agent.ini from openstack controller %(controller_node)s\n" %
                              {'controller_node' : controller_node.hostname})
             Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'dhcp_agent.ini',
@@ -1270,11 +1266,6 @@ class Helper(object):
                              {'controller_node' : controller_node.hostname})
             Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'metadata_agent.ini',
                                          controller_node.setup_node_dir)
-            if controller_node.deploy_mode == const.T5:
-                Helper.safe_print("Copy l3_agent.ini from openstack controller %(controller_node)s\n" %
-                                 {'controller_node' : controller_node.hostname})
-                Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'l3_agent.ini',
-                                             controller_node.setup_node_dir)
 
         rabbit_hosts = sets.Set()
         rabbit_port = None
@@ -1328,10 +1319,6 @@ class Helper(object):
                          {'hostname' : node.hostname})
         Helper.copy_file_to_remote(node, r'''%(dir)s/neutron.conf''' % {'dir' : node.setup_node_dir},
                                    '/etc/neutron', 'neutron.conf')
-        Helper.safe_print("Copy ml2_conf.conf to %(hostname)s\n" %
-                         {'hostname' : node.hostname})
-        Helper.copy_file_to_remote(node, r'''%(dir)s/ml2_conf.conf''' % {'dir' : node.setup_node_dir},
-                                   '/etc/neutron/plugins/ml2', 'ml2_conf.conf')
         Helper.safe_print("Copy dhcp_agent.ini to %(hostname)s\n" %
                          {'hostname' : node.hostname})
         Helper.copy_file_to_remote(node, r'''%(dir)s/dhcp_agent.ini''' % {'dir' : node.setup_node_dir},
@@ -1340,11 +1327,6 @@ class Helper(object):
                          {'hostname' : node.hostname})
         Helper.copy_file_to_remote(node, r'''%(dir)s/metadata_agent.ini''' % {'dir': node.setup_node_dir},
                                    '/etc/neutron', 'metadata_agent.ini')
-        if node.deploy_mode == const.T5:
-            Helper.safe_print("Copy l3_agent.ini to %(hostname)s\n" %
-                             {'hostname' : node.hostname})
-            Helper.copy_file_to_remote(node, r'''%(dir)s/l3_agent.ini''' % {'dir': node.setup_node_dir},
-                                       '/etc/neutron', 'l3_agent.ini')
 
         # copy ivs to node
         if node.deploy_mode == const.T6:
