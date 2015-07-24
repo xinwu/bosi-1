@@ -35,12 +35,6 @@ controller() {
     sudo pcs resource delete neutron-l3-agent-clone
     sudo pcs resource delete neutron-l3-agent
 
-    # install bsnstacklib
-    if [[ $install_bsnstacklib == true ]]; then
-        sudo pip install --upgrade "bsnstacklib<%(bsnstacklib_version)s"
-    fi
-    sudo systemctl stop neutron-bsn-agent
-
     # deploy bcf
     sudo puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
@@ -117,15 +111,15 @@ compute() {
 
     if [[ $deploy_dhcp_agent == true ]]; then
         echo 'Restart neutron-metadata-agent, neutron-dhcp-agent and neutron-l3-agent'
-        sudo systemctl start neutron-metadata-agent
         sudo systemctl enable neutron-metadata-agent
-        sudo systemctl start neutron-dhcp-agent
+        sudo systemctl start neutron-metadata-agent
         sudo systemctl enable neutron-dhcp-agent
+        sudo systemctl start neutron-dhcp-agent
     fi
 
     if [[ $deploy_l3_agent == true ]]; then
-        sudo systemctl start neutron-l3-agent
         sudo systemctl enable neutron-l3-agent
+        sudo systemctl start neutron-l3-agent
     fi
 
     # restart nova compute on compute node
@@ -166,6 +160,13 @@ sudo easy_install pip
 sudo puppet module install --force puppetlabs-inifile
 sudo puppet module install --force puppetlabs-stdlib
 
+# install bsnstacklib
+if [[ $install_bsnstacklib == true ]]; then
+    sudo pip install --upgrade "bsnstacklib<%(bsnstacklib_version)s"
+fi
+sudo systemctl stop neutron-bsn-agent
+sudo systemctl disable neutron-bsn-agent
+
 if [[ $is_controller == true ]]; then
     controller
 else
@@ -173,4 +174,6 @@ else
 fi
 
 set -e
+
+exit 0
 

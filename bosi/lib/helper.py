@@ -22,6 +22,21 @@ class Helper(object):
     # lock to serialize stdout of different threads
     __print_lock = Lock()
 
+
+    @staticmethod
+    def timedelta_total_seconds(timedelta):
+        return (timedelta.microseconds + 0.0 +
+               (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+
+
+    @staticmethod
+    def chmod_node(node):
+        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /etc/neutron")
+        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.dst_dir)
+        Helper.run_command_on_remote_without_timeout(node, "sudo touch %s" % node.log)
+        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
+
+
     @staticmethod
     def get_setup_node_ip():
         """
@@ -55,7 +70,7 @@ class Helper(object):
 
 
     @staticmethod
-    def run_command_on_local(command, timeout=1800):
+    def run_command_on_local(command, timeout=1200):
         """
         Use subprocess to run a shell command on local node.
         """
@@ -64,8 +79,7 @@ class Helper(object):
 
         try:
             p = subprocess.Popen(
-                command, shell=True, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
+                command, shell=True)
         except Exception as e:
             msg = "Error opening process %s: %s\n" % (command, e)
             Helper.safe_print(msg)
@@ -716,7 +730,7 @@ class Helper(object):
         node_yaml_config = node_yaml_config_map.get(hostname)
         if node_yaml_config:
             node_config = Helper.__load_node_yaml_config__(node_yaml_config, env)
-        elif not len(node_yaml_config_map):
+        elif not env.deploy_to_specified_nodes_only:
             node_config = Helper.__load_node_yaml_config__(node_config, env)
         else:
             return None
@@ -790,7 +804,7 @@ class Helper(object):
         node_yaml_config = node_yaml_config_map.get(hostname)
         if node_yaml_config:
             node_config = Helper.__load_node_yaml_config__(node_yaml_config, env)
-        elif not len(node_yaml_config_map):
+        elif not env.deploy_to_specified_nodes_only:
             node_config = Helper.__load_node_yaml_config__(node_config, env)
         else:
             return None
@@ -1127,6 +1141,15 @@ class Helper(object):
             subprocess.call(r'''sudo iptables -A FORWARD -i %(internal)s -o %(external)s -j ACCEPT''' %
                            {'external' : env.rhosp_installer_management_interface,
                             'internal' : env.rhosp_installer_pxe_interface}, shell=True)
+
+
+    @staticmethod
+    def update_last_log(node):
+        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
+        last_log, error = Helper.run_command_on_remote_without_timeout(node, "sudo tail -n 1 %s" % node.log)
+        if last_log:
+            node.set_last_log(last_log)
+        return node
 
 
     @staticmethod

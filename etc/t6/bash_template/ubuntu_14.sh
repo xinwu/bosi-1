@@ -26,19 +26,19 @@ controller() {
         crm resource stop p_neutron-dhcp-agent
         crm resource stop p_neutron-metadata-agent
         crm resource stop p_neutron-l3-agent
-        sleep 10
+        sleep 20
         crm configure delete p_neutron-dhcp-agent
         crm configure delete p_neutron-metadata-agent
         crm configure delete p_neutron-l3-agent
     fi
     service neutron-metadata-agent stop
-    update-rc.d neutron-metadata-agent disable
+    rm -f /etc/init/neutron-metadata-agent.conf
     service neutron-dhcp-agent stop
-    update-rc.d neutron-dhcp-agent disable
+    rm -f /etc/init/neutron-dhcp-agent.conf
     service neutron-l3-agent stop
-    update-rc.d neutron-l3-agent disable
+    rm -f /etc/init/neutron-l3-agent.conf
     service neutron-bsn-agent stop
-    update-rc.d neutron-bsn-agent disable
+    rm -f /etc/init/neutron-bsn-agent.conf
     
 
     if [[ $deploy_horizon_patch == true ]]; then
@@ -79,17 +79,17 @@ controller() {
         fi
     fi
 
-    echo 'Restart neutron-server'
-    rm -rf /etc/neutron/plugins/ml2/host_certs/*
-    service keystone restart
-    service apache2 restart
-    service neutron-server restart
-
     # schedule cron job to reschedule network in case dhcp agent fails
     chmod a+x /bin/dhcp_reschedule.sh
     crontab -r
     (crontab -l; echo "*/30 * * * * /usr/bin/fuel-logrotate") | crontab -
     (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
+
+    echo 'Restart neutron-server'
+    rm -rf /etc/neutron/plugins/ml2/host_certs/*
+    service keystone restart
+    service apache2 restart
+    service neutron-server restart
 }
 
 compute() {
@@ -97,9 +97,7 @@ compute() {
     apt-get install -o Dpkg::Options::="--force-confold" -y neutron-metadata-agent
     apt-get install -o Dpkg::Options::="--force-confold" -y neutron-dhcp-agent
     service neutron-metadata-agent stop
-    update-rc.d neutron-metadata-agent disable
     service neutron-dhcp-agent stop
-    update-rc.d neutron-dhcp-agent disable
     dhcp_py=$(find /usr -name dhcp.py | grep linux)
     dhcp_dir=$(dirname "${dhcp_py}")
     sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
@@ -149,12 +147,12 @@ compute() {
         service neutron-plugin-openvswitch-agent stop
         service neutron-bsn-agent stop
         rm -f /etc/init/neutron-bsn-agent.conf
+        rm -f /etc/init/neutron-plugin-openvswitch-agent.conf
         pkill neutron-openvswitch-agent
         rm -f /usr/bin/neutron-openvswitch-agent
 
         # stop ovs agent, otherwise, ovs bridges cannot be removed
         service neutron-plugin-openvswitch-agent stop
-        update-rc.d neutron-plugin-openvswitch-agent disable
 
         # remove ovs and linux bridge, example ("br-storage" "br-prv" "br-ex")
         declare -a ovs_br=(%(ovs_br)s)
@@ -168,6 +166,7 @@ compute() {
         # delete ovs br-int
         while true; do
             service neutron-plugin-openvswitch-agent stop
+            rm -f /etc/init/neutron-plugin-openvswitch-agent.conf
             update-rc.d neutron-plugin-openvswitch-agent disable
             ovs-vsctl del-br %(br-int)s
             ip link del dev %(br-int)s
@@ -293,4 +292,6 @@ if [[ ${fuel_cluster_id} != 'None' ]]; then
 fi
 
 set -e
+
+exit 0
 

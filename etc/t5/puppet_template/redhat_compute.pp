@@ -102,6 +102,14 @@ bond_intf { $uplinks:
 
 # dhcp configuration
 if %(deploy_dhcp_agent)s {
+    ini_setting { "dhcp agent resync_interval":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'resync_interval',
+        value             => '60',
+    }
     ini_setting { "dhcp agent interface driver":
         ensure            => present,
         path              => '/etc/neutron/dhcp_agent.ini',
@@ -155,6 +163,24 @@ if %(deploy_l3_agent)s {
         value             => 'False',
         notify            => Service['neutron-l3-agent'],
     }
+    ini_setting { "l3 agent external_network_bridge":
+        ensure            => present,
+        path              => '/etc/neutron/l3_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'external_network_bridge',
+        value             => '',
+        notify            => Service['neutron-l3-agent'],
+    }
+    ini_setting { "l3 agent handle_internal_only_routers":
+        ensure            => present,
+        path              => '/etc/neutron/l3_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'handle_internal_only_routers',
+        value             => 'True',
+        notify            => Service['neutron-l3-agent'],
+    }
     service{'neutron-l3-agent':
         ensure  => running,
         enable  => true,
@@ -176,7 +202,7 @@ ini_setting { "neutron.conf dhcp_agents_per_network":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'dhcp_agents_per_network',
-  value             => '2',
+  value             => '1',
 }
 ini_setting { "neutron.conf notification driver":
   ensure            => present,
@@ -185,6 +211,14 @@ ini_setting { "neutron.conf notification driver":
   key_val_separator => '=',
   setting           => 'notification_driver',
   value             => 'messaging',
+}
+ini_setting { "neutron.conf allow_automatic_l3agent_failover":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'allow_automatic_l3agent_failover',
+  value             => 'True',
 }
 
 service{'neutron-bsn-agent':

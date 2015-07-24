@@ -25,6 +25,9 @@ class Environment(object):
         # installer pxe interface ip
         self.installer_pxe_interface_ip = config.get('installer_pxe_interface_ip')
 
+        # install to specified nodes
+        self.deploy_to_specified_nodes_only = config.get('deploy_to_specified_nodes_only')
+
         # flags for upgrade
         self.install_ivs = config.get('default_install_ivs')
         self.install_bsnstacklib = config.get('default_install_bsnstacklib')
