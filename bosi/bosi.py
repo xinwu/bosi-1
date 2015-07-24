@@ -53,10 +53,10 @@ def worker_setup_node(q):
              'hostname' : node.hostname,
              'log'      : node.log}))
         end_time = datetime.datetime.now()
-        # TODO
+        diff = end_time - start_time
 
-        Helper.safe_print("Finish deploying %(hostname)s\n" %
-                         {'hostname' : node.hostname})
+        Helper.safe_print("Finish deploying %(hostname)s, cost time: %(diff)s\n" %
+                         {'hostname' : node.hostname, 'diff' : str(diff.total_seconds())})
         q.task_done()
 
 
