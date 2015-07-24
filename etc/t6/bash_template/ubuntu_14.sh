@@ -93,16 +93,22 @@ controller() {
 }
 
 compute() {
-    # patch linux/dhcp.py to make sure static host route is pushed to instances
-    apt-get install -o Dpkg::Options::="--force-confold" -y neutron-metadata-agent
-    apt-get install -o Dpkg::Options::="--force-confold" -y neutron-dhcp-agent
-    service neutron-metadata-agent stop
-    service neutron-dhcp-agent stop
-    dhcp_py=$(find /usr -name dhcp.py | grep linux)
-    dhcp_dir=$(dirname "${dhcp_py}")
-    sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
-    find $dhcp_dir -name "*.pyc" | xargs rm
-    find $dhcp_dir -name "*.pyo" | xargs rm
+    if [[ $deploy_dhcp_agent == true ]]; then
+        dpkg -l neutron-dhcp-agent
+        if [[ $? != 0 ]]; then
+            apt-get install -o Dpkg::Options::="--force-confold" -y neutron-metadata-agent
+            apt-get install -o Dpkg::Options::="--force-confold" -y neutron-dhcp-agent
+            service neutron-metadata-agent stop
+            service neutron-dhcp-agent stop
+        fi
+
+        # patch linux/dhcp.py to make sure static host route is pushed to instances
+        dhcp_py=$(find /usr -name dhcp.py | grep linux)
+        dhcp_dir=$(dirname "${dhcp_py}")
+        sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
+        find $dhcp_dir -name "*.pyc" | xargs rm
+        find $dhcp_dir -name "*.pyo" | xargs rm
+    fi
 
     # install ivs
     if [[ $install_ivs == true ]]; then
@@ -144,15 +150,14 @@ compute() {
         if [[ -f /etc/init/neutron-plugin-openvswitch-agent.override ]]; then
             cp /etc/init/neutron-plugin-openvswitch-agent.override /etc/init/neutron-bsn-agent.override
         fi
-        service neutron-plugin-openvswitch-agent stop
-        service neutron-bsn-agent stop
-        rm -f /etc/init/neutron-bsn-agent.conf
-        rm -f /etc/init/neutron-plugin-openvswitch-agent.conf
-        pkill neutron-openvswitch-agent
-        rm -f /usr/bin/neutron-openvswitch-agent
 
         # stop ovs agent, otherwise, ovs bridges cannot be removed
+        pkill neutron-openvswitch-agent
         service neutron-plugin-openvswitch-agent stop
+
+        rm -f /etc/init/neutron-bsn-agent.conf
+        rm -f /etc/init/neutron-plugin-openvswitch-agent.conf
+        rm -f /usr/bin/neutron-openvswitch-agent
 
         # remove ovs and linux bridge, example ("br-storage" "br-prv" "br-ex")
         declare -a ovs_br=(%(ovs_br)s)
@@ -167,7 +172,6 @@ compute() {
         while true; do
             service neutron-plugin-openvswitch-agent stop
             rm -f /etc/init/neutron-plugin-openvswitch-agent.conf
-            update-rc.d neutron-plugin-openvswitch-agent disable
             ovs-vsctl del-br %(br-int)s
             ip link del dev %(br-int)s
             sleep 1
@@ -227,9 +231,7 @@ compute() {
     if [[ $deploy_dhcp_agent == true ]]; then
         echo 'Restart neutron-metadata-agent and neutron-dhcp-agent'
         service neutron-metadata-agent restart
-        update-rc.d neutron-metadata-agent defaults
         service neutron-dhcp-agent restart
-        update-rc.d neutron-dhcp-agent defaults
     fi
 
     echo 'Restart openstack-nova-compute and neutron-bsn-agent'
