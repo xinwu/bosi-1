@@ -26,7 +26,7 @@ controller() {
         crm resource stop p_neutron-dhcp-agent
         crm resource stop p_neutron-metadata-agent
         crm resource stop p_neutron-l3-agent
-        sleep 10
+        sleep 20
         crm configure delete p_neutron-dhcp-agent
         crm configure delete p_neutron-metadata-agent
         crm configure delete p_neutron-l3-agent
@@ -293,4 +293,6 @@ if [[ ${fuel_cluster_id} != 'None' ]]; then
 fi
 
 set -e
+
+exit 0
 
