@@ -1,7 +1,10 @@
 import re
 import yaml
+import time
 import Queue
+import random
 import argparse
+import datetime
 import threading
 import lib.constants as const
 import subprocess32 as subprocess
@@ -38,11 +41,20 @@ def worker_setup_node(q):
                 {'dst_dir'  : node.dst_dir,
                  'hostname' : node.hostname,
                  'log'      : node.log}))
+
+        # a random delay to smooth apt-get/yum
+        delay = random.random() * 10.0
+        time.sleep(delay)
+
+        start_time = datetime.datetime.now()
         Helper.run_command_on_remote(node,
             (r'''sudo bash %(dst_dir)s/%(hostname)s.sh >> %(log)s 2>&1''' %
             {'dst_dir'  : node.dst_dir,
              'hostname' : node.hostname,
              'log'      : node.log}))
+        end_time = datetime.datetime.now()
+        # TODO
+
         Helper.safe_print("Finish deploying %(hostname)s\n" %
                          {'hostname' : node.hostname})
         q.task_done()
