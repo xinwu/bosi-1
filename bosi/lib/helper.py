@@ -1333,10 +1333,10 @@ class Helper(object):
         Helper.copy_file_to_remote(node, r'''%(dir)s/metadata_agent.ini''' % {'dir': node.setup_node_dir},
                                    '/etc/neutron', 'metadata_agent.ini')
         if node.deploy_mode == const.T5:
-            Helper.safe_print("Copy metadata_agent.ini to %(hostname)s\n" %
+            Helper.safe_print("Copy l3_agent.ini to %(hostname)s\n" %
                              {'hostname' : node.hostname})
-            Helper.copy_file_to_remote(node, r'''%(dir)s/metadata_agent.ini''' % {'dir': node.setup_node_dir},
-                                       '/etc/neutron', 'metadata_agent.ini')
+            Helper.copy_file_to_remote(node, r'''%(dir)s/l3_agent.ini''' % {'dir': node.setup_node_dir},
+                                       '/etc/neutron', 'l3_agent.ini')
 
         # copy ivs to node
         if node.deploy_mode == const.T6:
