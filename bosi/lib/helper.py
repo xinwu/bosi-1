@@ -55,7 +55,7 @@ class Helper(object):
 
 
     @staticmethod
-    def run_command_on_local(command, timeout=1800):
+    def run_command_on_local(command, timeout=1200):
         """
         Use subprocess to run a shell command on local node.
         """
@@ -64,8 +64,7 @@ class Helper(object):
 
         try:
             p = subprocess.Popen(
-                command, shell=True, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
+                command, shell=True)
         except Exception as e:
             msg = "Error opening process %s: %s\n" % (command, e)
             Helper.safe_print(msg)

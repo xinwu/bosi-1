@@ -98,11 +98,10 @@ def deploy_bcf(config, fuel_cluster_id, rhosp, tag, cleanup):
         with open(const.LOG_FILE, "a") as log_file:
             log_file.write(str(node))
 
-    # Use multiple threads to setup controller nodes
-    for i in range(const.MAX_WORKERS):
-        t = threading.Thread(target=worker_setup_node, args=(controller_node_q,))
-        t.daemon = True
-        t.start()
+    # Use single thread to setup controller nodes
+    t = threading.Thread(target=worker_setup_node, args=(controller_node_q,))
+    t.daemon = True
+    t.start()
     controller_node_q.join()
 
     # Use multiple threads to setup compute nodes
