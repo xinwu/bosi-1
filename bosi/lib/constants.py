@@ -90,3 +90,6 @@ HASH_HEADER            = 'BCF-SETUP'
 BCF_CONTROLLER_PORT    = 8443
 ANY                    = 'any'
 
+# BVS-3908 limit the size of uname to 64 characters
+UNAME_LENGTH_LIMIT = 64
+

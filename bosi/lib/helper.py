@@ -955,6 +955,16 @@ class Helper(object):
             tagged_intfs.append(tran['name'])
         node_config['tagged_intfs'] = tagged_intfs
 
+        # get uname
+        uname_string, error = Helper.run_command_on_remote_with_key_without_timeout(node_config['hostname'],
+            node_config['user'], 'uname -n')
+        if uname_string and not error:
+            node_config['uname'] = uname_string.strip()[:const.UNAME_LENGTH_LIMIT]
+        else:
+            Helper.safe_print("Error getting node %(hostname)s uname:\n%(error)s\n"
+                             % {'hostname' : node_config['hostname'], 'error' : error})
+            return None
+
         node = Node(node_config, env)
         return node
 
