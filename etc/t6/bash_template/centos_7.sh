@@ -64,14 +64,14 @@ controller() {
     # restart keystone and horizon
     systemctl restart httpd
 
-    echo 'Restart neutron-server'
-    rm -rf /etc/neutron/plugins/ml2/host_certs/*
-    systemctl restart neutron-server
-
     # schedule cron job to reschedule network in case dhcp agent fails
     chmod a+x /bin/dhcp_reschedule.sh
     crontab -r
     (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
+
+    echo 'Restart neutron-server'
+    rm -rf /etc/neutron/plugins/ml2/host_certs/*
+    systemctl restart neutron-server
 }
 
 compute() {
@@ -189,13 +189,11 @@ compute() {
     fi
 
     # restart libvirtd and nova compute on compute node
-    echo 'Restart libvirtd and openstack-nova-compute'
+    echo 'Restart libvirtd, openstack-nova-compute and neutron-bsn-agent'
     systemctl restart libvirtd
     systemctl enable libvirtd
     systemctl restart openstack-nova-compute
     systemctl enable openstack-nova-compute
-
-    # restart bsn-agent
     systemctl restart neutron-bsn-agent
 }
 
