@@ -111,15 +111,15 @@ compute() {
 
     if [[ $deploy_dhcp_agent == true ]]; then
         echo 'Restart neutron-metadata-agent, neutron-dhcp-agent and neutron-l3-agent'
-        sudo systemctl start neutron-metadata-agent
         sudo systemctl enable neutron-metadata-agent
-        sudo systemctl start neutron-dhcp-agent
+        sudo systemctl start neutron-metadata-agent
         sudo systemctl enable neutron-dhcp-agent
+        sudo systemctl start neutron-dhcp-agent
     fi
 
     if [[ $deploy_l3_agent == true ]]; then
-        sudo systemctl start neutron-l3-agent
         sudo systemctl enable neutron-l3-agent
+        sudo systemctl start neutron-l3-agent
     fi
 
     # restart nova compute on compute node
