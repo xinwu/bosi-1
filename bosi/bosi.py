@@ -23,6 +23,13 @@ node_q = Queue.Queue()
 node_dict = {}
 time_dict = {}
 
+
+def timedelta_total_seconds(timedelta):
+    return (
+        timedelta.microseconds + 0.0 +
+        (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+
+
 def chmod_node(node):
     Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /etc/neutron")
     Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.dst_dir)
@@ -59,11 +66,11 @@ def worker_setup_node(q):
         end_time = datetime.datetime.now()
 
         # parse setup log
-        diff = end_time - start_time
-        node.set_time_diff(diff.total_seconds())
+        diff = timedelta_total_seconds(end_time - start_time)
+        node.set_time_diff(diff)
         node = Helper.update_last_log(node)
         node_dict[node.hostname] = node
-        time_dict[node.hostname] = diff.total_seconds()
+        time_dict[node.hostname] = diff
 
         Helper.safe_print("Finish deploying %(hostname)s, cost time: %(diff).2f\n" %
                          {'hostname' : node.hostname, 'diff' : node.time_diff})
