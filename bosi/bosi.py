@@ -24,19 +24,6 @@ node_dict = {}
 time_dict = {}
 
 
-def timedelta_total_seconds(timedelta):
-    return (
-        timedelta.microseconds + 0.0 +
-        (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
-
-
-def chmod_node(node):
-    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /etc/neutron")
-    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.dst_dir)
-    Helper.run_command_on_remote_without_timeout(node, "sudo touch %s" % node.log)
-    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
-
-
 def worker_setup_node(q):
     while True:
         node = q.get()
@@ -66,7 +53,7 @@ def worker_setup_node(q):
         end_time = datetime.datetime.now()
 
         # parse setup log
-        diff = timedelta_total_seconds(end_time - start_time)
+        diff = Helper.timedelta_total_seconds(end_time - start_time)
         node.set_time_diff(diff)
         node = Helper.update_last_log(node)
         node_dict[node.hostname] = node
@@ -117,7 +104,7 @@ def deploy_bcf(config, fuel_cluster_id, rhosp, tag, cleanup):
             node_q.put(node)
 
         if node.rhosp:
-            chmod_node(node)
+            Helper.chmod_node(node)
 
     # copy neutron config from neutron server to setup node
     Helper.copy_neutron_config_from_controllers(controller_nodes)

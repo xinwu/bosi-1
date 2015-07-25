@@ -22,6 +22,21 @@ class Helper(object):
     # lock to serialize stdout of different threads
     __print_lock = Lock()
 
+
+    @staticmethod
+    def timedelta_total_seconds(timedelta):
+        return (timedelta.microseconds + 0.0 +
+               (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+
+
+    @staticmethod
+    def chmod_node(node):
+        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /etc/neutron")
+        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.dst_dir)
+        Helper.run_command_on_remote_without_timeout(node, "sudo touch %s" % node.log)
+        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
+
+
     @staticmethod
     def get_setup_node_ip():
         """
