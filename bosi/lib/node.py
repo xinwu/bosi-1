@@ -41,6 +41,10 @@ class Node(object):
         self.env_tag               = env.tag
         self.cleanup               = env.cleanup
 
+        # setup result
+        self.time_diff             = 0
+        self.last_log              = None
+
         # rhosp related config
         self.rhosp_automate_register              = env.rhosp_automate_register
         self.rhosp_installer_management_interface = env.rhosp_installer_management_interface
@@ -148,6 +152,14 @@ class Node(object):
 
     def set_dhcp_agent_scheduler_dir(self, dhcp_agent_scheduler_dir):
         self.dhcp_agent_scheduler_dir = dhcp_agent_scheduler_dir
+
+
+    def set_time_diff(self, time_diff):
+        self.time_diff = time_diff
+
+
+    def set_last_log(self, last_log):
+        self.last_log = last_log
 
 
     def get_network_vlan_ranges(self):
@@ -302,6 +314,8 @@ deploy_haproxy         : %(deploy_haproxy)s,
 tag                    : %(tag)s,
 env_tag                : %(env_tag)s,
 cleanup                : %(cleanup)s,
+time_diff              : %(time_diff)s,
+last_log               : %(last_log)s,
 rhosp_automate_register              : %(rhosp_automate_register)s,
 rhosp_installer_management_interface : %(rhosp_installer_management_interface)s,
 rhosp_installer_pxe_interface        : %(rhosp_installer_pxe_interface)s,
@@ -373,6 +387,8 @@ error                  : %(error)s,
 'tag'                   : self.tag,
 'env_tag'               : self.env_tag,
 'cleanup'               : self.cleanup,
+'time_diff'             : self.time_diff,
+'last_log'              : self.last_log,
 'rhosp_automate_register'              : self.rhosp_automate_register,
 'rhosp_installer_management_interface' : self.rhosp_installer_management_interface,
 'rhosp_installer_pxe_interface'        : self.rhosp_installer_pxe_interface,

@@ -11,6 +11,7 @@ import subprocess32 as subprocess
 from lib.node import Node
 from lib.helper import Helper
 from lib.environment import Environment
+from collections import OrderedDict
 
 # queue to store all controller nodes
 controller_node_q = Queue.Queue()
@@ -18,6 +19,9 @@ controller_node_q = Queue.Queue()
 # queue to store all nodes
 node_q = Queue.Queue()
 
+# result dict
+node_dict = {}
+time_dict = {}
 
 def chmod_node(node):
     Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /etc/neutron")
@@ -53,10 +57,16 @@ def worker_setup_node(q):
              'hostname' : node.hostname,
              'log'      : node.log}))
         end_time = datetime.datetime.now()
-        diff = end_time - start_time
 
-        Helper.safe_print("Finish deploying %(hostname)s, cost time: %(diff)s\n" %
-                         {'hostname' : node.hostname, 'diff' : str(diff.total_seconds())})
+        # parse setup log
+        diff = end_time - start_time
+        node.set_time_diff(diff.total_seconds())
+        node = Helper.update_last_log(node)
+        node_dict[node.hostname] = node
+        time_dict[node.hostname] = diff.total_seconds()
+
+        Helper.safe_print("Finish deploying %(hostname)s, cost time: %(diff).2f\n" %
+                         {'hostname' : node.hostname, 'diff' : node.time_diff})
         q.task_done()
 
 
@@ -122,6 +132,13 @@ def deploy_bcf(config, fuel_cluster_id, rhosp, tag, cleanup):
         t.daemon = True
         t.start()
     node_q.join()
+
+    sorted_time_dict = OrderedDict(sorted(time_dict.items(), key=lambda x: x[1]))
+    for hostname, time in sorted_time_dict.items():
+        Helper.safe_print("node: %(node)s, time: %(time).2f, last_log: %(log)s" %
+                          {'node' : hostname,
+                           'time' : time,
+                           'log'  : node_dict[hostname].last_log})
 
     Helper.safe_print("Big Cloud Fabric deployment finished! Check %(log)s on each node for details.\n" %
                      {'log' : const.LOG_FILE})

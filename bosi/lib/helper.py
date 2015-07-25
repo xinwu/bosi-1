@@ -1128,6 +1128,15 @@ class Helper(object):
 
 
     @staticmethod
+    def update_last_log(node):
+        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
+        last_log, error = Helper.run_command_on_remote_without_timeout(node, "sudo tail -n 1 %s" % node.log)
+        if last_log:
+            node.set_last_log(last_log)
+        return node
+
+
+    @staticmethod
     def run_command_on_remote_without_timeout(node, command):
         if node.rhosp:
             return Helper.run_command_on_remote_with_key_without_timeout(node.hostname,
