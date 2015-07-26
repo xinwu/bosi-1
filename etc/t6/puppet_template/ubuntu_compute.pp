@@ -207,6 +207,10 @@ file { '/etc/neutron/dnsmasq-neutron.conf':
 
 # dhcp configuration
 if %(deploy_dhcp_agent)s {
+    service { "neutron-dhcp-agent":
+        ensure            => running,
+        enable            => true,
+    }
     ini_setting { "dhcp agent resync_interval":
         ensure            => present,
         path              => '/etc/neutron/dhcp_agent.ini',
@@ -214,6 +218,7 @@ if %(deploy_dhcp_agent)s {
         key_val_separator => '=',
         setting           => 'resync_interval',
         value             => '60',
+        notify            => Service['neutron-dhcp-agent'],
     }
     ini_setting { "dhcp agent interface driver":
         ensure            => present,
@@ -222,6 +227,7 @@ if %(deploy_dhcp_agent)s {
         key_val_separator => '=',
         setting           => 'interface_driver',
         value             => 'neutron.agent.linux.interface.IVSInterfaceDriver',
+        notify            => Service['neutron-dhcp-agent'],
     }
     ini_setting { "dhcp agent dhcp driver":
         ensure            => present,
@@ -230,6 +236,7 @@ if %(deploy_dhcp_agent)s {
         key_val_separator => '=',
         setting           => 'dhcp_driver',
         value             => 'bsnstacklib.plugins.bigswitch.dhcp_driver.DnsmasqWithMetaData',
+        notify            => Service['neutron-dhcp-agent'],
     }
     ini_setting { "dhcp agent enable isolated metadata":
         ensure            => present,
@@ -238,6 +245,7 @@ if %(deploy_dhcp_agent)s {
         key_val_separator => '=',
         setting           => 'enable_isolated_metadata',
         value             => 'True',
+        notify            => Service['neutron-dhcp-agent'],
     }
     ini_setting { "dhcp agent disable metadata network":
         ensure            => present,
@@ -246,6 +254,7 @@ if %(deploy_dhcp_agent)s {
         key_val_separator => '=',
         setting           => 'enable_metadata_network',
         value             => 'False',
+        notify            => Service['neutron-dhcp-agent'],
     }
     ini_setting { "dhcp agent disable dhcp_delete_namespaces":
         ensure            => present,
@@ -254,6 +263,7 @@ if %(deploy_dhcp_agent)s {
         key_val_separator => '=',
         setting           => 'dhcp_delete_namespaces',
         value             => 'False',
+        notify            => Service['neutron-dhcp-agent'],
     }
 }
 
