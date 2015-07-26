@@ -93,19 +93,22 @@ controller() {
 }
 
 compute() {
-    # patch linux/dhcp.py to make sure static host route is pushed to instances
-    dpkg -l neutron-dhcp-agent
-    if [[ $? != 0 ]]; then
-        apt-get install -o Dpkg::Options::="--force-confold" -y neutron-metadata-agent
-        apt-get install -o Dpkg::Options::="--force-confold" -y neutron-dhcp-agent
+    if [[ $deploy_dhcp_agent == true ]]; then
+        dpkg -l neutron-dhcp-agent
+        if [[ $? != 0 ]]; then
+            apt-get install -o Dpkg::Options::="--force-confold" -y neutron-metadata-agent
+            apt-get install -o Dpkg::Options::="--force-confold" -y neutron-dhcp-agent
+            service neutron-metadata-agent stop
+            service neutron-dhcp-agent stop
+        fi
+
+        # patch linux/dhcp.py to make sure static host route is pushed to instances
+        dhcp_py=$(find /usr -name dhcp.py | grep linux)
+        dhcp_dir=$(dirname "${dhcp_py}")
+        sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
+        find $dhcp_dir -name "*.pyc" | xargs rm
+        find $dhcp_dir -name "*.pyo" | xargs rm
     fi
-    service neutron-metadata-agent stop
-    service neutron-dhcp-agent stop
-    dhcp_py=$(find /usr -name dhcp.py | grep linux)
-    dhcp_dir=$(dirname "${dhcp_py}")
-    sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
-    find $dhcp_dir -name "*.pyc" | xargs rm
-    find $dhcp_dir -name "*.pyo" | xargs rm
 
     # install ivs
     if [[ $install_ivs == true ]]; then
