@@ -28,11 +28,11 @@ controller() {
         crm configure delete p_neutron-l3-agent
     fi
     service neutron-metadata-agent stop
-    update-rc.d neutron-metadata-agent disable
+    mv /etc/init/neutron-metadata-agent.conf /etc/init/neutron-metadata-agent.conf.disabled
     service neutron-dhcp-agent stop
-    update-rc.d neutron-dhcp-agent disable
+    mv /etc/init/neutron-dhcp-agent.conf /etc/init/neutron-dhcp-agent.conf.disabled
     service neutron-l3-agent stop
-    update-rc.d neutron-l3-agent disable
+    mv /etc/init/neutron-l3-agent.conf /etc/init/neutron-l3-agent.conf.disabled
     
 
     if [[ $deploy_horizon_patch == true ]]; then
@@ -100,16 +100,21 @@ compute() {
     apt-get install -o Dpkg::Options::="--force-confold" -y neutron-dhcp-agent
     apt-get install -o Dpkg::Options::="--force-confold" -y neutron-l3-agent
     service neutron-metadata-agent stop
-    update-rc.d neutron-metadata-agent disable
+    mv /etc/init/neutron-metadata-agent.conf /etc/init/neutron-metadata-agent.conf.disabled
     service neutron-dhcp-agent stop
-    update-rc.d neutron-dhcp-agent disable
+    mv /etc/init/neutron-dhcp-agent.conf /etc/init/neutron-dhcp-agent.conf.disabled
     service neutron-l3-agent stop
-    update-rc.d neutron-l3-agent disable
+    mv /etc/init/neutron-l3-agent.conf /etc/init/neutron-l3-agent.conf.disabled
     dhcp_py=$(find /usr -name dhcp.py | grep linux)
     dhcp_dir=$(dirname "${dhcp_py}")
     sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
     find $dhcp_dir -name "*.pyc" | xargs rm
     find $dhcp_dir -name "*.pyo" | xargs rm
+
+    if [[ $deploy_haproxy == true ]]; then
+        apt-get install -y neutron-lbaas-agent haproxy
+        service neutron-lbaas-agent restart
+    fi
 
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
@@ -117,15 +122,21 @@ compute() {
     if [[ $deploy_dhcp_agent == true ]]; then
         echo 'Restart neutron-metadata-agent and neutron-dhcp-agent'
         service neutron-metadata-agent restart
-        update-rc.d neutron-metadata-agent defaults
+        mv /etc/init/neutron-metadata-agent.conf.disabled /etc/init/neutron-metadata-agent.conf
         service neutron-dhcp-agent restart
-        update-rc.d neutron-dhcp-agent defaults
+        mv /etc/init/neutron-dhcp-agent.conf.disabled /etc/init/neutron-dhcp-agent.conf
     fi
 
     if [[ $deploy_l3_agent == true ]]; then
         echo "Restart neutron-l3-agent"
         service neutron-l3-agent restart
-        update-rc.d neutron-l3-agent defaults
+        mv /etc/init/neutron-l3-agent.conf.disabled /etc/init/neutron-l3-agent.conf
+    fi
+
+    # we install this before puppet so the conf files are present and restart after puppet
+    # so that changes made by puppet are reflected correctly
+    if [[ $deploy_haproxy == true ]]; then
+        service neutron-lbaas-agent restart
     fi
 }
 

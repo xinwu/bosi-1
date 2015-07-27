@@ -47,7 +47,7 @@ ini_setting { "neutron.conf service_plugins":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'service_plugins',
-  value             => 'router',
+  value             => 'router,lbaas',
 }
 ini_setting { "neutron.conf dhcp_agents_per_network":
   ensure            => present,
@@ -67,13 +67,36 @@ ini_setting { "neutron.conf notification driver":
 }
 
 # make sure neutron-bsn-agent is stopped
+# config neutron-bsn-agent conf
+file { '/etc/init/neutron-bsn-agent.conf':
+    ensure => present,
+    content => "
+description \"Neutron BSN Agent\"
+start on runlevel [2345]
+stop on runlevel [!2345]
+respawn
+script
+    exec /usr/local/bin/neutron-bsn-agent --config-file=/etc/neutron/neutron.conf --config-file=/etc/neutron/plugins/ml2/ml2_conf.ini --log-file=/var/log/neutron/neutron-bsn-agent.log
+end script
+",
+}
+file { '/etc/init.d/neutron-bsn-agent':
+    ensure => link,
+    target => '/lib/init/upstart-job',
+    notify => Service['neutron-bsn-agent'],
+}
 service {'neutron-bsn-agent':
     ensure     => 'stopped',
     enable     => 'false',
     provider   => 'upstart',
+    subscribe  => [File['/etc/init/neutron-bsn-agent.conf'], File['/etc/init.d/neutron-bsn-agent']],
 }
 
 # ensure neutron-plugin-openvswitch-agent is running
+file { "/etc/init/neutron-plugin-openvswitch-agent.conf":
+    ensure  => file,
+    mode    => 0644,
+}
 service { 'neutron-plugin-openvswitch-agent':
   ensure     => 'running',
   enable     => 'true',
@@ -93,11 +116,19 @@ if %(deploy_l3_agent)s {
       setting           => 'enable_metadata_proxy',
       value             => 'False',
     }
+    ini_setting { "l3 agent external network bridge":
+      ensure            => present,
+      path              => '/etc/neutron/l3_agent.ini',
+      section           => 'DEFAULT',
+      key_val_separator => '=',
+      setting           => 'external_network_bridge',
+      value             => '',
+    }
 }
 
 file { '/etc/neutron/dnsmasq-neutron.conf':
   ensure            => file,
-  content           => 'dhcp-option-force=26,1500',
+  content           => 'dhcp-option-force=26,1400',
 }
 
 # dhcp configuration
@@ -144,3 +175,52 @@ if %(deploy_dhcp_agent)s {
     }
 }
 
+# haproxy
+if %(deploy_haproxy)s {
+    package { "neutron-lbaas-agent":
+        ensure  => installed,
+    }
+    package { "haproxy":
+        ensure  => installed,
+    }
+    ini_setting { "haproxy agent periodic interval":
+        ensure            => present,
+        path              => '/etc/neutron/lbaas_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'periodic_interval',
+        value             => '10',
+        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
+        notify            => Service['neutron-lbaas-agent'],
+    }
+    ini_setting { "haproxy agent interface driver":
+        ensure            => present,
+        path              => '/etc/neutron/lbaas_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'interface_driver',
+        value             => 'neutron.agent.linux.interface.OVSInterfaceDriver',
+        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
+        notify            => Service['neutron-lbaas-agent'],
+    }
+    ini_setting { "haproxy agent device driver":
+        ensure            => present,
+        path              => '/etc/neutron/lbaas_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'device_driver',
+        value             => 'neutron.services.loadbalancer.drivers.haproxy.namespace_driver.HaproxyNSDriver',
+        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
+        notify            => Service['neutron-lbaas-agent'],
+    }
+    service { "haproxy":
+        ensure            => running,
+        enable            => true,
+        require           => Package['haproxy'],
+    }
+    service { "neutron-lbaas-agent":
+        ensure            => running,
+        enable            => true,
+        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
+    }
+}
