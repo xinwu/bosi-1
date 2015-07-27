@@ -1363,7 +1363,7 @@ class Helper(object):
                                        '/etc/neutron', 'l3_agent.ini')
 
         # copy ivs to node
-        if node.deploy_mode == const.T6 and node.install_ivs:
+        if node.deploy_mode == const.T6 and node.role == const.ROLE_COMPUTE and node.install_ivs:
             Helper.safe_print("Copy %(ivs_pkg)s to %(hostname)s\n" %
                               {'ivs_pkg'  : node.ivs_pkg,
                                'hostname' : node.hostname})
