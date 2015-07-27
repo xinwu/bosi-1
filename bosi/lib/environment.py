@@ -6,7 +6,7 @@ from helper import Helper
 from rest import RestLib
 
 class Environment(object):
-    def __init__(self, config, fuel_cluster_id, rhosp, tag, cleanup):
+    def __init__(self, config, mode, fuel_cluster_id, rhosp, tag, cleanup):
         # fuel cluster id
         self.fuel_cluster_id = fuel_cluster_id
 
@@ -51,15 +51,9 @@ class Environment(object):
                 break
 
         # t5 or t6 mode
-        self.deploy_mode = config.get('default_deploy_mode')
+        self.deploy_mode = const.MODE_DICT.get(mode)
         if not self.deploy_mode:
             self.deploy_mode = const.T5
-        if config['nodes']:
-            for node_config in config['nodes']:
-                node_mode = node_config.get('deploy_mode')
-                if node_mode and node_mode.lower() == const.T6:
-                    self.deploy_mode = const.T6
-                    break
 
         # selinux configuration
         self.selinux_mode = None
