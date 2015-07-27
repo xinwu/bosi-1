@@ -66,6 +66,116 @@ ini_setting { "neutron.conf notification driver":
   value             => 'messaging',
 }
 
+# set the correct properties in ml2_conf.ini on compute as well
+# config /etc/neutron/plugins/ml2/ml2_conf.ini
+ini_setting { "ml2 type dirvers":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'ml2',
+  key_val_separator => '=',
+  setting           => 'type_drivers',
+  value             => 'vlan',
+  notify            => Service['neutron-plugin-openvswitch-agent'],
+}
+ini_setting { "ml2 tenant network types":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'ml2',
+  key_val_separator => '=',
+  setting           => 'tenant_network_types',
+  value             => 'vlan',
+  notify            => Service['neutron-plugin-openvswitch-agent'],
+}
+ini_setting { "ml2 tenant network vlan ranges":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'ml2_type_vlan',
+  key_val_separator => '=',
+  setting           => 'network_vlan_ranges',
+  value             => '%(network_vlan_ranges)s',
+  notify            => Service['neutron-plugin-openvswitch-agent'],
+}
+ini_setting { "ml2 mechanism drivers":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'ml2',
+  key_val_separator => '=',
+  setting           => 'mechanism_drivers',
+  value             => 'openvswitch,bigswitch',
+  notify            => Service['neutron-plugin-openvswitch-agent'],
+}
+ini_setting { "ml2 restproxy ssl cert directory":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'ssl_cert_directory',
+  value             => '/etc/neutron/plugins/ml2',
+  notify            => Service['neutron-plugin-openvswitch-agent'],
+}
+ini_setting { "ml2 restproxy servers":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'servers',
+  value             => '%(bcf_controllers)s',
+  notify            => Service['neutron-plugin-openvswitch-agent'],
+}
+ini_setting { "ml2 restproxy server auth":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'server_auth',
+  value             => '%(bcf_controller_user)s:%(bcf_controller_passwd)s',
+  notify            => Service['neutron-plugin-openvswitch-agent'],
+}
+ini_setting { "ml2 restproxy server ssl":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'server_ssl',
+  value             => 'True',
+  notify            => Service['neutron-plugin-openvswitch-agent'],
+}
+ini_setting { "ml2 restproxy auto sync on failure":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'auto_sync_on_failure',
+  value             => 'True',
+  notify            => Service['neutron-plugin-openvswitch-agent'],
+}
+ini_setting { "ml2 restproxy consistency interval":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'consistency_interval',
+  value             => 60,
+  notify            => Service['neutron-plugin-openvswitch-agent'],
+}
+ini_setting { "ml2 restproxy neutron_id":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'neutron_id',
+  value             => %(neutron_id)s,
+  notify            => Service['neutron-plugin-openvswitch-agent'],
+}
+
+# change ml2 ownership
+file { '/etc/neutron/plugins/ml2':
+  owner   => neutron,
+  group   => neutron,
+  recurse => true,
+  notify  => Service['neutron-plugin-openvswitch-agent'],
+}
+
 # make sure neutron-bsn-agent is stopped
 # config neutron-bsn-agent conf
 file { '/etc/init/neutron-bsn-agent.conf':
