@@ -162,7 +162,10 @@ def main():
                         help="Clean up existing routers, networks and projects.")
     args = parser.parse_args()
     if args.fuel_cluster_id and args.rhosp:
-        Helper.safe_print("Cannot have both fuel and rhosp as openstack installer")
+        Helper.safe_print("Cannot have both fuel and rhosp as openstack installer.\n")
+        return
+    if args.deploy_mode not in const.MODE_DICT:
+        Helper.safe_print("Deploy mode has to be pfabric or pvfabric.\n")
         return
     with open(args.config_file, 'r') as config_file:
         config = yaml.load(config_file)
