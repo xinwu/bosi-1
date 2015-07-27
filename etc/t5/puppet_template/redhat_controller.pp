@@ -245,7 +245,6 @@ ini_setting { "ml2 restproxy neutron_id":
 file { '/etc/neutron/plugins/ml2':
   owner   => neutron,
   group   => neutron,
-  mode    => 0777,
   recurse => true,
   notify  => Service['neutron-server'],
 }
