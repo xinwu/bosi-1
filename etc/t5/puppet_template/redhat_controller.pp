@@ -85,6 +85,15 @@ ini_setting { "neutron.conf notification driver":
   value             => 'messaging',
   notify            => Service['neutron-server'],
 }
+ini_setting { "neutron.conf allow_automatic_l3agent_failover":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'allow_automatic_l3agent_failover',
+  value             => 'True',
+  notify            => Service['neutron-server'],
+}
 
 # configure /etc/keystone/keystone.conf
 ini_setting { "keystone.conf notification driver":
