@@ -100,6 +100,97 @@ SLAVE=yes
 bond_intf { $uplinks:
 }
 
+# ml2
+ini_setting { "ml2 type dirvers":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'ml2',
+  key_val_separator => '=',
+  setting           => 'type_drivers',
+  value             => 'vlan',
+}
+ini_setting { "ml2 tenant network types":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'ml2',
+  key_val_separator => '=',
+  setting           => 'tenant_network_types',
+  value             => 'vlan',
+}
+ini_setting { "ml2 tenant network vlan ranges":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'ml2_type_vlan',
+  key_val_separator => '=',
+  setting           => 'network_vlan_ranges',
+  value             => '%(network_vlan_ranges)s',
+}
+ini_setting { "ml2 mechanism drivers":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'ml2',
+  key_val_separator => '=',
+  setting           => 'mechanism_drivers',
+  value             => 'openvswitch, bsn_ml2',
+}
+ini_setting { "ml2 restproxy ssl cert directory":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'ssl_cert_directory',
+  value             => '/etc/neutron/plugins/ml2',
+}
+ini_setting { "ml2 restproxy servers":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'servers',
+  value             => '%(bcf_controllers)s',
+}
+ini_setting { "ml2 restproxy server auth":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'server_auth',
+  value             => '%(bcf_controller_user)s:%(bcf_controller_passwd)s',
+}
+ini_setting { "ml2 restproxy server ssl":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'server_ssl',
+  value             => 'True',
+}
+ini_setting { "ml2 restproxy auto sync on failure":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'auto_sync_on_failure',
+  value             => 'True',
+}
+ini_setting { "ml2 restproxy consistency interval":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'consistency_interval',
+  value             => 60,
+}
+ini_setting { "ml2 restproxy neutron_id":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'neutron_id',
+  value             => %(neutron_id)s,
+}
+
+
 # dhcp configuration
 if %(deploy_dhcp_agent)s {
     ini_setting { "dhcp agent resync_interval":

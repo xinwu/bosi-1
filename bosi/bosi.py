@@ -136,7 +136,7 @@ def deploy_bcf(config, fuel_cluster_id, rhosp, tag, cleanup):
 
     sorted_time_dict = OrderedDict(sorted(time_dict.items(), key=lambda x: x[1]))
     for hostname, time in sorted_time_dict.items():
-        Helper.safe_print("node: %(node)s, time: %(time).2f, last_log: %(log)s" %
+        Helper.safe_print("node: %(node)s, time: %(time).2f, last_log: %(log)s\n" %
                           {'node' : hostname,
                            'time' : time,
                            'log'  : node_dict[hostname].last_log})
