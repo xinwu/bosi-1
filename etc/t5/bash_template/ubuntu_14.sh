@@ -17,18 +17,22 @@ controller() {
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
-    echo 'Stop and disable neutron-metadata-agent and neutron-dhcp-agent'
+    echo 'Stop and disable neutron-metadata-agent, neutron-dhcp-agent and neutron-l3-agent'
     if [[ ${fuel_cluster_id} != 'None' ]]; then
         crm resource stop p_neutron-dhcp-agent
         crm resource stop p_neutron-metadata-agent
+        crm resource stop p_neutron-l3-agent
         sleep 15
         crm configure delete p_neutron-dhcp-agent
         crm configure delete p_neutron-metadata-agent
+        crm configure delete p_neutron-l3-agent
     fi
     service neutron-metadata-agent stop
     mv /etc/init/neutron-metadata-agent.conf /etc/init/neutron-metadata-agent.conf.disabled
     service neutron-dhcp-agent stop
     mv /etc/init/neutron-dhcp-agent.conf /etc/init/neutron-dhcp-agent.conf.disabled
+    service neutron-l3-agent stop
+    mv /etc/init/neutron-l3-agent.conf /etc/init/neutron-l3-agent.conf.disabled
     
 
     if [[ $deploy_horizon_patch == true ]]; then
@@ -73,11 +77,10 @@ controller() {
     (crontab -l; echo "*/30 * * * * /usr/bin/fuel-logrotate") | crontab -
     (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
 
-    echo 'Restart neutron-l3-agent and neutron-server'
+    echo 'Restart neutron-server'
     rm -rf /etc/neutron/plugins/ml2/host_certs/*
     service keystone restart
     service apache2 restart
-    service neutron-l3-agent restart
     service neutron-server restart
 }
 
