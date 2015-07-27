@@ -1165,7 +1165,7 @@ class Helper(object):
         Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
         last_log, error = Helper.run_command_on_remote_without_timeout(node, "sudo tail -n 1 %s" % node.log)
         if last_log:
-            node.set_last_log(last_log)
+            node.set_last_log(last_log.strip())
         return node
 
 
