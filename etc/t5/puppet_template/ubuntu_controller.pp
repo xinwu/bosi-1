@@ -197,11 +197,7 @@ file { '/etc/neutron/dnsmasq-neutron.conf':
   content           => 'dhcp-option-force=26,1400',
 }
 
-# disable l3 agent
-service { 'neutron-l3-agent':
-  ensure  => stopped,
-  enable  => false,
-}
+# config /etc/neutron/l3-agent.ini
 ini_setting { "l3 agent disable metadata proxy":
   ensure            => present,
   path              => '/etc/neutron/l3_agent.ini',
@@ -209,6 +205,14 @@ ini_setting { "l3 agent disable metadata proxy":
   key_val_separator => '=',
   setting           => 'enable_metadata_proxy',
   value             => 'False',
+}
+ini_setting { "l3 agent external network bridge":
+  ensure            => present,
+  path              => '/etc/neutron/l3_agent.ini',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'external_network_bridge',
+  value             => '',
 }
 
 # config /etc/neutron/plugins/ml2/ml2_conf.ini 

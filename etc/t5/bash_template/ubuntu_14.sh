@@ -14,25 +14,19 @@ deploy_haproxy=%(deploy_haproxy)s
 
 
 controller() {
-    # deploy bcf
-    puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
-    echo 'Stop and disable neutron-metadata-agent, neutron-dhcp-agent and neutron-l3-agent'
+    echo 'Stop and disable neutron-metadata-agent and neutron-dhcp-agent'
     if [[ ${fuel_cluster_id} != 'None' ]]; then
         crm resource stop p_neutron-dhcp-agent
         crm resource stop p_neutron-metadata-agent
-        crm resource stop p_neutron-l3-agent
         sleep 15
         crm configure delete p_neutron-dhcp-agent
         crm configure delete p_neutron-metadata-agent
-        crm configure delete p_neutron-l3-agent
     fi
     service neutron-metadata-agent stop
     mv /etc/init/neutron-metadata-agent.conf /etc/init/neutron-metadata-agent.conf.disabled
     service neutron-dhcp-agent stop
     mv /etc/init/neutron-dhcp-agent.conf /etc/init/neutron-dhcp-agent.conf.disabled
-    service neutron-l3-agent stop
-    mv /etc/init/neutron-l3-agent.conf /etc/init/neutron-l3-agent.conf.disabled
     
 
     if [[ $deploy_horizon_patch == true ]]; then
@@ -57,8 +51,8 @@ controller() {
                     yes | cp -rfp %(dst_dir)s/%(horizon_patch_dir)s/$f/* %(horizon_base_dir)s/$f
                 fi
             done
-            find "%(horizon_base_dir)s" -name "*.pyc" | xargs -0 /bin/rm -f
-            find "%(horizon_base_dir)s" -name "*.pyo" | xargs -0 /bin/rm -f
+            find "%(horizon_base_dir)s" -name "*.pyc" | xargs rm
+            find "%(horizon_base_dir)s" -name "*.pyo" | xargs rm
 
             # patch neutron api.py to work around oslo bug
             # https://bugs.launchpad.net/oslo-incubator/+bug/1328247
@@ -71,10 +65,14 @@ controller() {
         fi
     fi
 
-    echo 'Restart neutron-server'
+    # deploy bcf
+    puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
+
+    echo 'Restart neutron-l3-agent and neutron-server'
     rm -rf /etc/neutron/plugins/ml2/host_certs/*
     service keystone restart
     service apache2 restart
+    service neutron-l3-agent restart
     service neutron-server restart
 
     # schedule cron job to reschedule network in case dhcp agent fails
@@ -136,6 +134,7 @@ compute() {
     # we install this before puppet so the conf files are present and restart after puppet
     # so that changes made by puppet are reflected correctly
     if [[ $deploy_haproxy == true ]]; then
+        echo "Restart neutron-lbaas-agent"
         service neutron-lbaas-agent restart
     fi
 }
