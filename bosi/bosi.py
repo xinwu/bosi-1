@@ -22,6 +22,15 @@ def chmod_node(node):
     Helper.run_command_on_remote_without_timeout(node, "sudo touch %s" % node.log)
     Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
 
+def reboot_compute_node(q):
+    while True:
+        node = q.get()
+        Helper.safe_print("Rebooting node %(hostname)s\n" %
+                         {'hostname' : node.hostname})
+        Helper.run_command_on_remote(node, r'''sudo reboot''')
+        Helper.safe_print("Finished rebooting node %(hostname)s\n" %
+                         {'hostname' : node.hostname})
+        q.task_done()
 
 def worker_setup_node(q):
     while True:
@@ -112,9 +121,16 @@ def deploy_bcf(config, fuel_cluster_id, rhosp, tag, cleanup):
         t.start()
     node_q.join()
 
+    # reboot compute nodes when deploying T5 on UBUNTU
+    if env.deploy_mode == const.T5 and env.os == const.UBUNTU :
+        for i in range(const.MAX_WORKERS):
+            t = threading.Thread(target=reboot_compute_node, args=(node_q,))
+            t.daemon = True
+            t.start()
+        node_q.join()
+
     Helper.safe_print("Big Cloud Fabric deployment finished! Check %(log)s on each node for details.\n" %
                      {'log' : const.LOG_FILE})
-
 
 def main():
     # Check if network is working properly

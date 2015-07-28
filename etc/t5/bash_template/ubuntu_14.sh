@@ -14,6 +14,8 @@ deploy_haproxy=%(deploy_haproxy)s
 
 
 controller() {
+    # deploy bcf
+    puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
     echo 'Stop and disable neutron-metadata-agent and neutron-dhcp-agent'
     if [[ ${fuel_cluster_id} != 'None' ]]; then
@@ -64,9 +66,6 @@ controller() {
             find $neutron_api_dir -name "*.pyo" | xargs rm
         fi
     fi
-
-    # deploy bcf
-    puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
     echo 'Restart neutron-l3-agent and neutron-server'
     rm -rf /etc/neutron/plugins/ml2/host_certs/*
