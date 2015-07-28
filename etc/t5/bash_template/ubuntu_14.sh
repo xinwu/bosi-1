@@ -86,8 +86,12 @@ compute() {
     # update bond mode to balance-xor
     ifdown %(bond)s
     sed -i 's/bond-mode.*/bond-mode balance-xor/' /etc/network/interfaces.d/ifcfg-%(bond)s
-    # ifup bond0 doesn't bring up slave interfaces. ifup -a applies to all auto interfaces
-    ifup -a
+    # bring up bond's uplinks one by one. ifup -a gives errors
+    declare -a uplinks=(%(uplinks)s)
+    len=${#uplinks[@]}
+    for (( i=0; i<$len; i++ )); do
+        ifup ${uplinks[$i]}
+    done
 
     # copy send_lldp to /bin
     sudo cp %(dst_dir)s/send_lldp /bin/
