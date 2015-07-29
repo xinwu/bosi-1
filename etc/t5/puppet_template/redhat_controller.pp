@@ -73,7 +73,7 @@ ini_setting { "neutron.conf dhcp_agents_per_network":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'dhcp_agents_per_network',
-  value             => '2',
+  value             => '1',
   notify            => Service['neutron-server'],
 }
 ini_setting { "neutron.conf notification driver":
@@ -83,6 +83,15 @@ ini_setting { "neutron.conf notification driver":
   key_val_separator => '=',
   setting           => 'notification_driver',
   value             => 'messaging',
+  notify            => Service['neutron-server'],
+}
+ini_setting { "neutron.conf allow_automatic_l3agent_failover":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'allow_automatic_l3agent_failover',
+  value             => 'True',
   notify            => Service['neutron-server'],
 }
 
@@ -165,7 +174,7 @@ ini_setting { "ml2 mechanism drivers":
   section           => 'ml2',
   key_val_separator => '=',
   setting           => 'mechanism_drivers',
-  value             => 'bsn_ml2',
+  value             => 'openvswitch, bsn_ml2',
   notify            => Service['neutron-server'],
 }
 ini_setting { "ml2 restproxy ssl cert directory":

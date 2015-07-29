@@ -22,6 +22,21 @@ class Helper(object):
     # lock to serialize stdout of different threads
     __print_lock = Lock()
 
+
+    @staticmethod
+    def timedelta_total_seconds(timedelta):
+        return (timedelta.microseconds + 0.0 +
+               (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+
+
+    @staticmethod
+    def chmod_node(node):
+        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /etc/neutron")
+        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.dst_dir)
+        Helper.run_command_on_remote_without_timeout(node, "sudo touch %s" % node.log)
+        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
+
+
     @staticmethod
     def get_setup_node_ip():
         """
@@ -55,7 +70,7 @@ class Helper(object):
 
 
     @staticmethod
-    def run_command_on_local(command, timeout=1800):
+    def run_command_on_local(command, timeout=1200):
         """
         Use subprocess to run a shell command on local node.
         """
@@ -64,8 +79,7 @@ class Helper(object):
 
         try:
             p = subprocess.Popen(
-                command, shell=True, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
+                command, shell=True)
         except Exception as e:
             msg = "Error opening process %s: %s\n" % (command, e)
             Helper.safe_print(msg)
@@ -1130,6 +1144,15 @@ class Helper(object):
 
 
     @staticmethod
+    def update_last_log(node):
+        Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
+        last_log, error = Helper.run_command_on_remote_without_timeout(node, "sudo tail -n 1 %s" % node.log)
+        if last_log:
+            node.set_last_log(last_log)
+        return node
+
+
+    @staticmethod
     def run_command_on_remote_without_timeout(node, command):
         if node.rhosp:
             return Helper.run_command_on_remote_with_key_without_timeout(node.hostname,
@@ -1258,10 +1281,6 @@ class Helper(object):
     def copy_neutron_config_from_controllers(controller_nodes):
         if len(controller_nodes) and controller_nodes[0]:
             controller_node = controller_nodes[0]
-            Helper.safe_print("Copy ml2_conf.ini from openstack controller %(controller_node)s\n" %
-                             {'controller_node' : controller_node.hostname})
-            Helper.copy_file_from_remote(controller_node, '/etc/neutron/plugins/ml2', 'ml2_conf.ini',
-                                         controller_node.setup_node_dir)
             Helper.safe_print("Copy dhcp_agent.ini from openstack controller %(controller_node)s\n" %
                              {'controller_node' : controller_node.hostname})
             Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'dhcp_agent.ini',
@@ -1270,11 +1289,6 @@ class Helper(object):
                              {'controller_node' : controller_node.hostname})
             Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'metadata_agent.ini',
                                          controller_node.setup_node_dir)
-            if controller_node.deploy_mode == const.T5:
-                Helper.safe_print("Copy l3_agent.ini from openstack controller %(controller_node)s\n" %
-                                 {'controller_node' : controller_node.hostname})
-                Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'l3_agent.ini',
-                                             controller_node.setup_node_dir)
 
         rabbit_hosts = sets.Set()
         rabbit_port = None
@@ -1328,10 +1342,6 @@ class Helper(object):
                          {'hostname' : node.hostname})
         Helper.copy_file_to_remote(node, r'''%(dir)s/neutron.conf''' % {'dir' : node.setup_node_dir},
                                    '/etc/neutron', 'neutron.conf')
-        Helper.safe_print("Copy ml2_conf.conf to %(hostname)s\n" %
-                         {'hostname' : node.hostname})
-        Helper.copy_file_to_remote(node, r'''%(dir)s/ml2_conf.conf''' % {'dir' : node.setup_node_dir},
-                                   '/etc/neutron/plugins/ml2', 'ml2_conf.conf')
         Helper.safe_print("Copy dhcp_agent.ini to %(hostname)s\n" %
                          {'hostname' : node.hostname})
         Helper.copy_file_to_remote(node, r'''%(dir)s/dhcp_agent.ini''' % {'dir' : node.setup_node_dir},
@@ -1340,11 +1350,6 @@ class Helper(object):
                          {'hostname' : node.hostname})
         Helper.copy_file_to_remote(node, r'''%(dir)s/metadata_agent.ini''' % {'dir': node.setup_node_dir},
                                    '/etc/neutron', 'metadata_agent.ini')
-        if node.deploy_mode == const.T5:
-            Helper.safe_print("Copy l3_agent.ini to %(hostname)s\n" %
-                             {'hostname' : node.hostname})
-            Helper.copy_file_to_remote(node, r'''%(dir)s/l3_agent.ini''' % {'dir': node.setup_node_dir},
-                                       '/etc/neutron', 'l3_agent.ini')
 
         # copy ivs to node
         if node.deploy_mode == const.T6:

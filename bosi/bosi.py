@@ -1,13 +1,17 @@
 import re
 import yaml
+import time
 import Queue
+import random
 import argparse
+import datetime
 import threading
 import lib.constants as const
 import subprocess32 as subprocess
 from lib.node import Node
 from lib.helper import Helper
 from lib.environment import Environment
+from collections import OrderedDict
 
 # queue to store all controller nodes
 controller_node_q = Queue.Queue()
@@ -15,22 +19,9 @@ controller_node_q = Queue.Queue()
 # queue to store all nodes
 node_q = Queue.Queue()
 
-
-def chmod_node(node):
-    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 /etc/neutron")
-    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.dst_dir)
-    Helper.run_command_on_remote_without_timeout(node, "sudo touch %s" % node.log)
-    Helper.run_command_on_remote_without_timeout(node, "sudo chmod -R 777 %s" % node.log)
-
-def reboot_compute_node(q):
-    while True:
-        node = q.get()
-        Helper.safe_print("Rebooting node %(hostname)s\n" %
-                         {'hostname' : node.hostname})
-        Helper.run_command_on_remote(node, r'''sudo reboot''')
-        Helper.safe_print("Finished rebooting node %(hostname)s\n" %
-                         {'hostname' : node.hostname})
-        q.task_done()
+# result dict
+node_dict = {}
+time_dict = {}
 
 def worker_setup_node(q):
     while True:
@@ -47,13 +38,36 @@ def worker_setup_node(q):
                 {'dst_dir'  : node.dst_dir,
                  'hostname' : node.hostname,
                  'log'      : node.log}))
+
+        # a random delay to smooth apt-get/yum
+        delay = random.random() * 10.0
+        time.sleep(delay)
+
+        start_time = datetime.datetime.now()
         Helper.run_command_on_remote(node,
             (r'''sudo bash %(dst_dir)s/%(hostname)s.sh >> %(log)s 2>&1''' %
             {'dst_dir'  : node.dst_dir,
              'hostname' : node.hostname,
              'log'      : node.log}))
-        Helper.safe_print("Finish deploying %(hostname)s\n" %
-                         {'hostname' : node.hostname})
+        end_time = datetime.datetime.now()
+
+        # parse setup log
+        diff = Helper.timedelta_total_seconds(end_time - start_time)
+        node.set_time_diff(diff)
+        node = Helper.update_last_log(node)
+        node_dict[node.hostname] = node
+        time_dict[node.hostname] = diff
+
+        # when deploying T5 on UBUNTU, reboot compute nodes
+        if node.deploy_mode == const.T5 and node.os == const.UBUNTU and node.role == const.ROLE_COMPUTE :
+            Helper.safe_print("Rebooting compute node %(hostname)s\n" %
+                             {'hostname' : node.hostname})
+            Helper.run_command_on_remote(node, r'''sudo reboot''')
+            Helper.safe_print("Node %(hostname)s rebooted. Wait for it to come back up.\n" %
+                             {'hostname' : node.hostname})
+
+        Helper.safe_print("Finish deploying %(hostname)s, cost time: %(diff).2f\n" %
+                         {'hostname' : node.hostname, 'diff' : node.time_diff})
         q.task_done()
 
 
@@ -97,7 +111,7 @@ def deploy_bcf(config, fuel_cluster_id, rhosp, tag, cleanup):
             node_q.put(node)
 
         if node.rhosp:
-            chmod_node(node)
+            Helper.chmod_node(node)
 
     # copy neutron config from neutron server to setup node
     Helper.copy_neutron_config_from_controllers(controller_nodes)
@@ -107,11 +121,10 @@ def deploy_bcf(config, fuel_cluster_id, rhosp, tag, cleanup):
         with open(const.LOG_FILE, "a") as log_file:
             log_file.write(str(node))
 
-    # Use multiple threads to setup controller nodes
-    for i in range(const.MAX_WORKERS):
-        t = threading.Thread(target=worker_setup_node, args=(controller_node_q,))
-        t.daemon = True
-        t.start()
+    # Use single thread to setup controller nodes
+    t = threading.Thread(target=worker_setup_node, args=(controller_node_q,))
+    t.daemon = True
+    t.start()
     controller_node_q.join()
 
     # Use multiple threads to setup compute nodes
@@ -121,13 +134,12 @@ def deploy_bcf(config, fuel_cluster_id, rhosp, tag, cleanup):
         t.start()
     node_q.join()
 
-    # reboot compute nodes when deploying T5 on UBUNTU
-    if env.deploy_mode == const.T5 and env.os == const.UBUNTU :
-        for i in range(const.MAX_WORKERS):
-            t = threading.Thread(target=reboot_compute_node, args=(node_q,))
-            t.daemon = True
-            t.start()
-        node_q.join()
+    sorted_time_dict = OrderedDict(sorted(time_dict.items(), key=lambda x: x[1]))
+    for hostname, time in sorted_time_dict.items():
+        Helper.safe_print("node: %(node)s, time: %(time).2f, last_log: %(log)s" %
+                          {'node' : hostname,
+                           'time' : time,
+                           'log'  : node_dict[hostname].last_log})
 
     Helper.safe_print("Big Cloud Fabric deployment finished! Check %(log)s on each node for details.\n" %
                      {'log' : const.LOG_FILE})

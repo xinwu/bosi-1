@@ -128,7 +128,7 @@ ini_setting { "neutron.conf dhcp_agents_per_network":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'dhcp_agents_per_network',
-  value             => '2',
+  value             => '1',
 }
 ini_setting { "neutron.conf notification driver":
   ensure            => present,

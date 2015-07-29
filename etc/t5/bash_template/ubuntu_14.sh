@@ -67,18 +67,18 @@ controller() {
         fi
     fi
 
+    # schedule cron job to reschedule network in case dhcp agent fails
+    chmod a+x /bin/dhcp_reschedule.sh
+    crontab -r
+    (crontab -l; echo "*/30 * * * * /usr/bin/fuel-logrotate") | crontab -
+    (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
+
     echo 'Restart neutron-l3-agent and neutron-server'
     rm -rf /etc/neutron/plugins/ml2/host_certs/*
     service keystone restart
     service apache2 restart
     service neutron-l3-agent restart
     service neutron-server restart
-
-    # schedule cron job to reschedule network in case dhcp agent fails
-    chmod a+x /bin/dhcp_reschedule.sh
-    crontab -r
-    (crontab -l; echo "*/30 * * * * /usr/bin/fuel-logrotate") | crontab -
-    (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
 }
 
 compute() {
