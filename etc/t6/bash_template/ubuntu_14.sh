@@ -94,8 +94,11 @@ controller() {
 
 compute() {
     # patch linux/dhcp.py to make sure static host route is pushed to instances
-    apt-get install -o Dpkg::Options::="--force-confold" -y neutron-metadata-agent
-    apt-get install -o Dpkg::Options::="--force-confold" -y neutron-dhcp-agent
+    dpkg -l neutron-dhcp-agent
+    if [[ $? != 0 ]]; then
+        apt-get install -o Dpkg::Options::="--force-confold" -y neutron-metadata-agent
+        apt-get install -o Dpkg::Options::="--force-confold" -y neutron-dhcp-agent
+    fi
     service neutron-metadata-agent stop
     service neutron-dhcp-agent stop
     dhcp_py=$(find /usr -name dhcp.py | grep linux)
