@@ -243,8 +243,8 @@ ini_setting { "ml2 restproxy neutron_id":
 
 # change ml2 ownership
 file { '/etc/neutron/plugins/ml2':
-  owner   => neutron,
-  group   => neutron,
+  owner   => root,
+  group   => root,
   recurse => true,
   notify  => Service['neutron-server'],
 }

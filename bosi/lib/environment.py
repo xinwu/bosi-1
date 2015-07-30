@@ -31,7 +31,7 @@ class Environment(object):
         # flags for upgrade
         self.install_ivs = config.get('default_install_ivs')
         self.install_bsnstacklib = config.get('default_install_bsnstacklib')
-        self.install_all = config.get('default_install_all')
+        self.install_all = True
 
         # flags for dhcp and metadata agent
         self.deploy_dhcp_agent = config.get('default_deploy_dhcp_agent')

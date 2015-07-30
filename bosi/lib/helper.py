@@ -1342,25 +1342,28 @@ class Helper(object):
     def copy_pkg_scripts_to_remote(node):
 
         # copy neutron, metadata, dhcp config to node
-        Helper.safe_print("Copy neutron.conf to %(hostname)s\n" %
-                         {'hostname' : node.hostname})
-        Helper.copy_file_to_remote(node, r'''%(dir)s/neutron.conf''' % {'dir' : node.setup_node_dir},
-                                   '/etc/neutron', 'neutron.conf')
-        Helper.safe_print("Copy dhcp_agent.ini to %(hostname)s\n" %
-                         {'hostname' : node.hostname})
-        Helper.copy_file_to_remote(node, r'''%(dir)s/dhcp_agent.ini''' % {'dir' : node.setup_node_dir},
-                                   '/etc/neutron', 'dhcp_agent.ini')
-        Helper.safe_print("Copy metadata_agent.ini to %(hostname)s\n" %
-                         {'hostname' : node.hostname})
-        Helper.copy_file_to_remote(node, r'''%(dir)s/metadata_agent.ini''' % {'dir': node.setup_node_dir},
-                                   '/etc/neutron', 'metadata_agent.ini')
-        Helper.safe_print("Copy l3_agent.ini to %(hostname)s\n" %
-                         {'hostname' : node.hostname})
-        Helper.copy_file_to_remote(node, r'''%(dir)s/l3_agent.ini''' % {'dir': node.setup_node_dir},
-                                   '/etc/neutron', 'l3_agent.ini')
+        if node.install_bsnstacklib:
+            Helper.safe_print("Copy neutron.conf to %(hostname)s\n" %
+                             {'hostname' : node.hostname})
+            Helper.copy_file_to_remote(node, r'''%(dir)s/neutron.conf''' % {'dir' : node.setup_node_dir},
+                                       '/etc/neutron', 'neutron.conf')
+        if node.deploy_dhcp_agent:
+            Helper.safe_print("Copy dhcp_agent.ini to %(hostname)s\n" %
+                             {'hostname' : node.hostname})
+            Helper.copy_file_to_remote(node, r'''%(dir)s/dhcp_agent.ini''' % {'dir' : node.setup_node_dir},
+                                       '/etc/neutron', 'dhcp_agent.ini')
+            Helper.safe_print("Copy metadata_agent.ini to %(hostname)s\n" %
+                             {'hostname' : node.hostname})
+            Helper.copy_file_to_remote(node, r'''%(dir)s/metadata_agent.ini''' % {'dir': node.setup_node_dir},
+                                       '/etc/neutron', 'metadata_agent.ini')
+        if node.deploy_l3_agent:
+            Helper.safe_print("Copy l3_agent.ini to %(hostname)s\n" %
+                             {'hostname' : node.hostname})
+            Helper.copy_file_to_remote(node, r'''%(dir)s/l3_agent.ini''' % {'dir': node.setup_node_dir},
+                                       '/etc/neutron', 'l3_agent.ini')
 
         # copy ivs to node
-        if node.deploy_mode == const.T6:
+        if node.deploy_mode == const.T6 and node.role == const.ROLE_COMPUTE and node.install_ivs:
             Helper.safe_print("Copy %(ivs_pkg)s to %(hostname)s\n" %
                               {'ivs_pkg'  : node.ivs_pkg,
                                'hostname' : node.hostname})
