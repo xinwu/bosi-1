@@ -22,16 +22,22 @@ controller() {
     echo "Stop and disable metadata agent, dhcp agent, l3 agent"
     sudo pcs resource disable neutron-metadata-agent-clone
     sudo pcs resource disable neutron-metadata-agent
+    sudo pcs resource cleanup neutron-metadata-agent-clone
+    sudo pcs resource cleanup neutron-metadata-agent
     sudo pcs resource delete neutron-metadata-agent-clone
     sudo pcs resource delete neutron-metadata-agent
 
     sudo pcs resource disable neutron-dhcp-agent-clone
     sudo pcs resource disable neutron-dhcp-agent
+    sudo pcs resource cleanup neutron-dhcp-agent-clone
+    sudo pcs resource cleanup neutron-dhcp-agent
     sudo pcs resource delete neutron-dhcp-agent-clone
     sudo pcs resource delete neutron-dhcp-agent
 
     sudo pcs resource disable neutron-l3-agent-clone
     sudo pcs resource disable neutron-l3-agent
+    sudo pcs resource cleanup neutron-l3-agent-clone
+    sudo pcs resource cleanup neutron-l3-agent
     sudo pcs resource delete neutron-l3-agent-clone
     sudo pcs resource delete neutron-l3-agent
 
