@@ -33,7 +33,7 @@ class Helper(object):
             return
         output, error = Helper.run_command_on_remote_without_timeout(node,
             "sudo cat /proc/net/bonding/%s | grep xor | wc -l" % node.bond)
-        if output == '1':
+        if output and (output.strip() == '1'):
             return
         Helper.run_command_on_remote(node, r'''sudo reboot''')
         Helper.safe_print("Node %(hostname)s rebooted. Wait for it to come back up.\n" %
