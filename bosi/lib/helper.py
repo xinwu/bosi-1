@@ -1289,6 +1289,10 @@ class Helper(object):
                              {'controller_node' : controller_node.hostname})
             Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'metadata_agent.ini',
                                          controller_node.setup_node_dir)
+            Helper.safe_print("Copy l3_agent.ini from openstack controller %(controller_node)s\n" %
+                             {'controller_node' : controller_node.hostname})
+            Helper.copy_file_from_remote(controller_node, '/etc/neutron', 'l3_agent.ini',
+                                         controller_node.setup_node_dir)
 
         rabbit_hosts = sets.Set()
         rabbit_port = None
@@ -1350,6 +1354,10 @@ class Helper(object):
                          {'hostname' : node.hostname})
         Helper.copy_file_to_remote(node, r'''%(dir)s/metadata_agent.ini''' % {'dir': node.setup_node_dir},
                                    '/etc/neutron', 'metadata_agent.ini')
+        Helper.safe_print("Copy l3_agent.ini to %(hostname)s\n" %
+                         {'hostname' : node.hostname})
+        Helper.copy_file_to_remote(node, r'''%(dir)s/l3_agent.ini''' % {'dir': node.setup_node_dir},
+                                   '/etc/neutron', 'l3_agent.ini')
 
         # copy ivs to node
         if node.deploy_mode == const.T6:
