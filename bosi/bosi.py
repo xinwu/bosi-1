@@ -59,12 +59,7 @@ def worker_setup_node(q):
         time_dict[node.hostname] = diff
 
         # when deploying T5 on UBUNTU, reboot compute nodes
-        if node.deploy_mode == const.T5 and node.os == const.UBUNTU and node.role == const.ROLE_COMPUTE and node.install_all:
-            Helper.safe_print("Rebooting compute node %(hostname)s\n" %
-                             {'hostname' : node.hostname})
-            Helper.run_command_on_remote(node, r'''sudo reboot''')
-            Helper.safe_print("Node %(hostname)s rebooted. Wait for it to come back up.\n" %
-                             {'hostname' : node.hostname})
+        Helper.reboot_if_necessary(node)
 
         Helper.safe_print("Finish deploying %(hostname)s, cost time: %(diff).2f\n" %
                          {'hostname' : node.hostname, 'diff' : node.time_diff})

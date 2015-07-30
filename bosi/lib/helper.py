@@ -24,6 +24,23 @@ class Helper(object):
 
 
     @staticmethod
+    def reboot_if_necessary(node):
+        if node.deploy_mode != const.T5:
+            return
+        if node.os != const.UBUNTU:
+            return
+        if node.role != const.ROLE_COMPUTE:
+            return
+        output, error = Helper.run_command_on_remote_without_timeout(node,
+            "sudo cat /proc/net/bonding/%s | grep xor | wc -l" % node.bond)
+        if output == '1':
+            return
+        Helper.run_command_on_remote(node, r'''sudo reboot''')
+        Helper.safe_print("Node %(hostname)s rebooted. Wait for it to come back up.\n" %
+                         {'hostname' : node.hostname})
+
+
+    @staticmethod
     def timedelta_total_seconds(timedelta):
         return (timedelta.microseconds + 0.0 +
                (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
