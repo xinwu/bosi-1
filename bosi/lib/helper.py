@@ -505,6 +505,7 @@ class Helper(object):
                       'default_gw'            : node.get_default_gw(),
                       'uplinks'               : node.get_comma_separated_uplinks(),
                       'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
+                      'deploy_l3_agent'       : str(node.deploy_l3_agent).lower(),
                       'neutron_id'            : node.get_neutron_id(),
                       'deploy_haproxy'        : str(node.deploy_haproxy).lower(),
                       'uname'                 : node.uname,
@@ -1451,5 +1452,4 @@ class Helper(object):
                 (r'''%(src_dir)s/rootwrap''' %
                 {'src_dir' : node.setup_node_dir}),
                 node.dst_dir)
-
 

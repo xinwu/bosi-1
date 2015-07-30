@@ -23,7 +23,6 @@ node_q = Queue.Queue()
 node_dict = {}
 time_dict = {}
 
-
 def worker_setup_node(q):
     while True:
         node = q.get()
@@ -58,6 +57,14 @@ def worker_setup_node(q):
         node = Helper.update_last_log(node)
         node_dict[node.hostname] = node
         time_dict[node.hostname] = diff
+
+        # when deploying T5 on UBUNTU, reboot compute nodes
+        if node.deploy_mode == const.T5 and node.os == const.UBUNTU and node.role == const.ROLE_COMPUTE :
+            Helper.safe_print("Rebooting compute node %(hostname)s\n" %
+                             {'hostname' : node.hostname})
+            Helper.run_command_on_remote(node, r'''sudo reboot''')
+            Helper.safe_print("Node %(hostname)s rebooted. Wait for it to come back up.\n" %
+                             {'hostname' : node.hostname})
 
         Helper.safe_print("Finish deploying %(hostname)s, cost time: %(diff).2f\n" %
                          {'hostname' : node.hostname, 'diff' : node.time_diff})
@@ -136,7 +143,6 @@ def deploy_bcf(config, fuel_cluster_id, rhosp, tag, cleanup):
 
     Helper.safe_print("Big Cloud Fabric deployment finished! Check %(log)s on each node for details.\n" %
                      {'log' : const.LOG_FILE})
-
 
 def main():
     # Check if network is working properly
