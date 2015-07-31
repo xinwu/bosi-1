@@ -1115,21 +1115,22 @@ class Helper(object):
                         'generated_script' : const.GENERATED_SCRIPT_DIR}, shell=True)
 
         # wget ivs packages
-        code_web = 1
-        code_local = 1
-        for pkg_type, url in env.ivs_url_map.iteritems():
-            if 'http://' in url or 'https://' in url:
-                code_web = subprocess.call("wget --no-check-certificate %(url)s -P %(setup_node_dir)s" %
-                                          {'url' : url, 'setup_node_dir' : setup_node_dir},
-                                           shell=True)
-        for pkg_type, url in env.ivs_url_map.iteritems():
-            if os.path.isfile(url):
-                code_local = subprocess.call("cp %(url)s %(setup_node_dir)s" %
-                                            {'url' : url, 'setup_node_dir' : setup_node_dir},
-                                             shell=True)
-        if env.deploy_mode == const.T6 and code_web != 0 and code_local != 0:
-            Helper.safe_print("Required ivs packages are not correctly downloaded.\n")
-            exit(1)
+        if env.deploy_mode == const.T6:
+            code_web = 1
+            code_local = 1
+            for pkg_type, url in env.ivs_url_map.iteritems():
+                if 'http://' in url or 'https://' in url:
+                    code_web = subprocess.call("wget --no-check-certificate %(url)s -P %(setup_node_dir)s" %
+                                              {'url' : url, 'setup_node_dir' : setup_node_dir},
+                                               shell=True)
+            for pkg_type, url in env.ivs_url_map.iteritems():
+                if os.path.isfile(url):
+                    code_local = subprocess.call("cp %(url)s %(setup_node_dir)s" %
+                                                {'url' : url, 'setup_node_dir' : setup_node_dir},
+                                                 shell=True)
+            if code_web != 0 and code_local != 0:
+                Helper.safe_print("Required ivs packages are not correctly downloaded.\n")
+                exit(1)
 
         # wget horizon patch
         code_web = 1
