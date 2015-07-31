@@ -52,7 +52,7 @@ file_line { "reserve keystone port":
 
 # purge bcf controller public key
 exec { 'purge bcf key':
-    command => "rm -rf /etc/neutron/plugins/ml2/host_certs/*",
+    command => "rm -rf /var/lib/neutron/host_certs/*",
     path    => $binpath,
     notify  => Service['neutron-server'],
 }
