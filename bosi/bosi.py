@@ -66,10 +66,10 @@ def worker_setup_node(q):
         q.task_done()
 
 
-def deploy_bcf(config, fuel_cluster_id, rhosp, tag, cleanup):
+def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup):
     # Deploy setup node
     Helper.safe_print("Start to prepare setup node\n")
-    env = Environment(config, fuel_cluster_id, rhosp, tag, cleanup)
+    env = Environment(config, mode, fuel_cluster_id, rhosp, tag, cleanup)
     Helper.common_setup_node_preparation(env)
     controller_nodes = []
 
@@ -150,6 +150,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config-file", required=True,
                         help="BCF YAML configuration file")
+    parser.add_argument("-m", "--deploy-mode", required=True,
+                        help="pfabric or pvfabric"),
     parser.add_argument('-f', "--fuel-cluster-id", required=False,
                         help="Fuel cluster ID. Fuel settings may override YAML configuration. Please refer to config.yaml")
     parser.add_argument('-r', "--rhosp", action='store_true', default=False,
@@ -164,7 +166,7 @@ def main():
         return
     with open(args.config_file, 'r') as config_file:
         config = yaml.load(config_file)
-    deploy_bcf(config, args.fuel_cluster_id, args.rhosp, args.tag, args.cleanup)
+    deploy_bcf(config, args.deploy_mode, args.fuel_cluster_id, args.rhosp, args.tag, args.cleanup)
 
 
 if __name__=='__main__':

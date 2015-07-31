@@ -13,6 +13,10 @@ ROLE_COMPUTE        = 'compute'
 T6 = 't6'
 T5 = 't5'
 
+MODE_DICT = { 'pfabric' : T5,
+    'pvfabric' : T6,
+}
+
 # openstack release to bsnstacklib version
 OS_RELEASE_TO_BSN_LIB = { 'juno' : '2015.1',
     'kilo'   : '2015.2',
