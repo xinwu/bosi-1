@@ -1,4 +1,4 @@
-# all of the exec statements use this path
+
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 
 # lldp
@@ -24,67 +24,42 @@ service { "send_lldp":
     require => [File['/bin/send_lldp'], File['/etc/init/send_lldp.conf']],
 }
 
-# edit rc.local for cron job and default gw
-file { "/etc/rc.local":
-    ensure  => file,
-    mode    => 0777,
-}->
-file_line { "remove exit 0":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "exit 0",
-}->
-file_line { "remove crontab -r":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "crontab -r",
-}->
-file_line { "remove fuel-logrotate":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "(crontab -l; echo \"*/30 * * * * /usr/bin/fuel-logrotate\") | crontab -",
-}->
-file_line { "remove dhcp_reschedule.sh":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
-}->
-file_line { "remove clear default gw":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "ip route del default",
-}->
-file_line { "remove ip route add default":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "ip route add default via %(default_gw)s",
-}->
-file_line { "clear default gw":
-    path    => '/etc/rc.local',
-    line    => "ip route del default",
-}->
-file_line { "add default gw":
-    path    => '/etc/rc.local',
-    line    => "ip route add default via %(default_gw)s",
-}->
-file_line { "clean up cron job":
-    path    => '/etc/rc.local',
-    line    => "crontab -r",
-}->
-file_line { "add cron job to rotate log":
-    path    => '/etc/rc.local',
-    line    => "(crontab -l; echo \"*/30 * * * * /usr/bin/fuel-logrotate\") | crontab -",
-}->
-file_line { "add cron job to reschedule dhcp":
-    path    => '/etc/rc.local',
-    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
-}->
-file_line { "add exit 0":
-    path    => '/etc/rc.local',
-    line    => "exit 0",
+# TODO install selinux policies
+#Package { allow_virtual => true }
+#class { selinux:
+#  mode => '%(selinux_mode)s'
+#}
+#selinux::module { 'selinux-bcf':
+#  ensure => 'present',
+#  source => 'puppet:///modules/selinux/centos.te',
+#}
+
+# install and enable ntp
+package { "ntp":
+    ensure  => installed,
+}
+service { "ntpd":
+    ensure  => running,
+    enable  => true,
+    path    => $binpath,
+    require => Package['ntp'],
+}
+
+# fix centos symbolic link problem for ivs debug logging
+file { '/usr/lib64/debug':
+   ensure => link,
+   target => '/lib/debug',
 }
 
 # config /etc/neutron/neutron.conf
+ini_setting { "neutron.conf debug":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'debug',
+  value             => 'True',
+}
 ini_setting { "neutron.conf report_interval":
   ensure            => present,
   path              => '/etc/neutron/neutron.conf',
@@ -271,6 +246,23 @@ service { 'neutron-plugin-openvswitch-agent':
   subscribe  => [File['/etc/init/neutron-plugin-openvswitch-agent.conf']],
 }
 
+# patch for packstack nova
+package { "device-mapper-libs":
+  ensure => latest,
+  notify => Service['libvirtd'],
+}
+service { "libvirtd":
+  ensure  => running,
+  enable  => true,
+  path    => $binpath,
+  notify  => Service['openstack-nova-compute'],
+}
+service { "openstack-nova-compute":
+  ensure  => running,
+  enable  => true,
+  path    => $binpath,
+}
+
 # l3 agent configuration
 if %(deploy_l3_agent)s {
     ini_setting { "l3 agent enable metadata proxy":
@@ -290,7 +282,6 @@ if %(deploy_l3_agent)s {
       value             => '',
     }
 }
-
 file { '/etc/neutron/dnsmasq-neutron.conf':
   ensure            => file,
   content           => 'dhcp-option-force=26,1400',
@@ -298,6 +289,14 @@ file { '/etc/neutron/dnsmasq-neutron.conf':
 
 # dhcp configuration
 if %(deploy_dhcp_agent)s {
+    ini_setting { "dhcp agent resync_interval":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'resync_interval',
+        value             => '60',
+    }
     ini_setting { "dhcp agent interface driver":
         ensure            => present,
         path              => '/etc/neutron/dhcp_agent.ini',
@@ -342,10 +341,10 @@ if %(deploy_dhcp_agent)s {
 
 # haproxy
 if %(deploy_haproxy)s {
-    package { "neutron-lbaas-agent":
+    package { "haproxy":
         ensure  => installed,
     }
-    package { "haproxy":
+    package { "keepalived":
         ensure  => installed,
     }
     ini_setting { "haproxy agent periodic interval":
@@ -355,7 +354,6 @@ if %(deploy_haproxy)s {
         key_val_separator => '=',
         setting           => 'periodic_interval',
         value             => '10',
-        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
         notify            => Service['neutron-lbaas-agent'],
     }
     ini_setting { "haproxy agent interface driver":
@@ -365,7 +363,6 @@ if %(deploy_haproxy)s {
         key_val_separator => '=',
         setting           => 'interface_driver',
         value             => 'neutron.agent.linux.interface.OVSInterfaceDriver',
-        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
         notify            => Service['neutron-lbaas-agent'],
     }
     ini_setting { "haproxy agent device driver":
@@ -375,7 +372,6 @@ if %(deploy_haproxy)s {
         key_val_separator => '=',
         setting           => 'device_driver',
         value             => 'neutron.services.loadbalancer.drivers.haproxy.namespace_driver.HaproxyNSDriver',
-        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
         notify            => Service['neutron-lbaas-agent'],
     }
     service { "haproxy":
@@ -386,6 +382,18 @@ if %(deploy_haproxy)s {
     service { "neutron-lbaas-agent":
         ensure            => running,
         enable            => true,
-        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
+        require           => Package['haproxy'],
+    }
+    service { "keepalived":
+        ensure            => running,
+        enable            => true,
+        require           => Package['keepalived'],
+    }
+    file_line { "net.ipv4.ip_nonlocal_bind=1":
+        path  => '/etc/sysctl.conf',
+        line  => "net.ipv4.ip_nonlocal_bind=1",
+        match => "^net.ipv4.ip_nonlocal_bind=1",
     }
 }
+
+
