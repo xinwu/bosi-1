@@ -1,4 +1,3 @@
-
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 
 # comment out heat domain related configurations
@@ -52,62 +51,42 @@ if($heat_config != '') {
     }
 }
 
-# edit rc.local for cron job
-file { "/etc/rc.d/rc.local":
+# edit rc.local for default gw
+file { "/etc/rc.local":
     ensure  => file,
     mode    => 0777,
 }->
-file_line { "remove crontab -r":
-    path    => '/etc/rc.d/rc.local',
+file_line { "remove touch /var/lock/subsys/local":
+    path    => '/etc/rc.local',
     ensure  => absent,
-    line    => "crontab -r",
+    line    => "touch /var/lock/subsys/local",
 }->
-file_line { "remove dhcp_reschedule.sh":
-    path    => '/etc/rc.d/rc.local',
+file_line { "remove clear default gw":
+    path    => '/etc/rc.local',
     ensure  => absent,
-    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
+    line    => "sudo ip route del default",
 }->
-file_line { "clean up cron job":
-    path    => '/etc/rc.d/rc.local',
-    line    => "crontab -r",
+file_line { "remove ip route add default":
+    path    => '/etc/rc.local',
+    ensure  => absent,
+    line    => "sudo ip route add default via %(default_gw)s",
 }->
-file_line { "add cron job to reschedule dhcp":
-    path    => '/etc/rc.d/rc.local',
-    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
-}
-
-# install and enable ntp
-package { "ntp":
-    ensure  => installed,
-}
-service { "ntpd":
-    ensure  => running,
-    enable  => true,
-    path    => $binpath,
-    require => Package['ntp'],
+file_line { "touch /var/lock/subsys/local":
+    path    => '/etc/rc.local',
+    line    => "touch /var/lock/subsys/local",
+}->
+file_line { "clear default gw":
+    path    => '/etc/rc.local',
+    line    => "sudo ip route del default",
+}->
+file_line { "add default gw":
+    path    => '/etc/rc.local',
+    line    => "sudo ip route add default via %(default_gw)s",
 }
 
 # make sure known_hosts is cleaned up
 file { "/root/.ssh/known_hosts":
     ensure => absent,
-}
-
-# keystone paste config
-ini_setting { "keystone paste config":
-    ensure            => present,
-    path              => '/etc/keystone/keystone.conf',
-    section           => 'paste_deploy',
-    key_val_separator => '=',
-    setting           => 'config_file',
-    value             => '/usr/share/keystone/keystone-dist-paste.ini',
-}
-ini_setting { "keystone.conf notification driver":
-  ensure            => present,
-  path              => '/etc/keystone/keystone.conf',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'notification_driver',
-  value             => 'messaging',
 }
 
 # reserve keystone ephemeral port
@@ -121,65 +100,21 @@ file_line { "reserve keystone port":
     match => '^net.ipv4.ip_local_reserved_ports.*$',
 }
 
-# TODO install selinux policies
-#Package { allow_virtual => true }
-#class { selinux:
-#    mode => '%(selinux_mode)s'
-#}
-#selinux::module { 'selinux-bcf':
-#    ensure => 'present',
-#    source => 'puppet:///modules/selinux/centos.te',
-#}
-
-# disable neutron-bsn-agent service
-service {'neutron-bsn-agent':
-    ensure  => stopped,
-    enable  => false,
-    path    => $binpath,
-}
-
 # purge bcf controller public key
 exec { 'purge bcf key':
-    command => "rm -rf /etc/neutron/plugins/ml2/host_certs/*",
+    command => "rm -rf /var/lib/neutron/host_certs/*",
     path    => $binpath,
     notify  => Service['neutron-server'],
 }
 
 # config /etc/neutron/neutron.conf
-ini_setting { "neutron.conf debug":
-  ensure            => present,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'debug',
-  value             => 'True',
-  notify            => Service['neutron-server'],
-}
-ini_setting { "neutron.conf report_interval":
-  ensure            => present,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'agent',
-  key_val_separator => '=',
-  setting           => 'report_interval',
-  value             => '60',
-  notify            => Service['neutron-server'],
-}
-ini_setting { "neutron.conf agent_down_time":
-  ensure            => present,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'agent_down_time',
-  value             => '150',
-  notify            => Service['neutron-server'],
-}
 ini_setting { "neutron.conf service_plugins":
   ensure            => present,
   path              => '/etc/neutron/neutron.conf',
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'service_plugins',
-  value             => 'router,lbaas',
+  value             => 'router',
   notify            => Service['neutron-server'],
 }
 ini_setting { "neutron.conf dhcp_agents_per_network":
@@ -200,21 +135,25 @@ ini_setting { "neutron.conf notification driver":
   value             => 'messaging',
   notify            => Service['neutron-server'],
 }
-ini_setting { "ensure absent of neutron.conf service providers":
-  ensure            => absent,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'service_providers',
-  key_val_separator => '=',
-  setting           => 'service_provider',
-}->
-ini_setting { "neutron.conf service providers":
+ini_setting { "neutron.conf allow_automatic_l3agent_failover":
   ensure            => present,
   path              => '/etc/neutron/neutron.conf',
-  section           => 'service_providers',
+  section           => 'DEFAULT',
   key_val_separator => '=',
-  setting           => 'service_provider',
-  value             => 'LOADBALANCER:Haproxy:neutron.services.loadbalancer.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default',
+  setting           => 'allow_automatic_l3agent_failover',
+  value             => 'True',
   notify            => Service['neutron-server'],
+}
+
+# configure /etc/keystone/keystone.conf
+ini_setting { "keystone.conf notification driver":
+  ensure            => present,
+  path              => '/etc/keystone/keystone.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'notification_driver',
+  value             => 'messaging',
+  notify            => Service['openstack-keystone'],
 }
 
 # config /etc/neutron/plugin.ini
@@ -241,7 +180,7 @@ file { '/etc/neutron/dnsmasq-neutron.conf':
   content           => 'dhcp-option-force=26,1400',
 }
 
-# config l3 agent
+# disable l3 agent proxy metadata
 ini_setting { "l3 agent disable metadata proxy":
   ensure            => present,
   path              => '/etc/neutron/l3_agent.ini',
@@ -285,7 +224,7 @@ ini_setting { "ml2 mechanism drivers":
   section           => 'ml2',
   key_val_separator => '=',
   setting           => 'mechanism_drivers',
-  value             => 'openvswitch,bigswitch',
+  value             => 'openvswitch, bigswitch',
   notify            => Service['neutron-server'],
 }
 ini_setting { "ml2 restproxy ssl cert directory":
@@ -294,7 +233,7 @@ ini_setting { "ml2 restproxy ssl cert directory":
   section           => 'restproxy',
   key_val_separator => '=',
   setting           => 'ssl_cert_directory',
-  value             => '/etc/neutron/plugins/ml2',
+  value             => '/var/lib/neutron',
   notify            => Service['neutron-server'],
 }
 ini_setting { "ml2 restproxy servers":
@@ -342,6 +281,15 @@ ini_setting { "ml2 restproxy consistency interval":
   value             => 60,
   notify            => Service['neutron-server'],
 }
+ini_setting { "ml2 restproxy neutron_id":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+  section           => 'restproxy',
+  key_val_separator => '=',
+  setting           => 'neutron_id',
+  value             => %(neutron_id)s,
+  notify            => Service['neutron-server'],
+}
 
 # change ml2 ownership
 file { '/etc/neutron/plugins/ml2':
@@ -351,27 +299,36 @@ file { '/etc/neutron/plugins/ml2':
   notify  => Service['neutron-server'],
 }
 
-# make services in right state
+# neutron-server, neutron-dhcp-agent and neutron-metadata-agent
 service { 'neutron-server':
-  ensure  => running,
-  enable  => true,
-  path    => $binpath,
-  require => Exec['purge bcf key'],
+  ensure     => running,
+  enable     => true,
+}
+service { 'openstack-keystone':
+  ensure     => running,
+  enable     => true,
 }
 service { 'neutron-dhcp-agent':
-  ensure  => stopped,
-  enable  => false,
-  path    => $binpath,
+  ensure     => stopped,
+  enable     => false,
 }
 service { 'neutron-metadata-agent':
   ensure  => stopped,
   enable  => false,
-  path    => $binpath,
+}
+service { 'neutron-l3-agent':
+  ensure  => stopped,
+  enable  => false,
 }
 
 # patch for packstack nova
 package { "device-mapper-libs":
   ensure => latest,
+}
+
+service { 'neutron-openvswitch-agent':
+  ensure  => running,
+  enable  => true,
 }
 
 # ovs_neutron_plugin for packstack
@@ -407,9 +364,11 @@ ini_setting { "clear tunnel types":
   require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
   notify            => Service['neutron-openvswitch-agent'],
 }
-service { 'neutron-openvswitch-agent':
-  ensure  => running,
-  enable  => true,
-}
 
+# disable neutron-bsn-agent service
+service {'neutron-bsn-agent':
+    ensure  => stopped,
+    enable  => false,
+    path    => $binpath,
+}
 
