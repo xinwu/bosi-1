@@ -105,6 +105,23 @@ ini_setting { "keystone.conf notification driver":
   value             => 'messaging',
   notify            => Service['openstack-keystone'],
 }
+ini_setting { "keystone.conf rabbit_hosts":
+  ensure            => present,
+  path              => '/etc/keystone/keystone.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'rabbit_hosts',
+  value             => '%(rabbit_hosts)s',
+  notify            => Service['openstack-keystone'],
+}
+ini_setting { "keystone.conf rabbit_host":
+  ensure            => absent,
+  path              => '/etc/keystone/keystone.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'rabbit_host',
+  notify            => Service['openstack-keystone'],
+}
 
 # config /etc/neutron/plugin.ini
 ini_setting { "neutron plugin.ini firewall_driver":

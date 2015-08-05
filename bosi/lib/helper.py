@@ -432,7 +432,8 @@ class Helper(object):
                       'neutron_id'            : node.get_neutron_id(),
                       'deploy_haproxy'        : str(node.deploy_haproxy).lower(),
                       'uname'                 : node.uname,
-                      'bond'                  : node.bond})
+                      'bond'                  : node.bond,
+                      'rabbit_hosts'          : node.rabbit_hosts})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -1343,6 +1344,8 @@ class Helper(object):
                         rabbit_ip = bridge.br_ip.split('/')[0]
                         rabbit_hosts_str = "%s:%s" % (rabbit_ip, rabbit_port)
                         break
+            for controller_node in controller_nodes:
+                controller_node.set_rabbit_hosts(rabbit_hosts_str)
             neutron_conf_new = open("%s/neutron.conf.new" % controller_node.setup_node_dir, 'w')
             neutron_conf = open("%s/neutron.conf" % controller_node.setup_node_dir, 'r')
             for line in neutron_conf:
