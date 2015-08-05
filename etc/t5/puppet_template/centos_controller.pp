@@ -190,7 +190,7 @@ ini_setting { "l3 agent disable metadata proxy":
   value             => 'False',
 }
 
-# config /etc/neutron/plugins/ml2/ml2_conf.ini 
+# config /etc/neutron/plugins/ml2/ml2_conf.ini
 ini_setting { "ml2 type dirvers":
   ensure            => present,
   path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
@@ -352,7 +352,7 @@ ini_setting { "clear tunnel type":
   section           => 'ovs',
   key_val_separator => '=',
   setting           => 'tunnel_type',
-  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],  
+  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
   notify            => Service['neutron-openvswitch-agent'],
 }
 ini_setting { "clear tunnel types":
