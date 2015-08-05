@@ -359,52 +359,39 @@ compute() {
     fi
 
     # restart libvirtd and nova compute on compute node
-    echo 'Restart libvirtd, openstack-nova-compute and neutron-bsn-agent'
-    systemctl restart libvirtd
+    echo 'Restart libvirtd and openstack-nova-compute'
     systemctl enable libvirtd
-    systemctl restart openstack-nova-compute
+    systemctl restart libvirtd
     systemctl enable openstack-nova-compute
-    systemctl restart neutron-bsn-agent
+    systemctl restart openstack-nova-compute
 }
 
 
 set +e
 
-# update dns
-sudo sed -i "s/^nameserver.*/nameserver %(rhosp_undercloud_dns)s/" /etc/resolv.conf
-
-# assign default gw
-sudo ip route del default
-sudo ip route del default
-sudo ip route add default via $default_gw
-
-# auto register
-if [[ $rhosp_automate_register == true ]]; then
-    sudo subscription-manager register --username $rhosp_register_username --password $rhosp_register_passwd --auto-attach
-fi
-
-sudo subscription-manager version | grep Unknown
-if [[ $? == 0 ]]; then
-    echo "node is not registered in subscription-manager"
-    exit 1
+# Make sure only root can run this script
+if [ "$(id -u)" != "0" ]; then
+   echo -e "Please run as root"
+   exit 1
 fi
 
 # prepare dependencies
-sudo rpm -iUvh http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
-sudo rpm -ivh https://yum.puppetlabs.com/el/7/products/x86_64/puppetlabs-release-7-10.noarch.rpm
-sudo yum update -y
-sudo yum groupinstall -y 'Development Tools'
-sudo yum install -y python-devel puppet python-pip wget libffi-devel openssl-devel ntp
-sudo easy_install pip
-sudo puppet module install --force puppetlabs-inifile
-sudo puppet module install --force puppetlabs-stdlib
+rpm -iUvh http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
+rpm -ivh https://yum.puppetlabs.com/el/7/products/x86_64/puppetlabs-release-7-10.noarch.rpm
+yum groupinstall -y 'Development Tools'
+yum install -y python-devel puppet python-pip wget libffi-devel openssl-devel
+yum update -y
+easy_install pip
+puppet module install --force puppetlabs-inifile
+puppet module install --force puppetlabs-stdlib
+puppet module install jfryman-selinux
+#mkdir -p /etc/puppet/modules/selinux/files
+#cp %(dst_dir)s/%(hostname)s.te /etc/puppet/modules/selinux/files/centos.te
 
 # install bsnstacklib
 if [[ $install_bsnstacklib == true ]]; then
-    sudo pip install --upgrade "bsnstacklib<%(bsnstacklib_version)s"
+    pip install --upgrade "bsnstacklib<%(bsnstacklib_version)s"
 fi
-sudo systemctl stop neutron-bsn-agent
-sudo systemctl disable neutron-bsn-agent
 
 if [[ $is_controller == true ]]; then
     controller
@@ -415,7 +402,6 @@ fi
 set -e
 
 exit 0
-
 
 
 

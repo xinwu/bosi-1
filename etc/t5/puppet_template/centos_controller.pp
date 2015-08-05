@@ -369,6 +369,5 @@ ini_setting { "clear tunnel types":
 service {'neutron-bsn-agent':
     ensure  => stopped,
     enable  => false,
-    path    => $binpath,
 }
 
