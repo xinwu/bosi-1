@@ -63,13 +63,6 @@ compute() {
     sudo systemctl stop neutron-metadata-agent
     sudo systemctl disable neutron-metadata-agent
 
-    # patch linux/dhcp.py to make sure static host route is pushed to instances
-    dhcp_py=$(sudo find /usr -name dhcp.py | grep linux)
-    dhcp_dir=$(dirname "${dhcp_py}")
-    sudo sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
-    sudo find $dhcp_dir -name "*.pyc" | xargs rm
-    sudo find $dhcp_dir -name "*.pyo" | xargs rm
-
     if [[ $deploy_haproxy == true ]]; then
         sudo groupadd nogroup
         sudo yum install -y keepalived haproxy

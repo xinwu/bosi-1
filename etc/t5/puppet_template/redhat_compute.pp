@@ -100,6 +100,11 @@ SLAVE=yes
 bond_intf { $uplinks:
 }
 
+file { '/etc/neutron/dnsmasq-neutron.conf':
+    ensure          => file,
+    content         => 'dhcp-option-force=26,1400',
+}
+
 # ml2
 ini_setting { "ml2 type dirvers":
   ensure            => present,
@@ -231,7 +236,7 @@ if %(deploy_dhcp_agent)s {
         section           => 'DEFAULT',
         key_val_separator => '=',
         setting           => 'enable_metadata_network',
-        value             => 'False',
+        value             => 'True',
     }
     ini_setting { "dhcp agent disable dhcp_delete_namespaces":
         ensure            => present,
