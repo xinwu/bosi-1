@@ -1111,6 +1111,8 @@ class Helper(object):
                        {'setup_node_dir' : setup_node_dir}, shell=True)
         subprocess.call("sudo rm -rf %(setup_node_dir)s/*.tar.gz" %
                        {'setup_node_dir' : setup_node_dir}, shell=True)
+        subprocess.call("sudo rm -rf %(setup_node_dir)s/pkg" %
+                       {'setup_node_dir' : setup_node_dir}, shell=True)
         subprocess.call("sudo rm -rf %(setup_node_dir)s/%(generated_script)s/*" %
                        {'setup_node_dir'   : setup_node_dir,
                         'generated_script' : const.GENERATED_SCRIPT_DIR}, shell=True)
@@ -1132,6 +1134,27 @@ class Helper(object):
             if code_web != 0 and code_local != 0:
                 Helper.safe_print("Required ivs packages are not correctly downloaded.\n")
                 exit(1)
+            if env.ivs_pkg_map.get('tar'):
+                tar_path = ("%(setup_node_dir)s/%(targz)s" %
+                           {'setup_node_dir' : setup_node_dir,
+                            'targz'          : env.ivs_pkg_map.get('tar')})
+                code_tar = subprocess.call("tar -xzvf %(tar_path)s -C %(setup_node_dir)s" %
+                                          {'tar_path'       : tar_path
+                                           'setup_node_dir' : setup_node_dir})
+                if code_tar != 0:
+                    Helper.safe_print("Required ivs packages are not correctly downloaded.\n")
+                    exit(1)
+                pkgs = []
+                for ivs_pkg_dir in const.IVS_TAR_PKG_DIRS:
+                    for pkg in os.listdir("%s/%s" % (setup_node_dir, ivs_pkg_dir)):
+                        if not os.path.isfile("%s/%s/%s" % (setup_node_dir, ivs_pkg_dir, pkg)):
+                            continue
+                        env.set_ivs_pkg_map(pkg)
+                        subprocess.call("cp %(setup_node_dir)s/%(ivs_pkg_dir)s/%(pkg)s %(setup_node_dir)s" %
+                                        {'setup_node_dir' : setup_node_dir,
+                                         'ivs_pkg_dir'    : ivs_pkg_dir,
+                                         'pkg'            : pkg})
+
 
         # wget horizon patch
         code_web = 1
