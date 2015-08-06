@@ -236,7 +236,7 @@ if %(deploy_dhcp_agent)s {
         section           => 'DEFAULT',
         key_val_separator => '=',
         setting           => 'enable_metadata_network',
-        value             => 'False',
+        value             => 'True',
     }
     ini_setting { "dhcp agent disable dhcp_delete_namespaces":
         ensure            => present,
