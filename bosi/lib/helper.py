@@ -432,7 +432,8 @@ class Helper(object):
                       'neutron_id'            : node.get_neutron_id(),
                       'deploy_haproxy'        : str(node.deploy_haproxy).lower(),
                       'uname'                 : node.uname,
-                      'bond'                  : node.bond})
+                      'bond'                  : node.bond,
+                      'rabbit_hosts'          : node.rabbit_hosts})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %
                              {'setup_node_dir'       : node.setup_node_dir,
                               'generated_script_dir' : const.GENERATED_SCRIPT_DIR,
@@ -1110,6 +1111,8 @@ class Helper(object):
                        {'setup_node_dir' : setup_node_dir}, shell=True)
         subprocess.call("sudo rm -rf %(setup_node_dir)s/*.tar.gz" %
                        {'setup_node_dir' : setup_node_dir}, shell=True)
+        subprocess.call("sudo rm -rf %(setup_node_dir)s/pkg" %
+                       {'setup_node_dir' : setup_node_dir}, shell=True)
         subprocess.call("sudo rm -rf %(setup_node_dir)s/%(generated_script)s/*" %
                        {'setup_node_dir'   : setup_node_dir,
                         'generated_script' : const.GENERATED_SCRIPT_DIR}, shell=True)
@@ -1131,6 +1134,29 @@ class Helper(object):
             if code_web != 0 and code_local != 0:
                 Helper.safe_print("Required ivs packages are not correctly downloaded.\n")
                 exit(1)
+            if env.ivs_pkg_map.get('tar'):
+                tar_path = ("%(setup_node_dir)s/%(targz)s" %
+                           {'setup_node_dir' : setup_node_dir,
+                            'targz'          : env.ivs_pkg_map.get('tar')})
+                code_tar = subprocess.call("tar -xzvf %(tar_path)s -C %(setup_node_dir)s" %
+                                          {'tar_path'       : tar_path,
+                                           'setup_node_dir' : setup_node_dir},
+                                           shell=True)
+                if code_tar != 0:
+                    Helper.safe_print("Required ivs packages are not correctly downloaded.\n")
+                    exit(1)
+                pkgs = []
+                for ivs_pkg_dir in const.IVS_TAR_PKG_DIRS:
+                    for pkg in os.listdir("%s/%s" % (setup_node_dir, ivs_pkg_dir)):
+                        if not os.path.isfile("%s/%s/%s" % (setup_node_dir, ivs_pkg_dir, pkg)):
+                            continue
+                        env.set_ivs_pkg_map(pkg)
+                        subprocess.call("cp %(setup_node_dir)s/%(ivs_pkg_dir)s/%(pkg)s %(setup_node_dir)s" %
+                                        {'setup_node_dir' : setup_node_dir,
+                                         'ivs_pkg_dir'    : ivs_pkg_dir,
+                                         'pkg'            : pkg},
+                                          shell=True)
+
 
         # wget horizon patch
         code_web = 1
@@ -1343,6 +1369,8 @@ class Helper(object):
                         rabbit_ip = bridge.br_ip.split('/')[0]
                         rabbit_hosts_str = "%s:%s" % (rabbit_ip, rabbit_port)
                         break
+            for controller_node in controller_nodes:
+                controller_node.set_rabbit_hosts(rabbit_hosts_str)
             neutron_conf_new = open("%s/neutron.conf.new" % controller_node.setup_node_dir, 'w')
             neutron_conf = open("%s/neutron.conf" % controller_node.setup_node_dir, 'r')
             for line in neutron_conf:

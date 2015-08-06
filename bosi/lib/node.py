@@ -40,6 +40,7 @@ class Node(object):
         self.tag                   = node_config.get('tag')
         self.env_tag               = env.tag
         self.cleanup               = env.cleanup
+        self.rabbit_hosts          = None
 
         # setup result
         self.time_diff             = 0
@@ -160,6 +161,10 @@ class Node(object):
 
     def set_last_log(self, last_log):
         self.last_log = last_log
+
+
+    def set_rabbit_hosts(self, rabbit_hosts):
+        self.rabbit_hosts = rabbit_hosts
 
 
     def get_network_vlan_ranges(self):
@@ -314,6 +319,7 @@ deploy_haproxy         : %(deploy_haproxy)s,
 tag                    : %(tag)s,
 env_tag                : %(env_tag)s,
 cleanup                : %(cleanup)s,
+rabbit_hosts           : %(rabbit_hosts)s,
 time_diff              : %(time_diff)s,
 last_log               : %(last_log)s,
 rhosp_automate_register              : %(rhosp_automate_register)s,
@@ -387,6 +393,7 @@ error                  : %(error)s,
 'tag'                   : self.tag,
 'env_tag'               : self.env_tag,
 'cleanup'               : self.cleanup,
+'rabbit_hosts'          : self.rabbit_hosts,
 'time_diff'             : self.time_diff,
 'last_log'              : self.last_log,
 'rhosp_automate_register'              : self.rhosp_automate_register,

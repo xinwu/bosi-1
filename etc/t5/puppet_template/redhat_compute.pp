@@ -100,6 +100,11 @@ SLAVE=yes
 bond_intf { $uplinks:
 }
 
+file { '/etc/neutron/dnsmasq-neutron.conf':
+    ensure          => file,
+    content         => 'dhcp-option-force=26,1400',
+}
+
 # ml2
 ini_setting { "ml2 type dirvers":
   ensure            => present,

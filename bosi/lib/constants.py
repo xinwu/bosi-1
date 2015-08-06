@@ -23,6 +23,8 @@ OS_RELEASE_TO_BSN_LIB = { 'juno' : '2015.1',
     'liberty': '2016.1',
 }
 
+IVS_TAR_PKG_DIRS = ["pkg/centos7-x86_64", "pkg/trusty-amd64"]
+
 # horizon patch
 DEPLOY_HORIZON_PATCH = True
 HORIZON_PATCH_URL = {
