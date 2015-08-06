@@ -1139,8 +1139,9 @@ class Helper(object):
                            {'setup_node_dir' : setup_node_dir,
                             'targz'          : env.ivs_pkg_map.get('tar')})
                 code_tar = subprocess.call("tar -xzvf %(tar_path)s -C %(setup_node_dir)s" %
-                                          {'tar_path'       : tar_path
-                                           'setup_node_dir' : setup_node_dir})
+                                          {'tar_path'       : tar_path,
+                                           'setup_node_dir' : setup_node_dir},
+                                           shell=True)
                 if code_tar != 0:
                     Helper.safe_print("Required ivs packages are not correctly downloaded.\n")
                     exit(1)
@@ -1153,7 +1154,8 @@ class Helper(object):
                         subprocess.call("cp %(setup_node_dir)s/%(ivs_pkg_dir)s/%(pkg)s %(setup_node_dir)s" %
                                         {'setup_node_dir' : setup_node_dir,
                                          'ivs_pkg_dir'    : ivs_pkg_dir,
-                                         'pkg'            : pkg})
+                                         'pkg'            : pkg},
+                                          shell=True)
 
 
         # wget horizon patch

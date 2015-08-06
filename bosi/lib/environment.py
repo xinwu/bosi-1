@@ -106,7 +106,7 @@ class Environment(object):
                 elif '.deb' in ivs_pkg and 'dbg' in ivs_pkg:
                     self.ivs_url_map['debug_deb'] = ivs_url
                     self.ivs_pkg_map['debug_deb'] = ivs_pkg
-                elif '.tar.gz' in ivs_pkg
+                elif '.tar.gz' in ivs_pkg:
                     self.ivs_url_map['tar'] = ivs_url
                     self.ivs_pkg_map['tar'] = ivs_pkg
 
@@ -163,7 +163,7 @@ class Environment(object):
         self.upper_vlan = upper_vlan
 
 
-    def set_ivs_pkg_map(ivs_pkg):
+    def set_ivs_pkg_map(self, ivs_pkg):
         if '.rpm' in ivs_pkg and 'debuginfo' not in ivs_pkg:
             self.ivs_pkg_map['rpm'] = ivs_pkg
         elif '.rpm' in ivs_pkg and 'debuginfo' in ivs_pkg:
