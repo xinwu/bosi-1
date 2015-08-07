@@ -258,6 +258,37 @@ ini_setting { "ml2 restproxy neutron_id":
   notify            => Service['neutron-server'],
 }
 
+# dhcp agent
+ini_setting { "dhcp agent enable isolated metadata":
+  ensure            => present,
+  path              => '/etc/neutron/dhcp_agent.ini',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'enable_isolated_metadata',
+  value             => 'True',
+  notify            => Service['neutron-dhcp-agent'],
+}
+ini_setting { "dhcp agent ovs_use_veth":
+  ensure            => present,
+  path              => '/etc/neutron/dhcp_agent.ini',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'ovs_use_veth',
+  value             => 'True',
+  notify            => Service['neutron-dhcp-agent'],
+}
+
+# l3 agent 
+ini_setting { "l3 agent ovs_use_veth":
+  ensure            => present,
+  path              => '/etc/neutron/l3_agent.ini',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'ovs_use_veth',
+  value             => 'True',
+  notify            => Service['neutron-l3-agent'],
+}
+
 # change ml2 ownership
 file { '/etc/neutron/plugins/ml2':
   owner   => neutron,
@@ -288,4 +319,14 @@ service { 'neutron-l3-agent':
   enable  => false,
 }
 
+
+service { 'neutron-dhcp-agent':
+  ensure     => running,
+  enable     => true,
+}
+
+service { 'neutron-l3-agent':
+  ensure     => running,
+  enable     => true,
+}
 
