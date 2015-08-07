@@ -698,7 +698,7 @@ class Helper(object):
             node_yaml_config = Helper.__load_node_yaml_config__(node_yaml_config, env)
 
             node_yaml_config['old_ivs_version'] = None
-            if node.deploy_mode == const.T6 :
+            if node_yaml_config['deploy_mode'] == const.T6 :
                 # get existing ivs version
                 output,errors = Helper.run_command_on_remote_with_passwd_without_timeout(
                     node_yaml_config['hostname'],
