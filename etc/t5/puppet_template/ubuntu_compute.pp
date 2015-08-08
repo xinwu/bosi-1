@@ -279,7 +279,7 @@ if %(deploy_l3_agent)s {
       section           => 'DEFAULT',
       key_val_separator => '=',
       setting           => 'enable_metadata_proxy',
-      value             => 'False',
+      value             => 'True',
     }
     ini_setting { "l3 agent external network bridge":
       ensure            => present,
@@ -288,6 +288,14 @@ if %(deploy_l3_agent)s {
       key_val_separator => '=',
       setting           => 'external_network_bridge',
       value             => '',
+    }
+    ini_setting { "l3 agent handle_internal_only_routers":
+        ensure            => present,
+        path              => '/etc/neutron/l3_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'handle_internal_only_routers',
+        value             => 'True',
     }
 }
 
@@ -312,7 +320,7 @@ if %(deploy_dhcp_agent)s {
         section           => 'DEFAULT',
         key_val_separator => '=',
         setting           => 'dhcp_driver',
-        value             => 'bsnstacklib.plugins.bigswitch.dhcp_driver.DnsmasqWithMetaData',
+        value             => 'neutron.agent.linux.dhcp.Dnsmasq',
     }
     ini_setting { "dhcp agent enable isolated metadata":
         ensure            => present,
@@ -328,7 +336,7 @@ if %(deploy_dhcp_agent)s {
         section           => 'DEFAULT',
         key_val_separator => '=',
         setting           => 'enable_metadata_network',
-        value             => 'False',
+        value             => 'True',
     }
     ini_setting { "dhcp agent disable dhcp_delete_namespaces":
         ensure            => present,

@@ -80,6 +80,13 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup):
         nodes_yaml_config = config['nodes']
     node_dic = Helper.load_nodes(nodes_yaml_config, env)
 
+    # copy neutron config from neutron server to setup node
+    for hostname, node in node_dic.iteritems():
+        if node.role == const.ROLE_NEUTRON_SERVER:
+            controller_nodes.append(node)
+    Helper.copy_neutron_config_from_controllers(controller_nodes)
+    Helper.copy_dhcp_scheduler_from_controllers(controller_nodes)
+
     # Generate scripts for each node
     for hostname, node in node_dic.iteritems():
         if node.os == const.CENTOS:
@@ -100,17 +107,12 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup):
             continue
 
         if node.role == const.ROLE_NEUTRON_SERVER:
-            controller_nodes.append(node)
             controller_node_q.put(node)
         else:
             node_q.put(node)
 
         if node.rhosp:
             Helper.chmod_node(node)
-
-    # copy neutron config from neutron server to setup node
-    Helper.copy_neutron_config_from_controllers(controller_nodes)
-    Helper.copy_dhcp_scheduler_from_controllers(controller_nodes)
 
     for hostname, node in node_dic.iteritems():
         with open(const.LOG_FILE, "a") as log_file:
