@@ -89,6 +89,24 @@ file { "/root/.ssh/known_hosts":
     ensure => absent,
 }
 
+# keystone paste config
+ini_setting { "keystone paste config":
+    ensure            => present,
+    path              => '/etc/keystone/keystone.conf',
+    section           => 'paste_deploy',
+    key_val_separator => '=',
+    setting           => 'config_file',
+    value             => '/usr/share/keystone/keystone-dist-paste.ini',
+}
+ini_setting { "keystone.conf notification driver":
+  ensure            => present,
+  path              => '/etc/keystone/keystone.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'notification_driver',
+  value             => 'messaging',
+}
+
 # reserve keystone ephemeral port
 exec { "reserve keystone port":
     command => "sysctl -w 'net.ipv4.ip_local_reserved_ports=49000,35357,41055,58882'",
@@ -100,6 +118,24 @@ file_line { "reserve keystone port":
     match => '^net.ipv4.ip_local_reserved_ports.*$',
 }
 
+# load 8021q module on boot
+file {'/etc/sysconfig/modules/8021q.modules':
+    ensure  => file,
+    mode    => 0777,
+    content => "modprobe 8021q",
+}
+exec { "load 8021q":
+    command => "modprobe 8021q",
+    path    => $binpath,
+}
+
+# disable neutron-bsn-agent service
+service {'neutron-bsn-agent':
+    ensure  => stopped,
+    enable  => false,
+    path    => $binpath,
+}
+
 # purge bcf controller public key
 exec { 'purge bcf key':
     command => "rm -rf /var/lib/neutron/host_certs/*",
@@ -108,13 +144,40 @@ exec { 'purge bcf key':
 }
 
 # config /etc/neutron/neutron.conf
+ini_setting { "neutron.conf debug":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'debug',
+  value             => 'True',
+  notify            => Service['neutron-server'],
+}
+ini_setting { "neutron.conf report_interval":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'agent',
+  key_val_separator => '=',
+  setting           => 'report_interval',
+  value             => '60',
+  notify            => Service['neutron-server'],
+}
+ini_setting { "neutron.conf agent_down_time":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'agent_down_time',
+  value             => '150',
+  notify            => Service['neutron-server'],
+}
 ini_setting { "neutron.conf service_plugins":
   ensure            => present,
   path              => '/etc/neutron/neutron.conf',
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'service_plugins',
-  value             => 'router',
+  value             => 'router,lbaas',
   notify            => Service['neutron-server'],
 }
 ini_setting { "neutron.conf dhcp_agents_per_network":
@@ -135,25 +198,21 @@ ini_setting { "neutron.conf notification driver":
   value             => 'messaging',
   notify            => Service['neutron-server'],
 }
-ini_setting { "neutron.conf allow_automatic_l3agent_failover":
+ini_setting { "ensure absent of neutron.conf service providers":
+  ensure            => absent,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'service_providers',
+  key_val_separator => '=',
+  setting           => 'service_provider',
+}->
+ini_setting { "neutron.conf service providers":
   ensure            => present,
   path              => '/etc/neutron/neutron.conf',
-  section           => 'DEFAULT',
+  section           => 'service_providers',
   key_val_separator => '=',
-  setting           => 'allow_automatic_l3agent_failover',
-  value             => 'True',
+  setting           => 'service_provider',
+  value             => 'LOADBALANCER:Haproxy:neutron.services.loadbalancer.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default',
   notify            => Service['neutron-server'],
-}
-
-# configure /etc/keystone/keystone.conf
-ini_setting { "keystone.conf notification driver":
-  ensure            => present,
-  path              => '/etc/keystone/keystone.conf',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'notification_driver',
-  value             => 'messaging',
-  notify            => Service['openstack-keystone'],
 }
 
 # config /etc/neutron/plugin.ini
@@ -180,7 +239,12 @@ file { '/etc/neutron/dnsmasq-neutron.conf':
   content           => 'dhcp-option-force=26,1400',
 }
 
-# disable l3 agent proxy metadata
+# disable l3 agent
+service { 'neutron-l3-agent':
+  ensure  => stopped,
+  enable  => false,
+  path    => $binpath,
+}
 ini_setting { "l3 agent disable metadata proxy":
   ensure            => present,
   path              => '/etc/neutron/l3_agent.ini',
@@ -299,26 +363,22 @@ file { '/etc/neutron/plugins/ml2':
   notify  => Service['neutron-server'],
 }
 
-# neutron-server, neutron-dhcp-agent and neutron-metadata-agent
+# make services in right state
 service { 'neutron-server':
-  ensure     => running,
-  enable     => true,
-}
-service { 'openstack-keystone':
-  ensure     => running,
-  enable     => true,
+  ensure  => running,
+  enable  => true,
+  path    => $binpath,
+  require => Exec['purge bcf key'],
 }
 service { 'neutron-dhcp-agent':
-  ensure     => stopped,
-  enable     => false,
+  ensure  => stopped,
+  enable  => false,
+  path    => $binpath,
 }
 service { 'neutron-metadata-agent':
   ensure  => stopped,
   enable  => false,
-}
-service { 'neutron-l3-agent':
-  ensure  => stopped,
-  enable  => false,
+  path    => $binpath,
 }
 
 # patch for packstack nova
@@ -364,10 +424,7 @@ ini_setting { "clear tunnel types":
   require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
   notify            => Service['neutron-openvswitch-agent'],
 }
-
-# disable neutron-bsn-agent service
-service {'neutron-bsn-agent':
-    ensure  => stopped,
-    enable  => false,
+service { 'neutron-openvswitch-agent':
+  ensure  => running,
+  enable  => true,
 }
-

@@ -33,6 +33,28 @@ file_line { "add default gw":
     line    => "sudo ip route add default via %(default_gw)s",
 }
 
+# install and enable ntp
+package { "ntp":
+    ensure  => installed,
+}
+service { "ntpd":
+    ensure  => running,
+    enable  => true,
+    path    => $binpath,
+    require => Package['ntp'],
+}
+
+# load 8021q module on boot
+file {'/etc/sysconfig/modules/8021q.modules':
+    ensure  => file,
+    mode    => 0777,
+    content => "modprobe 8021q",
+}
+exec { "load 8021q":
+    command => "modprobe 8021q",
+    path    => $binpath,
+}
+
 # lldp
 file { "/bin/send_lldp":
     ensure  => file,
@@ -97,6 +119,71 @@ SLAVE=yes
 }
 
 bond_intf { $uplinks:
+}
+
+# config /etc/neutron/neutron.conf
+ini_setting { "neutron.conf debug":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'debug',
+  value             => 'True',
+}
+ini_setting { "neutron.conf report_interval":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'agent',
+  key_val_separator => '=',
+  setting           => 'report_interval',
+  value             => '60',
+}
+ini_setting { "neutron.conf agent_down_time":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'agent_down_time',
+  value             => '150',
+}
+ini_setting { "neutron.conf service_plugins":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'service_plugins',
+  value             => 'router,lbaas',
+}
+ini_setting { "neutron.conf dhcp_agents_per_network":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'dhcp_agents_per_network',
+  value             => '1',
+}
+ini_setting { "neutron.conf notification driver":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'notification_driver',
+  value             => 'messaging',
+}
+ini_setting { "ensure absent of neutron.conf service providers":
+  ensure            => absent,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'service_providers',
+  key_val_separator => '=',
+  setting           => 'service_provider',
+}->
+ini_setting { "neutron.conf service providers":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'service_providers',
+  key_val_separator => '=',
+  setting           => 'service_provider',
+  value             => 'LOADBALANCER:Haproxy:neutron.services.loadbalancer.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default',
 }
 
 # ml2
@@ -189,6 +276,39 @@ ini_setting { "ml2 restproxy neutron_id":
   value             => %(neutron_id)s,
 }
 
+# disable neutron-bsn-agent service
+service {'neutron-bsn-agent':
+    ensure  => stopped,
+    enable  => false,
+    path    => $binpath,
+}
+
+# ensure neutron-openvswitch-agent is running
+service { 'neutron-openvswitch-agent':
+  ensure  => running,
+  enable  => true,
+}
+
+# patch for packstack nova
+package { "device-mapper-libs":
+  ensure => latest,
+  notify => Service['libvirtd'],
+}
+service { "libvirtd":
+  ensure  => running,
+  enable  => true,
+  path    => $binpath,
+  notify  => Service['openstack-nova-compute'],
+}
+service { "openstack-nova-compute":
+  ensure  => running,
+  enable  => true,
+  path    => $binpath,
+}
+file { '/etc/neutron/dnsmasq-neutron.conf':
+  ensure            => file,
+  content           => 'dhcp-option-force=26,1400',
+}
 
 # dhcp configuration
 if %(deploy_dhcp_agent)s {
@@ -251,7 +371,6 @@ if %(deploy_l3_agent)s {
         key_val_separator => '=',
         setting           => 'enable_metadata_proxy',
         value             => 'False',
-        notify            => Service['neutron-l3-agent'],
     }
     ini_setting { "l3 agent external_network_bridge":
         ensure            => present,
@@ -260,7 +379,6 @@ if %(deploy_l3_agent)s {
         key_val_separator => '=',
         setting           => 'external_network_bridge',
         value             => '',
-        notify            => Service['neutron-l3-agent'],
     }
     ini_setting { "l3 agent handle_internal_only_routers":
         ensure            => present,
@@ -269,56 +387,11 @@ if %(deploy_l3_agent)s {
         key_val_separator => '=',
         setting           => 'handle_internal_only_routers',
         value             => 'True',
-        notify            => Service['neutron-l3-agent'],
     }
     service{'neutron-l3-agent':
         ensure  => running,
         enable  => true,
     }
-}
-
-# config /etc/neutron/neutron.conf
-ini_setting { "neutron.conf service_plugins":
-  ensure            => present,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'service_plugins',
-  value             => 'router,lbaas',
-}
-ini_setting { "neutron.conf dhcp_agents_per_network":
-  ensure            => present,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'dhcp_agents_per_network',
-  value             => '1',
-}
-ini_setting { "neutron.conf notification driver":
-  ensure            => present,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'notification_driver',
-  value             => 'messaging',
-}
-ini_setting { "neutron.conf allow_automatic_l3agent_failover":
-  ensure            => present,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'DEFAULT',
-  key_val_separator => '=',
-  setting           => 'allow_automatic_l3agent_failover',
-  value             => 'True',
-}
-
-service{'neutron-bsn-agent':
-    ensure  => stopped,
-    enable  => false,
-}
-
-service { 'neutron-openvswitch-agent':
-  ensure  => running,
-  enable  => true,
 }
 
 # haproxy
