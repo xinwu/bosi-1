@@ -78,7 +78,7 @@ service { 'ivs':
 }
 
 package { 'apport':
-    ensure  => 'running',
+    ensure  => latest,
 }
 
 # load 8021q module on boot
