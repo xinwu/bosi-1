@@ -137,7 +137,7 @@ compute() {
     bash /etc/rc.d/rc.local
 
     if [[ $deploy_dhcp_agent == true ]]; then
-        echo 'Restart neutron-metadata-agent, neutron-dhcp-agent and neutron-l3-agent'
+        echo 'Restart neutron-metadata-agent and neutron-dhcp-agent'
         systemctl enable neutron-metadata-agent
         systemctl restart neutron-metadata-agent
         systemctl enable neutron-dhcp-agent
