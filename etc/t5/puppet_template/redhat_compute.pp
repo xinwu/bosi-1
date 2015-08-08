@@ -220,7 +220,7 @@ if %(deploy_dhcp_agent)s {
         section           => 'DEFAULT',
         key_val_separator => '=',
         setting           => 'dhcp_driver',
-        value             => 'bsnstacklib.plugins.bigswitch.dhcp_driver.DnsmasqWithMetaData',
+        value             => 'neutron.agent.linux.dhcp.Dnsmasq',
     }
     ini_setting { "dhcp agent enable isolated metadata":
         ensure            => present,
@@ -257,7 +257,6 @@ if %(deploy_l3_agent)s {
         key_val_separator => '=',
         setting           => 'enable_metadata_proxy',
         value             => 'False',
-        notify            => Service['neutron-l3-agent'],
     }
     ini_setting { "l3 agent external_network_bridge":
         ensure            => present,
@@ -266,7 +265,6 @@ if %(deploy_l3_agent)s {
         key_val_separator => '=',
         setting           => 'external_network_bridge',
         value             => '',
-        notify            => Service['neutron-l3-agent'],
     }
     ini_setting { "l3 agent handle_internal_only_routers":
         ensure            => present,
@@ -275,11 +273,6 @@ if %(deploy_l3_agent)s {
         key_val_separator => '=',
         setting           => 'handle_internal_only_routers',
         value             => 'True',
-        notify            => Service['neutron-l3-agent'],
-    }
-    service{'neutron-l3-agent':
-        ensure  => running,
-        enable  => true,
     }
 }
 
