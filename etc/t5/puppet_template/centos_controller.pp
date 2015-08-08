@@ -386,11 +386,6 @@ package { "device-mapper-libs":
   ensure => latest,
 }
 
-service { 'neutron-openvswitch-agent':
-  ensure  => running,
-  enable  => true,
-}
-
 # ovs_neutron_plugin for packstack
 file { "/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini":
     ensure  => file,
