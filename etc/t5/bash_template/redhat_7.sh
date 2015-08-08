@@ -109,7 +109,7 @@ compute() {
     sudo bash /etc/rc.d/rc.local
 
     if [[ $deploy_dhcp_agent == true ]]; then
-        echo 'Restart neutron-metadata-agent, neutron-dhcp-agent and neutron-l3-agent'
+        echo 'Restart neutron-metadata-agent, neutron-dhcp-agent'
         sudo systemctl enable neutron-metadata-agent
         sudo systemctl restart neutron-metadata-agent
         sudo systemctl enable neutron-dhcp-agent
@@ -117,14 +117,12 @@ compute() {
     fi
 
     if [[ $deploy_l3_agent == true ]]; then
+        echo 'Restart neutron-l3-agent, neutron-metadata-agent'
+        sudo systemctl enable neutron-metadata-agent
+        sudo systemctl restart neutron-metadata-agent
         sudo systemctl enable neutron-l3-agent
         sudo systemctl restart neutron-l3-agent
     fi
-
-    # restart nova compute on compute node
-    #echo 'Restart openstack-nova-compute'
-    #sudo systemctl restart openstack-nova-compute
-    #sudo systemctl enable openstack-nova-compute
 }
 
 
