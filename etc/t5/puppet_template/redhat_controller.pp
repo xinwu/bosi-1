@@ -288,4 +288,3 @@ service { 'neutron-l3-agent':
   enable  => false,
 }
 
-
