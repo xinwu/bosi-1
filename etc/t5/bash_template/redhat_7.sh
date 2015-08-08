@@ -122,6 +122,8 @@ compute() {
         sudo systemctl restart neutron-metadata-agent
         sudo systemctl enable neutron-l3-agent
         sudo systemctl restart neutron-l3-agent
+        sudo systemctl stop openstack-nova-compute
+        sudo systemctl disable openstack-nova-compute
     fi
 }
 
