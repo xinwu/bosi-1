@@ -618,6 +618,7 @@ class Helper(object):
                       'default_gw'            : node.get_default_gw(),
                       'uplinks'               : node.get_comma_separated_uplinks(),
                       'deploy_dhcp_agent'     : str(node.deploy_dhcp_agent).lower(),
+                      'deploy_l3_agent'       : str(node.deploy_l3_agent).lower(),
                       'neutron_id'            : node.get_neutron_id(),
                       'selinux_mode'          : node.selinux_mode,
                       'deploy_haproxy'        : str(node.deploy_haproxy).lower(),
@@ -696,19 +697,20 @@ class Helper(object):
         for hostname, node_yaml_config in node_yaml_config_map.iteritems():
             node_yaml_config = Helper.__load_node_yaml_config__(node_yaml_config, env)
 
-            # get existing ivs version
             node_yaml_config['old_ivs_version'] = None
-            output,errors = Helper.run_command_on_remote_with_passwd_without_timeout(
-                node_yaml_config['hostname'],
-                node_yaml_config['user'],
-                node_yaml_config['passwd'],
-                'ivs --version')
-            if errors or not output:
-                node_yaml_config['skip'] = True
-                node_yaml_config['error'] = ("Fail to retrieve ivs version from %(hostname)s" %
-                                            {'hostname' : node_yaml_config['hostname']})
-            if output and 'command not found' not in output:
-                node_yaml_config['old_ivs_version'] = output.split()[1]
+            if node_yaml_config['deploy_mode'] == const.T6 :
+                # get existing ivs version
+                output,errors = Helper.run_command_on_remote_with_passwd_without_timeout(
+                    node_yaml_config['hostname'],
+                    node_yaml_config['user'],
+                    node_yaml_config['passwd'],
+                    'ivs --version')
+                if errors or not output:
+                    node_yaml_config['skip'] = True
+                    node_yaml_config['error'] = ("Fail to retrieve ivs version from %(hostname)s" %
+                                                {'hostname' : node_yaml_config['hostname']})
+                if output and 'command not found' not in output:
+                    node_yaml_config['old_ivs_version'] = output.split()[1]
 
             node = Node(node_yaml_config, env)
             node_dic[node.hostname] = node
