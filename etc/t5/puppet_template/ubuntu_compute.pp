@@ -125,6 +125,21 @@ ini_setting { "neutron.conf notification driver":
   setting           => 'notification_driver',
   value             => 'messaging',
 }
+ini_setting { "ensure absent of neutron.conf service providers":
+  ensure            => absent,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'service_providers',
+  key_val_separator => '=',
+  setting           => 'service_provider',
+}->
+ini_setting { "neutron.conf service providers":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'service_providers',
+  key_val_separator => '=',
+  setting           => 'service_provider',
+  value             => 'LOADBALANCER:Haproxy:neutron.services.loadbalancer.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default',
+}
 
 # set the correct properties in ml2_conf.ini on compute as well
 # config /etc/neutron/plugins/ml2/ml2_conf.ini
