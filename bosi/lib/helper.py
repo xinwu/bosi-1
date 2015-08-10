@@ -31,8 +31,8 @@ class Helper(object):
             uname = output.strip()
             if len(uname) > const.UNAME_CUTOFF:
                 Helper.safe_print("hostname %(hostname)s is longer than %(cutoff)d characters, skip\n" %
-                                 % {'hostname' : node_config['hostname'],
-                                    'cutoff'   : const.UNAME_CUTOFF})
+                                 {'hostname' : node_config['hostname'],
+                                  'cutoff'   : const.UNAME_CUTOFF})
                 return None
             return uname
         else:
