@@ -1,4 +1,7 @@
 
+# uname -n cutoff length for port group name
+UNAME_CUTOFF = 58
+
 # max number of threads, each thread sets up one node
 MAX_WORKERS = 10
 
