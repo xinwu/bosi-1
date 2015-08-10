@@ -249,7 +249,7 @@ ini_setting { "ml2 mechanism drivers":
   section           => 'ml2',
   key_val_separator => '=',
   setting           => 'mechanism_drivers',
-  value             => 'openvswitch,bigswitch',
+  value             => 'openvswitch,bsn_ml2',
   notify            => Service['neutron-server'],
 }
 ini_setting { "ml2 restproxy ssl cert directory":

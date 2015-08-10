@@ -256,7 +256,7 @@ if %(deploy_l3_agent)s {
         section           => 'DEFAULT',
         key_val_separator => '=',
         setting           => 'enable_metadata_proxy',
-        value             => 'False',
+        value             => 'True',
     }
     ini_setting { "l3 agent external_network_bridge":
         ensure            => present,

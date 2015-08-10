@@ -1,4 +1,7 @@
 
+# uname -n cutoff length for port group name
+UNAME_CUTOFF = 58
+
 # max number of threads, each thread sets up one node
 MAX_WORKERS = 10
 
@@ -29,11 +32,11 @@ IVS_TAR_PKG_DIRS = ["pkg/centos7-x86_64", "pkg/trusty-amd64"]
 DEPLOY_HORIZON_PATCH = True
 HORIZON_PATCH_URL = {
     'juno' : 'https://github.com/bigswitch/horizon/archive/juno-bcf-3.0-beta1.tar.gz',
-    'kilo' : 'https://github.com/bigswitch/horizon/archive/master.tar.gz',
+    'kilo' : 'https://github.com/bigswitch/horizon/archive/stable/kilo2.tar.gz',
 }
 HORIZON_PATCH_DIR = {
     'juno' : 'horizon-juno-bcf-3.0-beta1',
-    'kilo' : 'horizon-master',
+    'kilo' : 'horizon-stable-kilo2',
 }
 HORIZON_BASE_DIR = '/usr/share/openstack-dashboard'
 
@@ -50,7 +53,7 @@ LOG_FILE             = "/var/log/bcf_setup.log"
 
 # constants for ivs config
 INBAND_VLAN     = 4092
-IVS_DAEMON_ARGS = (r'''DAEMON_ARGS=\"--inband-vlan %(inband_vlan)d%(uplink_interfaces)s%(internal_ports)s\"''')
+IVS_DAEMON_ARGS = (r'''DAEMON_ARGS=\"--hitless --inband-vlan %(inband_vlan)d%(uplink_interfaces)s%(internal_ports)s\"''')
 
 # constants of supported OSes and versions
 CENTOS          = 'centos'
