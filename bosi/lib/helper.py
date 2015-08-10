@@ -24,6 +24,24 @@ class Helper(object):
 
 
     @staticmethod
+    def get_uname(node):
+        # get uname
+        output, error = Helper.run_command_on_remote_without_timeout(node, "uname -n")
+        if output and not error:
+            uname = output.strip()
+            if len(uname) > const.UNAME_CUTOFF:
+                Helper.safe_print("hostname %(hostname)s is longer than %(cutoff)d characters, skip\n" %
+                                 % {'hostname' : node_config['hostname'],
+                                    'cutoff'   : const.UNAME_CUTOFF})
+                return None
+            return uname
+        else:
+            Helper.safe_print("Error getting node %(hostname)s uname:\n%(error)s\n"
+                             % {'hostname' : node_config['hostname'], 'error' : error})
+            return None
+
+
+    @staticmethod
     def reboot_if_necessary(node):
         if node.deploy_mode != const.T5:
             return
@@ -713,7 +731,11 @@ class Helper(object):
                     node_yaml_config['old_ivs_version'] = output.split()[1]
 
             node = Node(node_yaml_config, env)
-            node_dic[node.hostname] = node
+            uname = Helper.get_uname(node)
+            if uname:
+                node_yaml_config['uname'] = uname
+                node = Node(node_yaml_config, env)
+                node_dic[node.hostname] = node
         return node_dic
 
 
@@ -804,18 +826,15 @@ class Helper(object):
 
 
         # get uname
-        output, error = Helper.run_command_on_remote_without_timeout(node, "uname -n")
-        if output and not error:
-            node_config['uname'] = output.strip()
+        uname = Helper.get_uname(node)
+        if uname:
+            # TODO parse other vlans and bridges
+            # TODO get ivs version for t6
+            node_config['uname'] = uname
+            node = Node(node_config, env)
+            return node
         else:
-            Helper.safe_print("Error getting node %(hostname)s uname:\n%(error)s\n"
-                             % {'hostname' : node_config['hostname'], 'error' : error})
             return None
-
-        # TODO parse other vlans and bridges
-        # TODO get ivs version for t6
-        node = Node(node_config, env)
-        return node
 
 
     @staticmethod
@@ -976,7 +995,13 @@ class Helper(object):
         node_config['tagged_intfs'] = tagged_intfs
 
         node = Node(node_config, env)
-        return node
+        uname = Helper.get_uname(node)
+        if uname:
+            node_config['uname'] = uname
+            node = Node(node_config, env)
+            return node
+        else:
+            return None
 
 
     @staticmethod
