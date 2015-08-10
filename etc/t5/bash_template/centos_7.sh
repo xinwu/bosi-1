@@ -77,21 +77,29 @@ controller() {
 
 compute() {
 
-    systemctl stop neutron-l3-agent
-    systemctl disable neutron-l3-agent
-    systemctl stop neutron-dhcp-agent
-    systemctl disable neutron-dhcp-agent
-    systemctl stop neutron-metadata-agent
-    systemctl disable neutron-metadata-agent
+    if [[ $deploy_dhcp_agent == true ]]; then
+        echo 'Stop and disable neutron-metadata-agent and neutron-dhcp-agent'
+        systemctl stop neutron-dhcp-agent
+        systemctl disable neutron-dhcp-agent
+        systemctl stop neutron-metadata-agent
+        systemctl disable neutron-metadata-agent
 
-    # patch linux/dhcp.py to make sure static host route is pushed to instances
-    dhcp_py=$(find /usr -name dhcp.py | grep linux)
-    dhcp_dir=$(dirname "${dhcp_py}")
-    sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
-    find $dhcp_dir -name "*.pyc" | xargs rm
-    find $dhcp_dir -name "*.pyo" | xargs rm
+        # patch linux/dhcp.py to make sure static host route is pushed to instances
+        dhcp_py=$(find /usr -name dhcp.py | grep linux)
+        dhcp_dir=$(dirname "${dhcp_py}")
+        sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
+        find $dhcp_dir -name "*.pyc" | xargs rm
+        find $dhcp_dir -name "*.pyo" | xargs rm
+    fi
+
+    if [[ $deploy_l3_agent == true ]]; then
+        echo 'Stop and disable neutron-l3-agent'
+        systemctl stop neutron-l3-agent
+        systemctl disable neutron-l3-agent
+    fi
 
     if [[ $deploy_haproxy == true ]]; then
+        echo "Deplying haproxy"
         groupadd nogroup
         yum install -y keepalived haproxy
         sysctl -w net.ipv4.ip_nonlocal_bind=1
@@ -152,6 +160,7 @@ compute() {
     fi
 
     if [[ $deploy_l3_agent == true ]]; then
+        echo "Restart neutron-l3-agent"
         systemctl enable neutron-l3-agent
         systemctl restart neutron-l3-agent
     fi
