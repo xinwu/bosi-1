@@ -30,6 +30,13 @@ class Node(object):
         self.bridges               = node_config.get('bridges')
         self.br_bond               = node_config.get('br_bond')
         self.bond                  = node_config.get('bond')
+        # in case of config env (packstack), bond and br_bond
+        # may be empty
+        # TODO: maybe add it to env?
+        if not self.br_bond:
+            br_bond = "br-bond0"
+        if not self.bond:
+            self.bond = "bond0"
 
         self.pxe_interface         = node_config.get('pxe_interface')
         self.br_fw_admin           = node_config.get('br_fw_admin')
@@ -173,6 +180,9 @@ class Node(object):
                 'lower_vlan' : self.lower_vlan,
                 'upper_vlan' : self.upper_vlan})
 
+    def get_bridge_mappings(self):
+        # TODO: hotfix for testing. replace it with proper logic
+        return "physnet1:br-bond0"
 
     def get_uplink_intfs_for_ivs(self):
         uplink_intfs = []

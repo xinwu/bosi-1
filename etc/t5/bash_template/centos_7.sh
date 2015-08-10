@@ -128,10 +128,17 @@ compute() {
     done
     ifup %(bond)s
 
+    # add physical interface bridge
+    # this may be absent in case of packstack
+    ovs-vsctl --may-exist add-br %(br_bond)s
     # add bond to ovs
     ovs-vsctl --may-exist add-port %(br_bond)s %(bond)s
     sleep 5
     systemctl restart send_lldp
+
+    # restart neutron ovs plugin
+    # this ensures connections between br-int and br-bond are created fine
+    systemctl restart neutron-openvswitch-agent
 
     # assign default gw
     bash /etc/rc.d/rc.local
