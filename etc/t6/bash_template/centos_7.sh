@@ -221,7 +221,9 @@ puppet module install jfryman-selinux
 
 # install bsnstacklib
 if [[ $install_bsnstacklib == true ]]; then
+    sleep 2
     pip uninstall -y bsnstacklib
+    sleep 2
     pip install "bsnstacklib==2014.2.36"
 fi
 
