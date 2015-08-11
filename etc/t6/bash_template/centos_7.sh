@@ -224,7 +224,9 @@ if [[ $install_bsnstacklib == true ]]; then
     sleep 2
     pip uninstall -y bsnstacklib
     sleep 2
-    pip install "bsnstacklib==2014.2.36"
+    #fix for packstack BVS-4022
+    #pip install "bsnstacklib==2014.2.36"
+    pip install --upgrade "bsnstacklib<%(bsnstacklib_version)s"
 fi
 
 if [[ $is_controller == true ]]; then
