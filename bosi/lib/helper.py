@@ -105,7 +105,7 @@ class Helper(object):
 
 
     @staticmethod
-    def run_command_on_local(command, timeout=1200):
+    def run_command_on_local(command, timeout=600):
         """
         Use subprocess to run a shell command on local node.
         """
