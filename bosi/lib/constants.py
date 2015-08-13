@@ -99,3 +99,6 @@ HASH_HEADER            = 'BCF-SETUP'
 BCF_CONTROLLER_PORT    = 8443
 ANY                    = 'any'
 
+# T5 for Centos requires extra params when using packstack
+T5_CENTOS_BOND_BRIDGE = 'br-bond0'
+T5_CENTOS_BOND_NAME = 'bond0'

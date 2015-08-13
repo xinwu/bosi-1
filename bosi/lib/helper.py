@@ -640,6 +640,9 @@ class Helper(object):
                       'neutron_id'            : node.get_neutron_id(),
                       'selinux_mode'          : node.selinux_mode,
                       'deploy_haproxy'        : str(node.deploy_haproxy).lower(),
+                      'br_int'                : const.BR_NAME_INT,
+                      'network_vlan_ranges'   : node.get_network_vlan_ranges(),
+                      'br_mappings'           : node.get_bridge_mappings(),
                       'uname'                 : node.uname,
                       'bond'                  : node.bond})
         puppet_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp''' %

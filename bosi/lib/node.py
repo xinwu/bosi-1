@@ -82,6 +82,15 @@ class Node(object):
         self.ivs_debug_pkg         = None
         self.ivs_version           = None
         self.old_ivs_version       = node_config.get('old_ivs_version')
+
+        # in case of config env (packstack), bond and br_bond
+        # may be empty
+        if not self.br_bond:
+            self.br_bond = const.T5_CENTOS_BOND_BRIDGE
+
+        if not self.bond:
+            self.bond = const.T5_CENTOS_BOND_NAME
+
         if self.os in const.RPM_OS_SET:
             self.ivs_pkg           = self.ivs_pkg_map.get('rpm')
             self.ivs_debug_pkg     = self.ivs_pkg_map.get('debug_rpm')
@@ -173,6 +182,10 @@ class Node(object):
                 'lower_vlan' : self.lower_vlan,
                 'upper_vlan' : self.upper_vlan})
 
+    def get_bridge_mappings(self):
+        return (r'''%(physnet)s:%(bond_bridge)s''' %
+               {'physnet'       : self.physnet,
+                'bond_bridge'   : self.br_bond})
 
     def get_uplink_intfs_for_ivs(self):
         uplink_intfs = []

@@ -193,12 +193,6 @@ service {'neutron-bsn-agent':
     path    => $binpath,
 }
 
-# ensure neutron-openvswitch-agent is running
-service { 'neutron-openvswitch-agent':
-  ensure  => running,
-  enable  => true,
-}
-
 # patch for packstack nova
 package { "device-mapper-libs":
   ensure => latest,
@@ -361,3 +355,78 @@ if %(deploy_haproxy)s {
     }
 }
 
+# ovs_neutron_plugin for packstack
+file { "/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini":
+    ensure  => file,
+    mode    => 0777,
+}
+ini_setting { "disable tunneling":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
+  section           => 'ovs',
+  key_val_separator => '=',
+  setting           => 'enable_tunneling',
+  value             => 'False',
+  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
+  notify            => Service['neutron-openvswitch-agent'],
+}
+ini_setting { "clear tunnel type":
+  ensure            => absent,
+  path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
+  section           => 'ovs',
+  key_val_separator => '=',
+  setting           => 'tunnel_type',
+  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
+  notify            => Service['neutron-openvswitch-agent'],
+}
+ini_setting { "tenant network vlan ranges":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
+  section           => 'ovs',
+  key_val_separator => '=',
+  setting           => 'network_vlan_ranges',
+  value             => '%(network_vlan_ranges)s',
+  notify            => Service['neutron-openvswitch-agent'],
+}
+ini_setting { "clear tunnel id ranges":
+  ensure            => absent,
+  path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
+  section           => 'ovs',
+  key_val_separator => '=',
+  setting           => 'tunnel_id_ranges',
+  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
+  notify            => Service['neutron-openvswitch-agent'],
+}
+ini_setting { "integration bridge":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
+  section           => 'ovs',
+  key_val_separator => '=',
+  setting           => 'integration_bridge',
+  value             => '%(br_int)s',
+  notify            => Service['neutron-openvswitch-agent'],
+}
+ini_setting { "bridge mappings":
+  ensure            => present,
+  path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
+  section           => 'ovs',
+  key_val_separator => '=',
+  setting           => 'bridge_mappings',
+  value             => '%(br_mappings)s',
+  notify            => Service['neutron-openvswitch-agent'],
+}
+# this is agent section of the file
+ini_setting { "clear tunnel types":
+  ensure            => absent,
+  path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
+  section           => 'agent',
+  key_val_separator => '=',
+  setting           => 'tunnel_types',
+  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
+  notify            => Service['neutron-openvswitch-agent'],
+}
+# ensure neutron-openvswitch-agent is running
+service { 'neutron-openvswitch-agent':
+  ensure  => running,
+  enable  => true,
+}
