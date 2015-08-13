@@ -96,23 +96,32 @@ compute() {
     sudo cp %(dst_dir)s/send_lldp /bin/
     sudo chmod 777 /bin/send_lldp
 
-    # patch linux/dhcp.py to make sure static host route is pushed to instances
-    apt-get install -o Dpkg::Options::="--force-confold" -y neutron-metadata-agent
-    apt-get install -o Dpkg::Options::="--force-confold" -y neutron-dhcp-agent
-    apt-get install -o Dpkg::Options::="--force-confold" -y neutron-l3-agent
-    service neutron-metadata-agent stop
-    mv /etc/init/neutron-metadata-agent.conf /etc/init/neutron-metadata-agent.conf.disabled
-    service neutron-dhcp-agent stop
-    mv /etc/init/neutron-dhcp-agent.conf /etc/init/neutron-dhcp-agent.conf.disabled
-    service neutron-l3-agent stop
-    mv /etc/init/neutron-l3-agent.conf /etc/init/neutron-l3-agent.conf.disabled
-    dhcp_py=$(find /usr -name dhcp.py | grep linux)
-    dhcp_dir=$(dirname "${dhcp_py}")
-    sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
-    find $dhcp_dir -name "*.pyc" | xargs rm
-    find $dhcp_dir -name "*.pyo" | xargs rm
+    if [[ $deploy_dhcp_agent == true ]]; then
+        echo 'Deploy and stop neutron-metadata-agent and neutron-dhcp-agent'
+        apt-get install -o Dpkg::Options::="--force-confold" -y neutron-metadata-agent
+        apt-get install -o Dpkg::Options::="--force-confold" -y neutron-dhcp-agent
+        service neutron-metadata-agent stop
+        mv /etc/init/neutron-metadata-agent.conf /etc/init/neutron-metadata-agent.conf.disabled
+        service neutron-dhcp-agent stop
+        mv /etc/init/neutron-dhcp-agent.conf /etc/init/neutron-dhcp-agent.conf.disabled
+
+        # patch linux/dhcp.py to make sure static host route is pushed to instances
+        dhcp_py=$(find /usr -name dhcp.py | grep linux)
+        dhcp_dir=$(dirname "${dhcp_py}")
+        sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
+        find $dhcp_dir -name "*.pyc" | xargs rm
+        find $dhcp_dir -name "*.pyo" | xargs rm
+    fi
+
+    if [[ $deploy_l3_agent == true ]]; then
+        echo "Deploy and stop neutron-l3-agent"
+        apt-get install -o Dpkg::Options::="--force-confold" -y neutron-l3-agent
+        service neutron-l3-agent stop
+        mv /etc/init/neutron-l3-agent.conf /etc/init/neutron-l3-agent.conf.disabled
+    fi
 
     if [[ $deploy_haproxy == true ]]; then
+        echo "Deploy and stop neutron-lbaas-agent"
         apt-get install -y neutron-lbaas-agent haproxy
         service neutron-lbaas-agent restart
     fi
