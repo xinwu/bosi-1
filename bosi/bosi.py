@@ -89,22 +89,23 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup):
 
     # Generate scripts for each node
     for hostname, node in node_dic.iteritems():
+        if node.skip:
+            Helper.safe_print("skip node %(hostname)s due to %(error)s\n" %
+                             {'hostname' : hostname,
+                              'error'    : node.error})
+            continue
+
+        if node.tag != node.env_tag:
+            Helper.safe_print("skip node %(hostname)s due to mismatched tag\n" %
+                             {'hostname' : hostname})
+            continue
+
         if node.os == const.CENTOS:
             Helper.generate_scripts_for_centos(node)
         elif node.os == const.UBUNTU:
             Helper.generate_scripts_for_ubuntu(node)
         elif node.os == const.REDHAT:
             Helper.generate_scripts_for_redhat(node)
-
-        if node.skip:
-            Helper.safe_print("skip node %(hostname)s due to %(error)s\n" %
-                             {'hostname' : hostname,
-                              'error'    : node.error})
-            continue
-        if node.tag != node.env_tag:
-            Helper.safe_print("skip node %(hostname)s due to mismatched tag\n" %
-                             {'hostname' : hostname})
-            continue
 
         if node.role == const.ROLE_NEUTRON_SERVER:
             controller_node_q.put(node)

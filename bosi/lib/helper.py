@@ -852,6 +852,9 @@ class Helper(object):
             return None
         node_config['hostname'] = hostname
         node_config['role'] = role
+        if (role != const.ROLE_NEUTRON_SERVER) and (role != const.ROLE_COMPUTE):
+            node_config['skip'] = True
+            node_config['error'] = "node role is %s" % (role)
 
         # get node operating system information
         os_info, errors = Helper.run_command_on_remote_with_key_without_timeout(node_config['hostname'],
