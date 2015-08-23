@@ -118,7 +118,7 @@ class Helper(object):
         except Exception as e:
             msg = "Error executing command %s: %s\n" % (command, e)
             Helper.safe_print(msg)
-            return output
+            return msg
 
 
     @staticmethod
@@ -148,7 +148,7 @@ class Helper(object):
                     'log'        : node.log,
                     'remote_cmd' : command,
                    })
-        Helper.run_command_on_local(local_cmd)
+        return Helper.run_command_on_local(local_cmd)
 
 
     @staticmethod
@@ -243,7 +243,7 @@ class Helper(object):
                     'remote_cmd' : command,
                     'user'       : node.user,
                    })
-        Helper.run_command_on_local(local_cmd)
+        return Helper.run_command_on_local(local_cmd)
 
 
     @staticmethod
