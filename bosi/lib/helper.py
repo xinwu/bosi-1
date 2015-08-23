@@ -105,28 +105,20 @@ class Helper(object):
 
 
     @staticmethod
-    def run_command_on_local(command, timeout=600):
+    def run_command_on_local(command, user_timeout=600):
         """
-        Use subprocess to run a shell command on local node.
+        Use subprocess32's check_output to run command with timeout
         """
-        def target(process):
-            process.communicate()
-
         try:
-            p = subprocess.Popen(
-                command, shell=True)
+            output = subprocess.check_output(command,
+                stderr = subprocess.STDOUT,
+                timeout = user_timeout,
+                shell = True)
+            return output
         except Exception as e:
-            msg = "Error opening process %s: %s\n" % (command, e)
+            msg = "Error executing command %s: %s\n" % (command, e)
             Helper.safe_print(msg)
-            return
-        thread = threading.Thread(target=target, args=(p,))
-        thread.start()
-        thread.join(timeout)
-        if thread.is_alive():
-            p.terminate()
-            thread.join()
-            msg = "Timed out waiting for command %s to finish." % command
-            Helper.safe_print(msg)
+            return output
 
 
     @staticmethod
