@@ -83,6 +83,10 @@ class Node(object):
         self.ivs_version           = None
         self.old_ivs_version       = node_config.get('old_ivs_version')
 
+        if 'controller' not in self.role:
+            # verify install
+            self.verify = env.verify
+
         # in case of config env (packstack), bond and br_bond
         # may be empty
         if not self.br_bond:

@@ -1538,3 +1538,14 @@ class Helper(object):
                 {'src_dir' : node.setup_node_dir}),
                 node.dst_dir)
 
+
+    @staticmethod
+    def check_os_service_status(node, service_name_in):
+        # run service status command and return :-) or :-(
+        output = run_command_on_remote(node, r'''sudo bash service %(service_name)s status''' %
+                                      {'service_name' : service_name_in})
+        if "active (running)" in output:
+            return ":-)"
+        else:
+            return ":-("
+

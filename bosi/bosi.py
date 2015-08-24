@@ -58,6 +58,10 @@ def worker_setup_node(q):
         node_dict[node.hostname] = node
         time_dict[node.hostname] = diff
 
+        # verify services after deployment
+        if node.verify:
+            verify_node_setup(node)
+
         # when deploying T5 on UBUNTU, reboot compute nodes
         Helper.reboot_if_necessary(node)
 
@@ -65,11 +69,27 @@ def worker_setup_node(q):
                          {'hostname' : node.hostname, 'diff' : node.time_diff})
         q.task_done()
 
+def verify_node_setup(node):
+    all_service_status = 'Service status for node : ' + node.hostname
+    # check services are running and IVS version is correct
+    if node.deploy_dhcp_agent:
+        dhcp_status = Helper.check_os_service_status(node, "neutron-dhcp-agent")
+        all_service_status = all_service_status + ' | DHCP Agent ' + dhcp_status
+        metadata_status = Helper.check_os_service_status(node, "neutron-metadata-agent")
+        all_service_status = all_service_status + ' | DHCP Agent ' + metadata_status
+    if node.deploy_l3_agent:
+        l3_status = Helper.check_os_service_status(node, "neutron-l3-agent")
+        all_service_status = all_service_status + ' | L3 Agent ' + l3_status
+    if node.deploy_haproxy:
+        lbaas_status = Helper.check_os_service_status(node, "neutron-lbaas-agent")
+        all_service_status = all_service_status + ' | LBAAS Agent ' + lbaas_status
+    Helper.safe_print(all_service_status)
 
-def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup):
+
+def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup, verify):
     # Deploy setup node
     Helper.safe_print("Start to prepare setup node\n")
-    env = Environment(config, mode, fuel_cluster_id, rhosp, tag, cleanup)
+    env = Environment(config, mode, fuel_cluster_id, rhosp, tag, cleanup, verify)
     Helper.common_setup_node_preparation(env)
     controller_nodes = []
 
@@ -163,6 +183,8 @@ def main():
                         help="Deploy to tagged nodes only.")
     parser.add_argument('--cleanup', action='store_true', default=False,
                         help="Clean up existing routers, networks and projects.")
+    parser.add_argument('--verify', action='store_true', default=False,
+                        help="Verify service status for compute nodes after deployment.")
     args = parser.parse_args()
     if args.fuel_cluster_id and args.rhosp:
         Helper.safe_print("Cannot have both fuel and rhosp as openstack installer.\n")
@@ -172,7 +194,7 @@ def main():
         return
     with open(args.config_file, 'r') as config_file:
         config = yaml.load(config_file)
-    deploy_bcf(config, args.deploy_mode, args.fuel_cluster_id, args.rhosp, args.tag, args.cleanup)
+    deploy_bcf(config, args.deploy_mode, args.fuel_cluster_id, args.rhosp, args.tag, args.cleanup, args.verify)
 
 
 if __name__=='__main__':
