@@ -141,7 +141,7 @@ class Helper(object):
         """
         Run cmd on remote node.
         """
-        local_cmd = (r'''sshpass -p %(pwd)s ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s >> %(log)s 2>&1 "echo %(pwd)s | sudo -S %(remote_cmd)s"''' %
+        local_cmd = (r'''sshpass -p %(pwd)s ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s "echo %(pwd)s | sudo -S %(remote_cmd)s | tee %(log)s 2>&1"''' %
                    {'user'       : node.user,
                     'hostname'   : node.hostname,
                     'pwd'        : node.passwd,
@@ -237,7 +237,7 @@ class Helper(object):
         """
         Run cmd on remote node.
         """
-        local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s >> %(log)s 2>&1 "%(remote_cmd)s"''' %
+        local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s "%(remote_cmd)s | tee %(log)s 2>&1"''' %
                    {'hostname'   : node.hostname,
                     'log'        : node.log,
                     'remote_cmd' : command,
