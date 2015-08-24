@@ -279,7 +279,7 @@ if %(deploy_l3_agent)s {
       section           => 'DEFAULT',
       key_val_separator => '=',
       setting           => 'enable_metadata_proxy',
-      value             => 'True',
+      value             => 'False',
     }
     ini_setting { "l3 agent external network bridge":
       ensure            => present,
@@ -336,7 +336,7 @@ if %(deploy_dhcp_agent)s {
         section           => 'DEFAULT',
         key_val_separator => '=',
         setting           => 'enable_metadata_network',
-        value             => 'True',
+        value             => 'False',
     }
     ini_setting { "dhcp agent disable dhcp_delete_namespaces":
         ensure            => present,
