@@ -83,6 +83,14 @@ def verify_node_setup(node):
     if node.deploy_haproxy:
         lbaas_status = Helper.check_os_service_status(node, "neutron-lbaas-agent")
         all_service_status = all_service_status + ' | LBAAS Agent ' + lbaas_status
+    # for T6 deployment, check IVS status and version too
+    if node.deploy_mode == const.T6:
+        ivs_status = Helper.check_os_service_status(node, "ivs")
+        all_service_status = all_service_status + ' | IVS ' + ivs_status
+        if ivs_status == ':-)':
+            # ivs is OK. check version
+            ivs_version = Helper.check_ivs_version(node)
+            all_service_status = all_service_status + ' | IVS version ' + ivs_version
     Helper.safe_print(all_service_status)
 
 
