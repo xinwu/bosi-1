@@ -40,6 +40,7 @@ class Node(object):
         self.tag                   = node_config.get('tag')
         self.env_tag               = env.tag
         self.cleanup               = env.cleanup
+        self.verify                = None
         self.rabbit_hosts          = None
 
         # setup result
