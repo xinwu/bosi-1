@@ -18,6 +18,8 @@ controller_node_q = Queue.Queue()
 
 # queue to store all nodes
 node_q = Queue.Queue()
+# copy the node_q to this when original list is created
+verify_node_q = Queue.Queue()
 
 # result dict
 node_dict = {}
@@ -69,32 +71,35 @@ def worker_setup_node(q):
                          {'hostname' : node.hostname, 'diff' : node.time_diff})
         q.task_done()
 
-def verify_node_setup(node):
-    all_service_status = 'Service status for node : ' + node.hostname
-    # check services are running and IVS version is correct
-    if node.deploy_dhcp_agent:
-        dhcp_status = Helper.check_os_service_status(node, "neutron-dhcp-agent")
-        all_service_status = all_service_status + ' | DHCP Agent ' + dhcp_status
-        metadata_status = Helper.check_os_service_status(node, "neutron-metadata-agent")
-        all_service_status = all_service_status + ' | DHCP Agent ' + metadata_status
-    if node.deploy_l3_agent:
-        l3_status = Helper.check_os_service_status(node, "neutron-l3-agent")
-        all_service_status = all_service_status + ' | L3 Agent ' + l3_status
-    if node.deploy_haproxy:
-        lbaas_status = Helper.check_os_service_status(node, "neutron-lbaas-agent")
-        all_service_status = all_service_status + ' | LBAAS Agent ' + lbaas_status
-    # for T6 deployment, check IVS status and version too
-    if node.deploy_mode == const.T6:
-        ivs_status = Helper.check_os_service_status(node, "ivs")
-        all_service_status = all_service_status + ' | IVS ' + ivs_status
-        if ivs_status == ':-)':
-            # ivs is OK. check version
-            ivs_version = Helper.check_ivs_version(node)
-            all_service_status = all_service_status + ' | IVS version ' + ivs_version
-    Helper.safe_print(all_service_status)
+def verify_node_setup(q):
+    while True:
+        node = q.get()
+        all_service_status = 'Service status for node : ' + node.hostname
+        # check services are running and IVS version is correct
+        if node.deploy_dhcp_agent:
+            dhcp_status = Helper.check_os_service_status(node, "neutron-dhcp-agent")
+            all_service_status = all_service_status + ' | DHCP Agent ' + dhcp_status
+            metadata_status = Helper.check_os_service_status(node, "neutron-metadata-agent")
+            all_service_status = all_service_status + ' | DHCP Agent ' + metadata_status
+        if node.deploy_l3_agent:
+            l3_status = Helper.check_os_service_status(node, "neutron-l3-agent")
+            all_service_status = all_service_status + ' | L3 Agent ' + l3_status
+        if node.deploy_haproxy:
+            lbaas_status = Helper.check_os_service_status(node, "neutron-lbaas-agent")
+            all_service_status = all_service_status + ' | LBAAS Agent ' + lbaas_status
+        # for T6 deployment, check IVS status and version too
+        if node.deploy_mode == const.T6:
+            ivs_status = Helper.check_os_service_status(node, "ivs")
+            all_service_status = all_service_status + ' | IVS ' + ivs_status
+            if ivs_status == ':-)':
+                # ivs is OK. check version
+                ivs_version = Helper.check_ivs_version(node)
+                all_service_status = all_service_status + ' | IVS version ' + ivs_version
+        Helper.safe_print(all_service_status + '\n')
+        q.task_done()
 
 
-def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup, verify):
+def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup, verify, verify_only):
     # Deploy setup node
     Helper.safe_print("Start to prepare setup node\n")
     env = Environment(config, mode, fuel_cluster_id, rhosp, tag, cleanup, verify)
@@ -138,7 +143,9 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup, verify):
         if node.role == const.ROLE_NEUTRON_SERVER:
             controller_node_q.put(node)
         else:
+            # python doesn't have deep copy for Queue, hence add to both
             node_q.put(node)
+            verify_node_q.put(node)
 
         if node.rhosp:
             Helper.chmod_node(node)
@@ -147,28 +154,39 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup, verify):
         with open(const.LOG_FILE, "a") as log_file:
             log_file.write(str(node))
 
-    # Use single thread to setup controller nodes
-    t = threading.Thread(target=worker_setup_node, args=(controller_node_q,))
-    t.daemon = True
-    t.start()
-    controller_node_q.join()
-
-    # Use multiple threads to setup compute nodes
-    for i in range(const.MAX_WORKERS):
-        t = threading.Thread(target=worker_setup_node, args=(node_q,))
+    # in case of verify_only, do not deploy, just verify
+    if not verify_only:
+        # Use single thread to setup controller nodes
+        t = threading.Thread(target=worker_setup_node, args=(controller_node_q,))
         t.daemon = True
         t.start()
-    node_q.join()
+        controller_node_q.join()
 
-    sorted_time_dict = OrderedDict(sorted(time_dict.items(), key=lambda x: x[1]))
-    for hostname, time in sorted_time_dict.items():
-        Helper.safe_print("node: %(node)s, time: %(time).2f, last_log: %(log)s\n" %
-                          {'node' : hostname,
-                           'time' : time,
-                           'log'  : node_dict[hostname].last_log})
+        # Use multiple threads to setup compute nodes
+        for i in range(const.MAX_WORKERS):
+            t = threading.Thread(target=worker_setup_node, args=(node_q,))
+            t.daemon = True
+            t.start()
+        node_q.join()
 
-    Helper.safe_print("Big Cloud Fabric deployment finished! Check %(log)s on each node for details.\n" %
-                     {'log' : const.LOG_FILE})
+        sorted_time_dict = OrderedDict(sorted(time_dict.items(), key=lambda x: x[1]))
+        for hostname, time in sorted_time_dict.items():
+            Helper.safe_print("node: %(node)s, time: %(time).2f, last_log: %(log)s\n" %
+                              {'node' : hostname,
+                               'time' : time,
+                               'log'  : node_dict[hostname].last_log})
+
+        Helper.safe_print("Big Cloud Fabric deployment finished! Check %(log)s on each node for details.\n" %
+                         {'log' : const.LOG_FILE})
+
+    if verify or verify_only:
+        # verify each node and post results
+        Helper.safe_print("Verifying deployment for all compute nodes.\n")
+        for i in range(const.MAX_WORKERS):
+            t = threading.Thread(target=verify_node_setup, args=(verify_node_q,))
+            t.daemon = True
+            t.start()
+        verify_node_q.join()
 
 def main():
     # Check if network is working properly
@@ -193,6 +211,8 @@ def main():
                         help="Clean up existing routers, networks and projects.")
     parser.add_argument('--verify', action='store_true', default=False,
                         help="Verify service status for compute nodes after deployment.")
+    parser.add_argument('--verifyonly', action='store_true', default=False,
+                        help="Verify service status for compute nodes after deployment. Does not deploy BCF specific changes.")
     args = parser.parse_args()
     if args.fuel_cluster_id and args.rhosp:
         Helper.safe_print("Cannot have both fuel and rhosp as openstack installer.\n")
@@ -202,7 +222,7 @@ def main():
         return
     with open(args.config_file, 'r') as config_file:
         config = yaml.load(config_file)
-    deploy_bcf(config, args.deploy_mode, args.fuel_cluster_id, args.rhosp, args.tag, args.cleanup, args.verify)
+    deploy_bcf(config, args.deploy_mode, args.fuel_cluster_id, args.rhosp, args.tag, args.cleanup, args.verify, args.verifyonly)
 
 
 if __name__=='__main__':
