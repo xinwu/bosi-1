@@ -60,10 +60,6 @@ def worker_setup_node(q):
         node_dict[node.hostname] = node
         time_dict[node.hostname] = diff
 
-        # verify services after deployment
-        if node.verify:
-            verify_node_setup(node)
-
         # when deploying T5 on UBUNTU, reboot compute nodes
         Helper.reboot_if_necessary(node)
 
@@ -102,7 +98,7 @@ def verify_node_setup(q):
 def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup, verify, verify_only):
     # Deploy setup node
     Helper.safe_print("Start to prepare setup node\n")
-    env = Environment(config, mode, fuel_cluster_id, rhosp, tag, cleanup, verify)
+    env = Environment(config, mode, fuel_cluster_id, rhosp, tag, cleanup)
     Helper.common_setup_node_preparation(env)
     controller_nodes = []
 

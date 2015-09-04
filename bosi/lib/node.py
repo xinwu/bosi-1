@@ -40,7 +40,6 @@ class Node(object):
         self.tag                   = node_config.get('tag')
         self.env_tag               = env.tag
         self.cleanup               = env.cleanup
-        self.verify                = None
         self.rabbit_hosts          = None
 
         # setup result
@@ -83,10 +82,6 @@ class Node(object):
         self.ivs_debug_pkg         = None
         self.ivs_version           = None
         self.old_ivs_version       = node_config.get('old_ivs_version')
-
-        if 'controller' not in self.role:
-            # verify install
-            self.verify = env.verify
 
         # in case of config env (packstack), bond and br_bond
         # may be empty
