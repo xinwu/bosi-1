@@ -76,7 +76,7 @@ def verify_node_setup(q):
             dhcp_status = Helper.check_os_service_status(node, "neutron-dhcp-agent")
             all_service_status = all_service_status + ' | DHCP Agent ' + dhcp_status
             metadata_status = Helper.check_os_service_status(node, "neutron-metadata-agent")
-            all_service_status = all_service_status + ' | DHCP Agent ' + metadata_status
+            all_service_status = all_service_status + ' | Metadata Agent ' + metadata_status
         if node.deploy_l3_agent:
             l3_status = Helper.check_os_service_status(node, "neutron-l3-agent")
             all_service_status = all_service_status + ' | L3 Agent ' + l3_status

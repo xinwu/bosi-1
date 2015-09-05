@@ -24,10 +24,10 @@ class Helper(object):
 
 
     @staticmethod
-    def get_uname(node):
+    def get_uname(node, node_config):
         # get uname
-        output, error = Helper.run_command_on_remote_without_timeout(node, "uname -n")
-        if output and not error:
+        output = Helper.run_command_on_remote(node, "uname -n")
+        if 'Error' not in output:
             uname = output.strip()
             if len(uname) > const.UNAME_CUTOFF:
                 Helper.safe_print("hostname %(hostname)s is longer than %(cutoff)d characters, skip\n" %
@@ -37,7 +37,7 @@ class Helper(object):
             return uname
         else:
             Helper.safe_print("Error getting node %(hostname)s uname:\n%(error)s\n"
-                             % {'hostname' : node_config['hostname'], 'error' : error})
+                             % {'hostname' : node_config['hostname'], 'error' : output})
             return None
 
 
@@ -726,7 +726,7 @@ class Helper(object):
                     node_yaml_config['old_ivs_version'] = output.split()[1]
 
             node = Node(node_yaml_config, env)
-            uname = Helper.get_uname(node)
+            uname = Helper.get_uname(node, node_yaml_config)
             if uname:
                 node_yaml_config['uname'] = uname
                 node = Node(node_yaml_config, env)
@@ -821,7 +821,7 @@ class Helper(object):
 
 
         # get uname
-        uname = Helper.get_uname(node)
+        uname = Helper.get_uname(node, node_config)
         if uname:
             # TODO parse other vlans and bridges
             # TODO get ivs version for t6
@@ -993,7 +993,7 @@ class Helper(object):
         node_config['tagged_intfs'] = tagged_intfs
 
         node = Node(node_config, env)
-        uname = Helper.get_uname(node)
+        uname = Helper.get_uname(node, node_config)
         if uname:
             node_config['uname'] = uname
             node = Node(node_config, env)
@@ -1240,11 +1240,11 @@ class Helper(object):
     @staticmethod
     def run_command_on_remote(node, command):
         if node.rhosp:
-            Helper.run_command_on_remote_with_key(node, command)
+            return Helper.run_command_on_remote_with_key(node, command)
         elif node.fuel_cluster_id:
-            Helper.run_command_on_remote_with_key(node, command)
+            return Helper.run_command_on_remote_with_key(node, command)
         else:
-            Helper.run_command_on_remote_with_passwd(node, command)
+            return Helper.run_command_on_remote_with_passwd(node, command)
 
 
     @staticmethod
@@ -1542,8 +1542,8 @@ class Helper(object):
     @staticmethod
     def check_os_service_status(node, service_name_in):
         # run service status command and return :-) or :-(
-        output = run_command_on_remote(node, r'''sudo bash service %(service_name)s status''' %
-                                      {'service_name' : service_name_in})
+        output = Helper.run_command_on_remote(node, r'''sudo bash service %(service_name)s status''' %
+                                             {'service_name' : service_name_in})
         if "running" in output:
             return ":-)"
         else:
@@ -1552,7 +1552,7 @@ class Helper(object):
     @staticmethod
     def check_ivs_version(node):
         # required version is node.ivs_version
-        output = run_command_on_remote(node, r'''sudo bash ivs --version''')
+        output = Helper.run_command_on_remote(node, r'''sudo bash ivs --version''')
         # version string looks like this: ivs 3.0.0 (2015-08-14.18:26-39a875b trusty-amd64)
         split_version = string.split(output, ' ')
         # split_version[1] would be empty in error scenario
