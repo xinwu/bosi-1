@@ -1552,7 +1552,7 @@ class Helper(object):
     @staticmethod
     def check_ivs_version(node):
         # required version is node.ivs_version
-        output = Helper.run_command_on_remote(node, r'''sudo bash ivs --version''')
+        output = Helper.run_command_on_remote(node, r'''ivs --version''')
         # version string looks like this: ivs 3.0.0 (2015-08-14.18:26-39a875b trusty-amd64)
         split_version = string.split(output, ' ')
         # split_version[1] would be empty in error scenario
