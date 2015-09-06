@@ -20,6 +20,9 @@ controller_node_q = Queue.Queue()
 node_q = Queue.Queue()
 # copy the node_q to this when original list is created
 verify_node_q = Queue.Queue()
+# keep track of verified nodes
+node_pass = {}
+node_fail = {}
 
 # result dict
 node_dict = {}
@@ -77,7 +80,7 @@ def verify_node_setup(q):
             all_service_status = all_service_status + ' | DHCP Agent ' + dhcp_status
             metadata_status = Helper.check_os_service_status(node, "neutron-metadata-agent")
             all_service_status = all_service_status + ' | Metadata Agent ' + metadata_status
-        if node.deploy_l3_agent:
+        if node.deploy_l3_agent and node.deploy_mode == const.T5:
             l3_status = Helper.check_os_service_status(node, "neutron-l3-agent")
             all_service_status = all_service_status + ' | L3 Agent ' + l3_status
         if node.deploy_haproxy:
@@ -85,13 +88,23 @@ def verify_node_setup(q):
             all_service_status = all_service_status + ' | LBAAS Agent ' + lbaas_status
         # for T6 deployment, check IVS status and version too
         if node.deploy_mode == const.T6:
+            # check ivs status and version
             ivs_status = Helper.check_os_service_status(node, "ivs")
-            all_service_status = all_service_status + ' | IVS ' + ivs_status
             if ivs_status == ':-)':
                 # ivs is OK. check version
                 ivs_version = Helper.check_ivs_version(node)
                 all_service_status = all_service_status + ' | IVS version ' + ivs_version
-        Helper.safe_print(all_service_status + '\n')
+            else:
+                # ivs not OK
+                all_service_status = all_service_status + ' | IVS ' + ivs_status
+            # check neutron-bsn-agent status
+            bsn_agent_status = Helper.check_os_service_status(node, "neutron-bsn-agent")
+            all_service_status = all_service_status + ' | BSN Agent ' + bsn_agent_status
+        # after forming the complete string, put in respective list
+        if ":-(" not in all_service_status:
+            node_pass[node.hostname] = all_service_status
+        else:
+            node_fail[node.hostname] = all_service_status
         q.task_done()
 
 
@@ -183,6 +196,15 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup, verify, verif
             t.daemon = True
             t.start()
         verify_node_q.join()
+        # print status
+        # success nodes
+        Helper.safe_print('Deployed successfully to: \n')
+        for node_element in node_pass:
+            Helper.safe_print(node_element + '\n')
+        # failed nodes
+        Helper.safe_print('Deployment to following failed: \n')
+        for node_element in node_fail:
+            Helper.safe_print(str(node_element) + ' : ' + str(node_fail[node_element]) + '\n')
 
 def main():
     # Check if network is working properly
