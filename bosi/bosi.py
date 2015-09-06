@@ -36,7 +36,7 @@ def worker_setup_node(q):
                          {'hostname' : node.hostname})
         if node.cleanup and node.role == const.ROLE_NEUTRON_SERVER:
             Helper.run_command_on_remote(node,
-                (r'''sudo bash %(dst_dir)s/%(hostname)s_ospurge.sh >> %(log)s 2>&1''' %
+                (r'''sudo bash %(dst_dir)s/%(hostname)s_ospurge.sh''' %
                 {'dst_dir'  : node.dst_dir,
                  'hostname' : node.hostname,
                  'log'      : node.log}))
@@ -47,7 +47,7 @@ def worker_setup_node(q):
 
         start_time = datetime.datetime.now()
         Helper.run_command_on_remote(node,
-            (r'''sudo bash %(dst_dir)s/%(hostname)s.sh >> %(log)s 2>&1''' %
+            (r'''sudo bash %(dst_dir)s/%(hostname)s.sh''' %
             {'dst_dir'  : node.dst_dir,
              'hostname' : node.hostname,
              'log'      : node.log}))
