@@ -24,10 +24,10 @@ class Helper(object):
 
 
     @staticmethod
-    def get_uname(node):
+    def get_uname(node, node_config):
         # get uname
-        output, error = Helper.run_command_on_remote_without_timeout(node, "uname -n")
-        if output and not error:
+        output = Helper.run_command_on_remote(node, "uname -n")
+        if 'Error' not in output:
             uname = output.strip()
             if len(uname) > const.UNAME_CUTOFF:
                 Helper.safe_print("hostname %(hostname)s is longer than %(cutoff)d characters, skip\n" %
@@ -37,7 +37,7 @@ class Helper(object):
             return uname
         else:
             Helper.safe_print("Error getting node %(hostname)s uname:\n%(error)s\n"
-                             % {'hostname' : node_config['hostname'], 'error' : error})
+                             % {'hostname' : node_config['hostname'], 'error' : output})
             return None
 
 
@@ -105,28 +105,20 @@ class Helper(object):
 
 
     @staticmethod
-    def run_command_on_local(command, timeout=600):
+    def run_command_on_local(command, user_timeout=600):
         """
-        Use subprocess to run a shell command on local node.
+        Use subprocess32's check_output to run command with timeout
         """
-        def target(process):
-            process.communicate()
-
         try:
-            p = subprocess.Popen(
-                command, shell=True)
+            output = subprocess.check_output(command,
+                stderr = subprocess.STDOUT,
+                timeout = user_timeout,
+                shell = True)
+            return output
         except Exception as e:
-            msg = "Error opening process %s: %s\n" % (command, e)
+            msg = "Error executing command %s: %s\n" % (command, e)
             Helper.safe_print(msg)
-            return
-        thread = threading.Thread(target=target, args=(p,))
-        thread.start()
-        thread.join(timeout)
-        if thread.is_alive():
-            p.terminate()
-            thread.join()
-            msg = "Timed out waiting for command %s to finish." % command
-            Helper.safe_print(msg)
+            return msg
 
 
     @staticmethod
@@ -149,14 +141,14 @@ class Helper(object):
         """
         Run cmd on remote node.
         """
-        local_cmd = (r'''sshpass -p %(pwd)s ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s >> %(log)s 2>&1 "echo %(pwd)s | sudo -S %(remote_cmd)s"''' %
+        local_cmd = (r'''sshpass -p %(pwd)s ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s "echo %(pwd)s | sudo -S %(remote_cmd)s | tee %(log)s 2>&1"''' %
                    {'user'       : node.user,
                     'hostname'   : node.hostname,
                     'pwd'        : node.passwd,
                     'log'        : node.log,
                     'remote_cmd' : command,
                    })
-        Helper.run_command_on_local(local_cmd)
+        return Helper.run_command_on_local(local_cmd)
 
 
     @staticmethod
@@ -245,13 +237,13 @@ class Helper(object):
         """
         Run cmd on remote node.
         """
-        local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s >> %(log)s 2>&1 "%(remote_cmd)s"''' %
+        local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o LogLevel=quiet %(user)s@%(hostname)s "%(remote_cmd)s | tee %(log)s 2>&1"''' %
                    {'hostname'   : node.hostname,
                     'log'        : node.log,
                     'remote_cmd' : command,
                     'user'       : node.user,
                    })
-        Helper.run_command_on_local(local_cmd)
+        return Helper.run_command_on_local(local_cmd)
 
 
     @staticmethod
@@ -734,7 +726,7 @@ class Helper(object):
                     node_yaml_config['old_ivs_version'] = output.split()[1]
 
             node = Node(node_yaml_config, env)
-            uname = Helper.get_uname(node)
+            uname = Helper.get_uname(node, node_yaml_config)
             if uname:
                 node_yaml_config['uname'] = uname
                 node = Node(node_yaml_config, env)
@@ -829,7 +821,7 @@ class Helper(object):
 
 
         # get uname
-        uname = Helper.get_uname(node)
+        uname = Helper.get_uname(node, node_config)
         if uname:
             # TODO parse other vlans and bridges
             # TODO get ivs version for t6
@@ -1001,7 +993,7 @@ class Helper(object):
         node_config['tagged_intfs'] = tagged_intfs
 
         node = Node(node_config, env)
-        uname = Helper.get_uname(node)
+        uname = Helper.get_uname(node, node_config)
         if uname:
             node_config['uname'] = uname
             node = Node(node_config, env)
@@ -1248,11 +1240,11 @@ class Helper(object):
     @staticmethod
     def run_command_on_remote(node, command):
         if node.rhosp:
-            Helper.run_command_on_remote_with_key(node, command)
+            return Helper.run_command_on_remote_with_key(node, command)
         elif node.fuel_cluster_id:
-            Helper.run_command_on_remote_with_key(node, command)
+            return Helper.run_command_on_remote_with_key(node, command)
         else:
-            Helper.run_command_on_remote_with_passwd(node, command)
+            return Helper.run_command_on_remote_with_passwd(node, command)
 
 
     @staticmethod
@@ -1545,4 +1537,27 @@ class Helper(object):
                 (r'''%(src_dir)s/rootwrap''' %
                 {'src_dir' : node.setup_node_dir}),
                 node.dst_dir)
+
+
+    @staticmethod
+    def check_os_service_status(node, service_name_in):
+        # run service status command and return :-) or :-(
+        output = Helper.run_command_on_remote(node, r'''sudo bash service %(service_name)s status''' %
+                                             {'service_name' : service_name_in})
+        if "running" in output:
+            return ":-)"
+        else:
+            return ":-("
+
+    @staticmethod
+    def check_ivs_version(node):
+        # required version is node.ivs_version
+        output = Helper.run_command_on_remote(node, r'''ivs --version''')
+        # version string looks like this: ivs 3.0.0 (2015-08-14.18:26-39a875b trusty-amd64)
+        split_version = string.split(output, ' ')
+        # split_version[1] would be empty in error scenario
+        if node.ivs_version == split_version[1]:
+            return ':-)'
+        else:
+            return ':-( Expected ' + node.ivs_version + ' Actual ' + split_version[1]
 
