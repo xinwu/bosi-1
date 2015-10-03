@@ -1,7 +1,8 @@
-import json
-import httplib
 import constants as const
-from membership_rule import MembershipRule
+import httplib
+import json
+from util import safe_print
+
 
 class RestLib(object):
     @staticmethod
@@ -23,56 +24,51 @@ class RestLib(object):
             ret = (response.status, response.reason, response.read(),
                    response.getheader(const.HASH_HEADER))
             with open(const.LOG_FILE, "a") as log_file:
-                log_file.write('Controller REQUEST: %s %s:body=%r' %
+                log_file.write('Controller REQUEST: %s %s:body=%r\n' %
                               (method, host + prefix + url, data))
-                log_file.write('Controller RESPONSE: status=%d reason=%r, data=%r,'
-                               'hash=%r' % ret)
+                log_file.write('Controller RESPONSE: status=%d reason=%r,'
+                               'data=%r, hash=%r\n' % ret)
             return ret
         except Exception as e:
             raise Exception("Controller REQUEST exception: %s" % e)
 
-
     @staticmethod
     def get(cookie, url, server, port, hashPath=None):
         host = "%s:%d" % (server, port)
-        return RestLib.request(url, hashPath=hashPath, host=host, cookie=cookie)
-
+        return RestLib.request(url, hashPath=hashPath, host=host,
+                               cookie=cookie)
 
     @staticmethod
     def post(cookie, url, server, port, data, hashPath=None):
         host = "%s:%d" % (server, port)
-        return RestLib.request(url, method='POST', hashPath=hashPath, host=host,
-                               data=data, cookie=cookie)
-
+        return RestLib.request(url, method='POST', hashPath=hashPath,
+                               host=host, data=data, cookie=cookie)
 
     @staticmethod
     def patch(cookie, url, server, port, data, hashPath=None):
         host = "%s:%d" % (server, port)
-        return RestLib.request(url, method='PATCH', hashPath=hashPath, host=host,
-                               data=data, cookie=cookie)
-
+        return RestLib.request(url, method='PATCH', hashPath=hashPath,
+                               host=host, data=data, cookie=cookie)
 
     @staticmethod
     def put(cookie, url, server, port, data, hashPath=None):
         host = "%s:%d" % (server, port)
-        return RestLib.request(url, method='PUT', hashPath=hashPath, host=host,
-                               data=data, cookie=cookie)
-
+        return RestLib.request(url, method='PUT', hashPath=hashPath,
+                               host=host, data=data, cookie=cookie)
 
     @staticmethod
     def delete(cookie, url, server, port, hashPath=None):
         host = "%s:%d" % (server, port)
-        return RestLib.request(url, method='DELETE', hashPath=hashPath, host=host,
-                               cookie=cookie)
-
+        return RestLib.request(url, method='DELETE', hashPath=hashPath,
+                               host=host, cookie=cookie)
 
     @staticmethod
     def auth_bcf(server, username, password, port=const.BCF_CONTROLLER_PORT):
         login = {"user": username, "password": password}
         host = "%s:%d" % (server, port)
         ret = RestLib.request("/api/v1/auth/login", prefix='',
-                               method='POST', data=json.dumps(login),
-                               host=host)
+                              method='POST', data=json.dumps(login),
+                              host=host)
         session = json.loads(ret[2])
         if ret[0] != 200:
             raise Exception(ret)
@@ -86,9 +82,9 @@ class RestLib(object):
         ret = RestLib.delete(cookie, url, server, port)
         return ret
 
-
     @staticmethod
-    def get_active_bcf_controller(servers, username, password, port=const.BCF_CONTROLLER_PORT):
+    def get_active_bcf_controller(servers, username, password,
+                                  port=const.BCF_CONTROLLER_PORT):
         for server in servers:
             try:
                 cookie = RestLib.auth_bcf(server, username, password, port)
@@ -96,15 +92,16 @@ class RestLib(object):
                 res = RestLib.get(cookie, url, server, port)[2]
                 if 'active' in res:
                     return server, cookie
-            except Exception as e:
+            except Exception:
                 continue
         return None, None
 
-
     @staticmethod
-    def get_os_mgmt_segments(server, cookie, tenant, port=const.BCF_CONTROLLER_PORT):
-        url = (r'''applications/bcf/info/endpoint-manager/segment[tenant="%(tenant)s"]''' %
-              {'tenant' : tenant})
+    def get_os_mgmt_segments(server, cookie, tenant,
+                             port=const.BCF_CONTROLLER_PORT):
+        url = (r'''applications/bcf/info/endpoint-manager/segment'''
+               '''[tenant="%(tenant)s"]''' %
+               {'tenant': tenant})
         ret = RestLib.get(cookie, url, server, port)
         if ret[0] != 200:
             raise Exception(ret)
@@ -115,20 +112,28 @@ class RestLib(object):
             segments.append(segment['name'].lower())
         return segments
 
-
     @staticmethod
-    def program_segment_and_membership_rule(server, cookie, rule, tenant, port=const.BCF_CONTROLLER_PORT):
-        existing_segments = RestLib.get_os_mgmt_segments(server, cookie, tenant, port)
+    def program_segment_and_membership_rule(server, cookie, rule, tenant,
+                                            port=const.BCF_CONTROLLER_PORT):
+        existing_segments = RestLib.get_os_mgmt_segments(
+            server, cookie, tenant, port)
         if rule.segment not in existing_segments:
             with open(const.LOG_FILE, "a") as log_file:
-                log_file.write(r'''BCF controller does not have tenant %(tenant)s segment %(segment)s''' %
-                              {'tenant' : tenant, 'segment' : rule.segment})
+                msg = (r'''Warning: BCF controller does not have tenant '''
+                       '''%(tenant)s segment %(segment)s''' %
+                       {'tenant': tenant, 'segment': rule.segment})
+                safe_print(msg)
+                log_file.write(msg)
             return
 
-        segment_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/segment[name="%(segment)s"]''' %
-                      {'tenant' : tenant, 'segment' : rule.segment})
+        segment_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
+                       '''segment[name="%(segment)s"]''' %
+                       {'tenant': tenant, 'segment': rule.segment})
         segment_data = {"name": rule.segment}
-        ret = RestLib.post(cookie, segment_url, server, port, json.dumps(segment_data))
+        safe_print("Configuring BCF Segment: Tenant %s, Segment %s" %
+                   (tenant, rule.segment))
+        ret = RestLib.post(cookie, segment_url, server, port,
+                           json.dumps(segment_data))
         if ret[0] != 204:
             raise Exception(ret)
 
@@ -137,37 +142,60 @@ class RestLib(object):
         else:
             vlan = -1
 
-        intf_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/segment[name="%(segment)s"]/switch-port-membership-rule[interface="%(interface)s"][switch="%(switch)s"][vlan=%(vlan)d]''' %
-                       {'tenant'    : tenant,
-                        'segment'   : rule.segment,
-                        'interface' : const.ANY,
-                        'switch'    : const.ANY,
-                        'vlan'      : vlan})
-        rule_data = {"interface" : const.ANY, "switch" : const.ANY, "vlan" : vlan}
-        ret = RestLib.post(cookie, intf_rule_url, server, port, json.dumps(rule_data))
+        intf_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
+                         '''segment[name="%(segment)s"]/'''
+                         '''switch-port-membership-rule[interface="'''
+                         '''%(interface)s"][switch="%(switch)s"]'''
+                         '''[vlan=%(vlan)d]''' %
+                         {'tenant': tenant,
+                          'segment': rule.segment,
+                          'interface': const.ANY,
+                          'switch': const.ANY,
+                          'vlan': vlan})
+        rule_data = {"interface": const.ANY, "switch": const.ANY, "vlan": vlan}
+        safe_print("Configuring BCF Segment rule: Tenant %s, Segment "
+                   "%s Rule: member switch any interface any vlan %d"
+                   % (tenant, rule.segment, vlan))
+        ret = RestLib.post(cookie, segment_url, server, port,
+                           json.dumps(segment_data))
+        ret = RestLib.post(cookie, intf_rule_url, server, port,
+                           json.dumps(rule_data))
         if ret[0] != 204:
             raise Exception(ret)
 
-        pg_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/segment[name="%(segment)s"]/port-group-membership-rule[port-group="%(pg)s"][vlan=%(vlan)d]''' %
-                       {'tenant'    : tenant,
-                        'segment'   : rule.segment,
-                        'pg'        : const.ANY,
-                        'vlan'      : vlan})
-        rule_data = {"port-group" : const.ANY, "vlan" : vlan}
-        ret = RestLib.post(cookie, pg_rule_url, server, port, json.dumps(rule_data))
+        pg_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
+                       '''segment[name="%(segment)s"]/'''
+                       '''port-group-membership-rule[port-group="%(pg)s"]'''
+                       '''[vlan=%(vlan)d]''' %
+                       {'tenant': tenant,
+                        'segment': rule.segment,
+                        'pg': const.ANY,
+                        'vlan': vlan})
+        rule_data = {"port-group": const.ANY, "vlan": vlan}
+        safe_print("Configuring BCF Segment rule: Tenant %s, "
+                   "Segment %s Rule: member port-group any vlan %d"
+                   % (tenant, rule.segment, vlan))
+        ret = RestLib.post(cookie, pg_rule_url, server, port,
+                           json.dumps(rule_data))
         if ret[0] != 204:
             raise Exception(ret)
 
-        specific_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/segment[name="%(segment)s"]/switch-port-membership-rule[interface="%(interface)s"][switch="%(switch)s"][vlan=%(vlan)d]''' %
-                       {'tenant'    : tenant,
-                        'segment'   : rule.segment,
-                        'interface' : rule.internal_port,
-                        'switch'    : const.ANY,
-                        'vlan'      : -1})
-        rule_data = {"interface" : rule.internal_port, "switch" : const.ANY, "vlan" : -1}
-        ret = RestLib.post(cookie, specific_rule_url, server, port, json.dumps(rule_data))
+        specific_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
+                             '''segment[name="%(segment)s"]/'''
+                             '''switch-port-membership-rule'''
+                             '''[interface="%(interface)s"]'''
+                             '''[switch="%(switch)s"][vlan=%(vlan)d]''' %
+                             {'tenant': tenant,
+                              'segment': rule.segment,
+                              'interface': rule.internal_port,
+                              'switch': const.ANY,
+                              'vlan': -1})
+        rule_data = {"interface": rule.internal_port,
+                     "switch": const.ANY, "vlan": -1}
+        safe_print("Configuring BCF Segment rule: Tenant %s, Segment %s Rule: "
+                   "member switch any interface %s vlan untagged"
+                   % (tenant, rule.segment, rule.internal_port))
+        ret = RestLib.post(cookie, specific_rule_url, server, port,
+                           json.dumps(rule_data))
         if ret[0] != 204:
             raise Exception(ret)
-
-
-
