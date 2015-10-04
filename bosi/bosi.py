@@ -96,6 +96,11 @@ def verify_node_setup(q):
                 node, "neutron-lbaas-agent")
             all_service_status = (all_service_status +
                                   ' | LBAAS Agent ' + lbaas_status)
+        # for T5 deployment, check LLDP service status on compute nodes
+        if node.deploy_mode == const.T5 and node.role == const.ROLE_COMPUTE:
+            lldp_status = Helper.check_os_service_status(node, "send_lldp")
+            all_service_status = (all_service_status +
+                                  ' | LLDP Service ' + lldp_status)
         # for T6 deployment, check IVS status and version too
         if node.deploy_mode == const.T6:
             # check ivs status and version
