@@ -120,7 +120,7 @@ class RestLib(object):
         if rule.segment not in existing_segments:
             with open(const.LOG_FILE, "a") as log_file:
                 msg = (r'''Warning: BCF controller does not have tenant '''
-                       '''%(tenant)s segment %(segment)s''' %
+                       '''%(tenant)s segment %(segment)s\n''' %
                        {'tenant': tenant, 'segment': rule.segment})
                 safe_print(msg)
                 log_file.write(msg)
@@ -130,7 +130,7 @@ class RestLib(object):
                        '''segment[name="%(segment)s"]''' %
                        {'tenant': tenant, 'segment': rule.segment})
         segment_data = {"name": rule.segment}
-        safe_print("Configuring BCF Segment: Tenant %s, Segment %s" %
+        safe_print("Configuring BCF Segment: Tenant %s, Segment %s\n" %
                    (tenant, rule.segment))
         ret = RestLib.post(cookie, segment_url, server, port,
                            json.dumps(segment_data))
@@ -154,7 +154,7 @@ class RestLib(object):
                           'vlan': vlan})
         rule_data = {"interface": const.ANY, "switch": const.ANY, "vlan": vlan}
         safe_print("Configuring BCF Segment rule: Tenant %s, Segment "
-                   "%s Rule: member switch any interface any vlan %d"
+                   "%s Rule: member switch any interface any vlan %d\n"
                    % (tenant, rule.segment, vlan))
         ret = RestLib.post(cookie, segment_url, server, port,
                            json.dumps(segment_data))
@@ -173,7 +173,7 @@ class RestLib(object):
                         'vlan': vlan})
         rule_data = {"port-group": const.ANY, "vlan": vlan}
         safe_print("Configuring BCF Segment rule: Tenant %s, "
-                   "Segment %s Rule: member port-group any vlan %d"
+                   "Segment %s Rule: member port-group any vlan %d\n"
                    % (tenant, rule.segment, vlan))
         ret = RestLib.post(cookie, pg_rule_url, server, port,
                            json.dumps(rule_data))
@@ -193,7 +193,7 @@ class RestLib(object):
         rule_data = {"interface": rule.internal_port,
                      "switch": const.ANY, "vlan": -1}
         safe_print("Configuring BCF Segment rule: Tenant %s, Segment %s Rule: "
-                   "member switch any interface %s vlan untagged"
+                   "member switch any interface %s vlan untagged\n"
                    % (tenant, rule.segment, rule.internal_port))
         ret = RestLib.post(cookie, specific_rule_url, server, port,
                            json.dumps(rule_data))
