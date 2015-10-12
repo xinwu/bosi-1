@@ -963,8 +963,8 @@ class Helper(object):
             break
 
         # get bridge ip, vlan and construct bridge obj
-        bridges = []
-        bridge_names = []
+        bridges = set()
+        bridge_names = set()
         for br_key, br_name in roles.iteritems():
             if br_key in const.BR_KEY_EXCEPTION:
                 continue
@@ -989,8 +989,8 @@ class Helper(object):
             else:
                 ip = ip[0]
             bridge = Bridge(br_key, br_name, ip, vlan)
-            bridges.append(bridge)
-            bridge_names.append(br_name)
+            bridges.add(bridge)
+            bridge_names.add(br_name)
 
             # get default gw, most likely on br-ex
             gw = endpoints[br_name].get('gateway')

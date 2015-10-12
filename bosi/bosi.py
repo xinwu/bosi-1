@@ -132,8 +132,7 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
 
     # Generate detailed node information
     safe_print("Start to setup Big Cloud Fabric\n")
-    if 'nodes' in config:
-        nodes_yaml_config = config['nodes']
+    nodes_yaml_config = config['nodes'] if 'nodes' in config else None
     node_dic = Helper.load_nodes(nodes_yaml_config, env)
 
     # copy neutron config from neutron server to setup node
@@ -176,6 +175,7 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
         with open(const.LOG_FILE, "a") as log_file:
             log_file.write(str(node))
 
+    return
     # in case of verify_only, do not deploy, just verify
     if not verify_only:
         # Use single thread to setup controller nodes
