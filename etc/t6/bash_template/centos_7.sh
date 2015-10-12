@@ -10,6 +10,7 @@ deploy_horizon_patch=%(deploy_horizon_patch)s
 fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
 deploy_haproxy=%(deploy_haproxy)s
+skip_ivs_version_check=%(skip_ivs_version_check)s
 
 
 controller() {
@@ -109,6 +110,11 @@ compute() {
         fi
 
         if [[ $pass == true ]]; then
+            rpm -ivh --force %(dst_dir)s/%(ivs_pkg)s
+            if [[ -f %(dst_dir)s/%(ivs_debug_pkg)s ]]; then
+                rpm -ivh --force %(dst_dir)s/%(ivs_debug_pkg)s
+            fi
+        elif [[ $skip_ivs_version_check == true ]]; then
             rpm -ivh --force %(dst_dir)s/%(ivs_pkg)s
             if [[ -f %(dst_dir)s/%(ivs_debug_pkg)s ]]; then
                 rpm -ivh --force %(dst_dir)s/%(ivs_debug_pkg)s

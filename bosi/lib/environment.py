@@ -6,7 +6,7 @@ from rest import RestLib
 
 
 class Environment(object):
-    def __init__(self, config, mode, fuel_cluster_id, rhosp, tag, cleanup):
+    def __init__(self, config, mode, fuel_cluster_id, rhosp, tag, cleanup, skip_ivs_version_check):
         # fuel cluster id
         self.fuel_cluster_id = fuel_cluster_id
 
@@ -18,6 +18,8 @@ class Environment(object):
 
         # clean up flag
         self.cleanup = cleanup
+
+        self.skip_ivs_version_check = skip_ivs_version_check
 
         # neutron_id for ml2 plugin restproxy
         self.neutron_id = config.get('neutron_id')

@@ -123,10 +123,11 @@ def verify_node_setup(q):
 
 
 def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
-               verify, verify_only):
+               verify, verify_only, skip_ivs_version_check):
     # Deploy setup node
     safe_print("Start to prepare setup node\n")
-    env = Environment(config, mode, fuel_cluster_id, rhosp, tag, cleanup)
+    env = Environment(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
+                      skip_ivs_version_check)
     Helper.common_setup_node_preparation(env)
     controller_nodes = []
 
@@ -249,6 +250,8 @@ def main():
     parser.add_argument('--cleanup', action='store_true', default=False,
                         help="Clean up existing routers, "
                              "networks and projects.")
+    parser.add_argument('--skip-ivs-version-check', action='store_true',
+                        default=False, help="Skip ivs version check.")
     parser.add_argument('--verify', action='store_true', default=False,
                         help="Verify service status for compute nodes "
                              "after deployment.")
@@ -263,7 +266,8 @@ def main():
     with open(args.config_file, 'r') as config_file:
         config = yaml.load(config_file)
     deploy_bcf(config, args.deploy_mode, args.fuel_cluster_id, args.rhosp,
-               args.tag, args.cleanup, args.verify, args.verifyonly)
+               args.tag, args.cleanup, args.verify, args.verifyonly,
+               args.skip_ivs_version_check)
 
 
 if __name__ == '__main__':
