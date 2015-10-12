@@ -39,6 +39,7 @@ class Node(object):
         self.tag = node_config.get('tag')
         self.env_tag = env.tag
         self.cleanup = env.cleanup
+        self.skip_ivs_version_check = env.skip_ivs_version_check
         self.rabbit_hosts = None
 
         # setup result
@@ -131,6 +132,8 @@ class Node(object):
             if old_ivs_version_num[0] == '0':
                 return
             if str(self.ivs_version) in str(self.old_ivs_version):
+                return
+            if self.skip_ivs_version_check:
                 return
             diff = int(ivs_version_num[0]) - int(old_ivs_version_num[0])
             if self.ivs_version < self.old_ivs_version:

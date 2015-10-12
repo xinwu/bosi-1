@@ -476,7 +476,8 @@ class Helper(object):
                  'uplinks': node.get_all_uplinks(),
                  'deploy_haproxy': str(node.deploy_haproxy).lower(),
                  'bond': node.bond,
-                 'br_bond': node.br_bond})
+                 'br_bond': node.br_bond,
+                 'skip_ivs_version_check': str(node.skip_ivs_version_check).lower()})
         bash_script_path = (r'''%(setup_node_dir)s/%(generated_script_dir)s'''
                             '''/%(hostname)s.sh''' %
                             {'setup_node_dir': node.setup_node_dir,
@@ -582,7 +583,8 @@ class Helper(object):
                  'uplinks': node.get_all_uplinks(),
                  'deploy_haproxy': str(node.deploy_haproxy).lower(),
                  'bond': node.bond,
-                 'br_bond': node.br_bond})
+                 'br_bond': node.br_bond,
+                 'skip_ivs_version_check': str(node.skip_ivs_version_check).lower()})
         bash_script_path = (
             r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.sh'''
             % {'setup_node_dir': node.setup_node_dir,

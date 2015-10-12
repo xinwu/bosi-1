@@ -10,7 +10,7 @@ deploy_horizon_patch=%(deploy_horizon_patch)s
 fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
 deploy_haproxy=%(deploy_haproxy)s
-
+skip_ivs_version_check=%(skip_ivs_version_check)s
 
 controller() {
 
@@ -133,6 +133,18 @@ compute() {
         fi
 
         if [[ $pass == true ]]; then
+            dpkg --force-all -i %(dst_dir)s/%(ivs_pkg)s
+            if [[ -f %(dst_dir)s/%(ivs_debug_pkg)s ]]; then
+                modinfo openvswitch | grep "^version"
+                if [[ $? == 0 ]]; then
+                    apt-get remove -y openvswitch-datapath-dkms && rmmod openvswitch && modprobe openvswitch
+                fi
+                apt-get install -y libnl-genl-3-200
+                apt-get -f install -y
+                dpkg --force-all -i %(dst_dir)s/%(ivs_debug_pkg)s
+                apt-get install -y apport
+            fi
+        elif [[ $skip_ivs_version_check == true ]]; then
             dpkg --force-all -i %(dst_dir)s/%(ivs_pkg)s
             if [[ -f %(dst_dir)s/%(ivs_debug_pkg)s ]]; then
                 modinfo openvswitch | grep "^version"
