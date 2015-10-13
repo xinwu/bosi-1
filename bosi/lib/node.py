@@ -198,11 +198,13 @@ class Node(object):
             for br in self.bridges:
                 if (not br.br_vlan) or (br.br_key == const.BR_KEY_PRIVATE):
                     continue
-                internal_ports.append(' --internal-port=')
                 prefixes = br.br_key.split('/')
                 segment = prefixes[len(prefixes) - 1]
                 port_prefix = const.IVS_INTERNAL_PORT_DIC.get(segment)
+                if not port_prefix:
+                    continue
                 port = "%s%s" % (port_prefix, self.fuel_cluster_id)
+                internal_ports.append(' --internal-port=')
                 internal_ports.append(port)
         return ''.join(internal_ports)
 
@@ -217,6 +219,8 @@ class Node(object):
             prefixes = br.br_key.split('/')
             segment = prefixes[len(prefixes) - 1]
             port_prefix = const.IVS_INTERNAL_PORT_DIC.get(segment)
+            if not port_prefix:
+                continue
             port = "%s%s" % (port_prefix, self.fuel_cluster_id)
             port_ips.append(r'''"%(port)s,%(ip)s"''' %
                            {'port': port,
