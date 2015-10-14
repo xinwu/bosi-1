@@ -175,7 +175,6 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
         with open(const.LOG_FILE, "a") as log_file:
             log_file.write(str(node))
 
-    return
     # in case of verify_only, do not deploy, just verify
     if not verify_only:
         # Use single thread to setup controller nodes
