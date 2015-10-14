@@ -976,7 +976,7 @@ class Helper(object):
         bridges = set()
         bridge_names = set()
         for br_key, br_name in roles.iteritems():
-            if br_key in const.BR_KEY_EXCEPTION:
+            if br_name == node_config['br_fw_admin']:
                 continue
 
             vlan = None

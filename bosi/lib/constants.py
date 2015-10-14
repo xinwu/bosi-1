@@ -86,7 +86,6 @@ RHOSP_OVERCLOUD_OPENRC = '/home/stack/overcloudrc'
 NONE_IP = 'none'
 BR_KEY_PRIVATE = 'neutron/private'
 BR_KEY_FW_ADMIN = 'fw-admin'
-BR_KEY_EXCEPTION = [BR_KEY_FW_ADMIN]
 BR_NAME_INT = 'br-int'
 
 # ivs internal port prefix mapping
