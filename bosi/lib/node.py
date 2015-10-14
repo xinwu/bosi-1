@@ -228,12 +228,12 @@ class Node(object):
         return ",".join(port_ips)
 
     def get_all_ovs_brs(self):
-        ovs_brs = []
-        ovs_brs.append(r'''"%(br)s"''' % {'br': const.BR_NAME_INT})
+        ovs_brs = set()
+        # ovs_brs.add(r'''"%(br)s"''' % {'br': const.BR_NAME_INT})
         if self.bridges:
             for br in self.bridges:
-                ovs_brs.append(r'''"%(br)s"''' % {'br': br.br_name})
-            ovs_brs.append(r'''"%(br)s"''' % {'br': self.br_bond})
+                ovs_brs.add(r'''"%(br)s"''' % {'br': br.br_name})
+            ovs_brs.add(r'''"%(br)s"''' % {'br': self.br_bond})
         return ' '.join(ovs_brs)
 
     def get_all_interfaces(self):
@@ -261,14 +261,14 @@ class Node(object):
         return ','.join(uplinks)
 
     def get_all_bonds(self):
-        bonds = []
+        bonds = set()
         if self.bond and self.bridges:
             for br in self.bridges:
                 if (br.br_vlan) and (':' not in str(br.br_vlan)):
-                    bonds.append(r'''%(bond)s.%(vlan)s''' %
-                                {'bond': self.bond,
-                                 'vlan': br.br_vlan})
-            bonds.append(r'''%(bond)s''' % {'bond': self.bond})
+                    bonds.add(r'''%(bond)s.%(vlan)s''' %
+                              {'bond': self.bond,
+                               'vlan': br.br_vlan})
+            bonds.add(r'''%(bond)s''' % {'bond': self.bond})
         return ' '.join(bonds)
 
     def get_default_gw(self):

@@ -220,6 +220,8 @@ compute() {
             echo -e 'bridge_ports' %(pxe_interface)s >>/etc/network/interfaces
             echo -e 'address' %(br_fw_admin_address)s >>/etc/network/interfaces
             echo -e 'up ip route add default via' %(default_gw)s >>/etc/network/interfaces
+
+            ifup %(br_fw_admin)s
         fi
 
         #reset uplinks to move them out of bond
