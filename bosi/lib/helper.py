@@ -951,9 +951,10 @@ class Helper(object):
         bridge_vlan_map = {}
         for tran in trans:
             if (tran['action'] == 'add-port' and
-                node_config['bond'] in tran['name'] and
-                '.' in tran['name']):
-                bridge_vlan_map[tran['bridge']] = int(tran['name'].split('.')[1])
+                    node_config['bond'] in tran['name'] and
+                    '.' in tran['name']):
+                bridge_vlan_map[tran['bridge']] = (
+                    int(tran['name'].split('.')[1]))
         node_config['bridge_vlan_map'] = bridge_vlan_map
 
         # get br-fw-admin information

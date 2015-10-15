@@ -18,23 +18,28 @@ T5 = 't5'
 MODE_DICT = {'pfabric': T5,
              'pvfabric': T6}
 
+OS_RELEASE_JUNO = 'juno'
+OS_RELEASE_KILO = 'kilo'
+OS_RELEASE_LIBERTY = 'liberty'
+
 # openstack release to bsnstacklib version
-OS_RELEASE_TO_BSN_LIB = {'juno': '2015.1',
-                         'kilo': '2015.2',
-                         'liberty': '2016.1'}
+OS_RELEASE_TO_BSN_LIB = {OS_RELEASE_JUNO: '2015.1',
+                         OS_RELEASE_KILO: '2015.2',
+                         OS_RELEASE_LIBERTY: '2016.1'}
 
 IVS_TAR_PKG_DIRS = ["pkg/centos7-x86_64", "pkg/trusty-amd64"]
 
 # horizon patch
 DEPLOY_HORIZON_PATCH = True
 HORIZON_PATCH_URL = {
-    'juno': 'https://github.com/bigswitch/horizon/archive/'
-            'juno-bcf-3.0-beta1.tar.gz',
-    'kilo': 'https://github.com/bigswitch/horizon/archive/stable/kilo2.tar.gz',
+    OS_RELEASE_JUNO: 'https://github.com/bigswitch/horizon/archive/'
+                     'juno-bcf-3.0-beta1.tar.gz',
+    OS_RELEASE_KILO: 'https://github.com/bigswitch/horizon/archive/'
+                     'stable/kilo2.tar.gz',
 }
 HORIZON_PATCH_DIR = {
-    'juno': 'horizon-juno-bcf-3.0-beta1',
-    'kilo': 'horizon-stable-kilo2',
+    OS_RELEASE_JUNO: 'horizon-juno-bcf-3.0-beta1',
+    OS_RELEASE_KILO: 'horizon-stable-kilo2',
 }
 HORIZON_BASE_DIR = '/usr/share/openstack-dashboard'
 
