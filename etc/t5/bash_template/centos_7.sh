@@ -141,7 +141,7 @@ compute() {
     ovs-vsctl --may-exist add-br %(br_bond)s
     # add bond to ovs
     ovs-vsctl --may-exist add-port %(br_bond)s %(bond)s
-    sleep 5
+    sleep 10
     systemctl restart send_lldp
 
     # restart neutron ovs plugin
