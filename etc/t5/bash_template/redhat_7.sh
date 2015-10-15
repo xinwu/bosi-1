@@ -95,7 +95,7 @@ compute() {
 
     # add bond to ovs
     sudo ovs-vsctl --may-exist add-port %(br_bond)s %(bond)s
-    sleep 5
+    sleep 10
     sudo systemctl restart send_lldp
 
     # assign default gw
