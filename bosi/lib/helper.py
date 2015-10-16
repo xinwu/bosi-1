@@ -1132,6 +1132,11 @@ class Helper(object):
                         node_yaml_config['hostname'])
                 except Exception:
                     continue
+                try:
+                    node_yaml_config['fqdn'] = socket.gethostbyaddr(
+                        node_yaml_config['hostname'])[0]
+                except Exception:
+                    node_yaml_config['fqdn'] = node_yaml_config['hostname']
                 node_yaml_config_map[node_yaml_config['hostname']] = (
                     node_yaml_config)
         if env.fuel_cluster_id is None and not env.rhosp:
@@ -1387,7 +1392,7 @@ class Helper(object):
                    (dhcp_py, src_dir, controller_node.hostname))
         safe_print(
             "Copy %(dhcp_py)s from openstack controller %(controller_node)s\n"
-            % {'controller_node': controller_node.hostname,
+            % {'controller_node': controller_node.fqdn,
                'dhcp_py': dhcp_py})
         Helper.copy_file_from_remote(controller_node, src_dir, dhcp_py,
                                      controller_node.setup_node_dir)
@@ -1423,21 +1428,21 @@ class Helper(object):
             safe_print(
                 "Copy dhcp_agent.ini from openstack controller "
                 "%(controller_node)s\n" %
-                {'controller_node': controller_node.hostname})
+                {'controller_node': controller_node.fqdn})
             Helper.copy_file_from_remote(
                 controller_node, '/etc/neutron', 'dhcp_agent.ini',
                 controller_node.setup_node_dir)
             safe_print(
                 "Copy metadata_agent.ini from openstack controller "
                 "%(controller_node)s\n" %
-                {'controller_node': controller_node.hostname})
+                {'controller_node': controller_node.fqdn})
             Helper.copy_file_from_remote(
                 controller_node, '/etc/neutron', 'metadata_agent.ini',
                 controller_node.setup_node_dir)
             safe_print(
                 "Copy l3_agent.ini from openstack controller "
                 "%(controller_node)s\n" %
-                {'controller_node': controller_node.hostname})
+                {'controller_node': controller_node.fqdn})
             Helper.copy_file_from_remote(
                 controller_node, '/etc/neutron', 'l3_agent.ini',
                 controller_node.setup_node_dir)
@@ -1448,7 +1453,7 @@ class Helper(object):
             safe_print(
                 "Copy neutron.conf from openstack controller "
                 "%(controller_node)s\n" %
-                {'controller_node': controller_node.hostname})
+                {'controller_node': controller_node.fqdn})
             Helper.copy_file_from_remote(
                 controller_node, '/etc/neutron', 'neutron.conf',
                 controller_node.setup_node_dir)
@@ -1502,20 +1507,20 @@ class Helper(object):
         # copy neutron, metadata, dhcp config to node
         if node.install_bsnstacklib:
             safe_print("Copy neutron.conf to %(hostname)s\n" %
-                       {'hostname': node.hostname})
+                       {'hostname': node.fqdn})
             Helper.copy_file_to_remote(
                 node,
                 r'''%(dir)s/neutron.conf''' % {'dir': node.setup_node_dir},
                 '/etc/neutron', 'neutron.conf')
         if node.deploy_dhcp_agent:
             safe_print("Copy dhcp_agent.ini to %(hostname)s\n" %
-                       {'hostname': node.hostname})
+                       {'hostname': node.fqdn})
             Helper.copy_file_to_remote(
                 node,
                 r'''%(dir)s/dhcp_agent.ini''' % {'dir': node.setup_node_dir},
                 '/etc/neutron', 'dhcp_agent.ini')
             safe_print("Copy metadata_agent.ini to %(hostname)s\n" %
-                       {'hostname': node.hostname})
+                       {'hostname': node.fqdn})
             Helper.copy_file_to_remote(
                 node,
                 r'''%(dir)s/metadata_agent.ini'''
@@ -1523,7 +1528,7 @@ class Helper(object):
                 '/etc/neutron', 'metadata_agent.ini')
         if node.deploy_l3_agent:
             safe_print("Copy l3_agent.ini to %(hostname)s\n" %
-                       {'hostname': node.hostname})
+                       {'hostname': node.fqdn})
             Helper.copy_file_to_remote(
                 node, r'''%(dir)s/l3_agent.ini'''
                 % {'dir': node.setup_node_dir},
@@ -1533,7 +1538,7 @@ class Helper(object):
         if (node.deploy_mode == const.T6 and
                 node.role == const.ROLE_COMPUTE and node.install_ivs):
             safe_print("Copy %(ivs_pkg)s to %(hostname)s\n" %
-                       {'ivs_pkg': node.ivs_pkg, 'hostname': node.hostname})
+                       {'ivs_pkg': node.ivs_pkg, 'hostname': node.fqdn})
             Helper.copy_file_to_remote(
                 node,
                 (r'''%(src_dir)s/%(ivs_pkg)s''' %
@@ -1543,7 +1548,7 @@ class Helper(object):
             if node.ivs_debug_pkg is not None:
                 safe_print("Copy %(ivs_debug_pkg)s to %(hostname)s\n" %
                            {'ivs_debug_pkg': node.ivs_debug_pkg,
-                            'hostname': node.hostname})
+                            'hostname': node.fqdn})
                 Helper.copy_file_to_remote(
                     node,
                     (r'''%(src_dir)s/%(ivs_debug_pkg)s''' %
@@ -1554,7 +1559,7 @@ class Helper(object):
         if node.deploy_mode == const.T5 and node.role == const.ROLE_COMPUTE:
             # copy send_lldp to t5 compute nodes
             safe_print("Copy send_lldp to %(hostname)s\n" %
-                       {'hostname': node.hostname})
+                       {'hostname': node.fqdn})
             Helper.copy_file_to_remote(
                 node,
                 r'''%(setup_node_dir)s/%(deploy_mode)s/'''
@@ -1566,14 +1571,14 @@ class Helper(object):
 
         # copy bash script to node
         safe_print("Copy bash script to %(hostname)s\n" %
-                   {'hostname': node.hostname})
+                   {'hostname': node.fqdn})
         Helper.copy_file_to_remote(
             node, node.bash_script_path, node.dst_dir,
             "%(hostname)s.sh" % {'hostname': node.hostname})
 
         # copy puppet script to node
         safe_print("Copy puppet script to %(hostname)s\n" %
-                   {'hostname': node.hostname})
+                   {'hostname': node.fqdn})
         Helper.copy_file_to_remote(node,
            node.puppet_script_path,
            node.dst_dir,
@@ -1591,14 +1596,14 @@ class Helper(object):
         if node.role == const.ROLE_NEUTRON_SERVER:
             # copy ospurge script to node
             safe_print("Copy ospurge script to %(hostname)s\n" %
-                       {'hostname': node.hostname})
+                       {'hostname': node.fqdn})
             Helper.copy_file_to_remote(
                 node, node.ospurge_script_path, node.dst_dir,
                 "%(hostname)s_ospurge.sh" % {'hostname': node.hostname})
 
             # copy dhcp reschedule script to node
             safe_print("Copy dhcp reschedule script to %(hostname)s\n" %
-                       {'hostname': node.hostname})
+                       {'hostname': node.fqdn})
             Helper.copy_file_to_remote(
                 node, node.dhcp_reschedule_script_path, node.dst_dir,
                 'dhcp_reschedule.sh')
@@ -1607,7 +1612,7 @@ class Helper(object):
             if node.openstack_release == 'juno':
                 safe_print(
                     "Copy dhcp_agent_scheduler.py to %(hostname)s\n" %
-                    {'hostname': node.hostname})
+                    {'hostname': node.fqdn})
                 Helper.copy_file_to_remote(
                     node,
                     "%s/dhcp_agent_scheduler.py" % node.setup_node_dir,
@@ -1616,7 +1621,7 @@ class Helper(object):
             # copy horizon patch to node
             if node.deploy_horizon_patch:
                 safe_print("Copy horizon patch to %(hostname)s\n" %
-                           {'hostname': node.hostname})
+                           {'hostname': node.fqdn})
                 Helper.copy_file_to_remote(
                     node,
                     (r'''%(src_dir)s/%(horizon_patch)s''' %
@@ -1627,7 +1632,7 @@ class Helper(object):
         # copy rootwrap to remote
         if node.fuel_cluster_id:
             safe_print("Copy rootwrap to %(hostname)s\n" %
-                       {'hostname': node.hostname})
+                       {'hostname': node.fqdn})
             Helper.copy_dir_to_remote(
                 node,
                 (r'''%(src_dir)s/rootwrap''' %

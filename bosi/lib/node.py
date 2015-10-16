@@ -12,6 +12,7 @@ class Node(object):
         self.dhcp_agent_scheduler_dir = None
         self.log = const.LOG_FILE
         self.hostname = node_config['hostname']
+        self.fqdn = node_config['fqdn']
         self.uname = node_config.get('uname')
         self.role = node_config['role'].lower()
         self.skip = node_config['skip']
@@ -301,6 +302,7 @@ class Node(object):
             dhcp_agent_scheduler_dir: %(dhcp_agent_scheduler_dir)s,
             log: %(log)s,
             hostname: %(hostname)s,
+            fqdn: %(fqdn)s,
             uname: %(uname)s,
             role: %(role)s,
             skip: %(skip)s,
@@ -376,6 +378,7 @@ class Node(object):
             'dhcp_agent_scheduler_dir': self.dhcp_agent_scheduler_dir,
             'log': self.log,
             'hostname': self.hostname,
+            'fqdn': self.fqdn,
             'uname': self.uname,
             'role': self.role,
             'skip': self.skip,
