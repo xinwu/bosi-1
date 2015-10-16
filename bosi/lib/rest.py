@@ -156,8 +156,6 @@ class RestLib(object):
         safe_print("Configuring BCF Segment rule: Tenant %s, Segment "
                    "%s Rule: member switch any interface any vlan %d\n"
                    % (tenant, rule.segment, vlan))
-        ret = RestLib.post(cookie, segment_url, server, port,
-                           json.dumps(segment_data))
         ret = RestLib.post(cookie, intf_rule_url, server, port,
                            json.dumps(rule_data))
         if ret[0] != 204:

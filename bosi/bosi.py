@@ -91,6 +91,11 @@ def verify_node_setup(q):
                 node, "neutron-l3-agent")
             all_service_status = (all_service_status +
                                   ' | L3 Agent ' + l3_status)
+        # for T5 deployment, check LLDP service status on compute nodes
+        if node.deploy_mode == const.T5 and node.role == const.ROLE_COMPUTE:
+            lldp_status = Helper.check_os_service_status(node, "send_lldp")
+            all_service_status = (all_service_status +
+                                  ' | LLDP Service ' + lldp_status)
         # for T6 deployment, check IVS status and version too
         if node.deploy_mode == const.T6:
             # check ivs status and version
@@ -128,8 +133,7 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
 
     # Generate detailed node information
     safe_print("Start to setup Big Cloud Fabric\n")
-    if 'nodes' in config:
-        nodes_yaml_config = config['nodes']
+    nodes_yaml_config = config['nodes'] if 'nodes' in config else None
     node_dic = Helper.load_nodes(nodes_yaml_config, env)
 
     # copy neutron config from neutron server to setup node
@@ -137,7 +141,8 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
         if node.role == const.ROLE_NEUTRON_SERVER:
             controller_nodes.append(node)
     Helper.copy_neutron_config_from_controllers(controller_nodes)
-    Helper.copy_dhcp_scheduler_from_controllers(controller_nodes)
+    if env.openstack_release == const.OS_RELEASE_JUNO:
+        Helper.copy_dhcp_scheduler_from_controllers(controller_nodes)
 
     # Generate scripts for each node
     for hostname, node in node_dic.iteritems():
