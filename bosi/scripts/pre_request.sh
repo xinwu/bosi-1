@@ -22,6 +22,7 @@ if [[ $? == 0 ]]; then
     apt-get install -y puppet python-dev python-yaml sshpass python-pip
     apt-get install -y linux-headers-$(uname -r) build-essential
     pip install --upgrade subprocess32 futures
+    apt-get install -y wget
     exit 0
 fi
 

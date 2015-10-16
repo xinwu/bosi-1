@@ -228,7 +228,7 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
 
 def main():
     # Check if network is working properly
-    code = subprocess.call("ping www.bigswitch.com -c1", shell=True)
+    code = subprocess.call("wget www.bigswitch.com --timeout=5", shell=True)
     if code != 0:
         safe_print("Network is not working properly, quit deployment\n")
         exit(1)
