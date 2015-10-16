@@ -36,8 +36,8 @@ def worker_setup_node(q):
         Helper.copy_pkg_scripts_to_remote(node)
 
         # deploy node
-        safe_print("Start to deploy %(hostname)s\n" %
-                   {'hostname': node.hostname})
+        safe_print("Start to deploy %(fqdn)s\n" %
+                   {'fqdn': node.fqdn})
         if node.cleanup and node.role == const.ROLE_NEUTRON_SERVER:
             Helper.run_command_on_remote(node,
                 (r'''sudo bash %(dst_dir)s/%(hostname)s_ospurge.sh''' %
@@ -61,21 +61,21 @@ def worker_setup_node(q):
         diff = Helper.timedelta_total_seconds(end_time - start_time)
         node.set_time_diff(diff)
         node = Helper.update_last_log(node)
-        node_dict[node.hostname] = node
-        time_dict[node.hostname] = diff
+        node_dict[node.fqdn] = node
+        time_dict[node.fqdn] = diff
 
         # when deploying T5 on UBUNTU, reboot compute nodes
         Helper.reboot_if_necessary(node)
 
-        safe_print("Finish deploying %(hostname)s, cost time: %(diff).2f\n" %
-                   {'hostname': node.hostname, 'diff': node.time_diff})
+        safe_print("Finish deploying %(fqdn)s, cost time: %(diff).2f\n" %
+                   {'fqdn': node.fqdn, 'diff': node.time_diff})
         q.task_done()
 
 
 def verify_node_setup(q):
     while True:
         node = q.get()
-        all_service_status = 'Service status for node: ' + node.hostname
+        all_service_status = 'Service status for node: ' + node.fqdn
         # check services are running and IVS version is correct
         if node.deploy_dhcp_agent:
             dhcp_status = Helper.check_os_service_status(
@@ -116,9 +116,9 @@ def verify_node_setup(q):
                                   ' | BSN Agent ' + bsn_agent_status)
         # after forming the complete string, put in respective list
         if ":-(" not in all_service_status:
-            node_pass[node.hostname] = all_service_status
+            node_pass[node.fqdn] = all_service_status
         else:
-            node_fail[node.hostname] = all_service_status
+            node_fail[node.fqdn] = all_service_status
         q.task_done()
 
 
@@ -147,13 +147,13 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
     # Generate scripts for each node
     for hostname, node in node_dic.iteritems():
         if node.skip:
-            safe_print("skip node %(hostname)s due to %(error)s\n" %
-                       {'hostname': hostname, 'error': node.error})
+            safe_print("skip node %(fqdn)s due to %(error)s\n" %
+                       {'fqdn': node.fqdn, 'error': node.error})
             continue
 
         if node.tag != node.env_tag:
-            safe_print("skip node %(hostname)s due to mismatched tag\n" %
-                       {'hostname': hostname})
+            safe_print("skip node %(fqdn)s due to mismatched tag\n" %
+                       {'fqdn': node.fqdn})
             continue
 
         if node.os == const.CENTOS:
@@ -195,11 +195,11 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
 
         sorted_time_dict = OrderedDict(sorted(time_dict.items(),
                                               key=lambda x: x[1]))
-        for hostname, h_time in sorted_time_dict.items():
-            safe_print("node: %(node)s, time: %(time).2f, "
+        for fqdn, h_time in sorted_time_dict.items():
+            safe_print("node: %(fqdn)s, time: %(time).2f, "
                        "last_log: %(log)s\n" %
-                       {'node': hostname, 'time': h_time,
-                        'log': node_dict[hostname].last_log})
+                       {'fqdn': fqdn, 'time': h_time,
+                        'log': node_dict[fqdn].last_log})
 
         safe_print("Big Cloud Fabric deployment finished! "
                    "Check %(log)s on each node for details.\n" %
