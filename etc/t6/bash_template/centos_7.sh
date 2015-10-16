@@ -33,32 +33,7 @@ controller() {
 
     # deploy bcf horizon patch to controller node
     if [[ $deploy_horizon_patch == true ]]; then
-        # enable lb
-        sed -i 's/'"'"'enable_lb'"'"': False/'"'"'enable_lb'"'"': True/g' %(horizon_base_dir)s/openstack_dashboard/local/local_settings.py
-
-        # chmod neutron config since bigswitch horizon patch reads neutron config as well
-        chmod -R a+r /usr/share/neutron
-        chmod -R a+x /usr/share/neutron
-        chmod -R a+r /etc/neutron
-        chmod -R a+x /etc/neutron
-
-        if [[ -f %(dst_dir)s/%(horizon_patch)s ]]; then
-            chmod -R 777 '/etc/neutron/'
-            tar -xzf %(dst_dir)s/%(horizon_patch)s -C %(dst_dir)s
-            fs=('openstack_dashboard/dashboards/admin/dashboard.py' 'openstack_dashboard/dashboards/project/dashboard.py' 'openstack_dashboard/dashboards/admin/connections' 'openstack_dashboard/dashboards/project/connections' 'openstack_dashboard/dashboards/project/routers/extensions/routerrules/rulemanager.py' 'openstack_dashboard/dashboards/project/routers/extensions/routerrules/tabs.py')
-            for f in "${fs[@]}"
-            do
-                if [[ -f %(dst_dir)s/%(horizon_patch_dir)s/$f ]]; then
-                    yes | cp -rfp %(dst_dir)s/%(horizon_patch_dir)s/$f %(horizon_base_dir)s/$f
-                else
-                    mkdir -p %(horizon_base_dir)s/$f
-                    yes | cp -rfp %(dst_dir)s/%(horizon_patch_dir)s/$f/* %(horizon_base_dir)s/$f
-                fi
-            done
-            find "%(horizon_base_dir)s" -name "*.pyc" | xargs rm
-            find "%(horizon_base_dir)s" -name "*.pyo" | xargs rm
-            systemctl restart httpd
-        fi
+        # TODO: new way to plugin horizon
     fi
 
     # restart keystone and horizon

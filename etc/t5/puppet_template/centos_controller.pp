@@ -371,10 +371,6 @@ package { "device-mapper-libs":
 }
 
 # ovs_neutron_plugin for packstack
-file { "/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini":
-    ensure  => file,
-    mode    => 0777,
-}
 ini_setting { "disable tunneling":
   ensure            => present,
   path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
