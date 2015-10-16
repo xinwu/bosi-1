@@ -43,9 +43,6 @@ class Environment(object):
         # flags for l3 agent
         self.deploy_l3_agent = config.get('default_deploy_l3_agent')
 
-        # flags for haproxy
-        self.deploy_haproxy = config.get('default_deploy_haproxy')
-
         # setup node ip and directory
         self.setup_node_ip = Helper.get_setup_node_ip()
         example_yamls = ["/usr/local/etc/bosi/config.yaml",

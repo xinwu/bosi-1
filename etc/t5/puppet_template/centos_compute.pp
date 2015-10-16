@@ -68,7 +68,7 @@ Description=send lldp
 After=syslog.target network.target
 [Service]
 Type=simple
-ExecStart=/bin/send_lldp --system-desc 5c:16:c7:00:00:00 --system-name %(uname)s -i 10 --network_interface %(uplinks)s
+ExecStart=/bin/send_lldp --system-desc 5c:16:c7:00:00:04 --system-name %(uname)s -i 10 --network_interface %(uplinks)s
 Restart=always
 StartLimitInterval=60s
 StartLimitBurst=3
@@ -169,21 +169,6 @@ ini_setting { "neutron.conf notification driver":
   key_val_separator => '=',
   setting           => 'notification_driver',
   value             => 'messaging',
-}
-ini_setting { "ensure absent of neutron.conf service providers":
-  ensure            => absent,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'service_providers',
-  key_val_separator => '=',
-  setting           => 'service_provider',
-}->
-ini_setting { "neutron.conf service providers":
-  ensure            => present,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'service_providers',
-  key_val_separator => '=',
-  setting           => 'service_provider',
-  value             => 'LOADBALANCER:Haproxy:neutron.services.loadbalancer.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default',
 }
 
 # disable neutron-bsn-agent service
@@ -298,68 +283,7 @@ if %(deploy_l3_agent)s {
     }
 }
 
-# haproxy
-if %(deploy_haproxy)s {
-    package { "haproxy":
-        ensure  => installed,
-    }
-    package { "keepalived":
-        ensure  => installed,
-    }
-    ini_setting { "haproxy agent periodic interval":
-        ensure            => present,
-        path              => '/etc/neutron/lbaas_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'periodic_interval',
-        value             => '10',
-        notify            => Service['neutron-lbaas-agent'],
-    }
-    ini_setting { "haproxy agent interface driver":
-        ensure            => present,
-        path              => '/etc/neutron/lbaas_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'interface_driver',
-        value             => 'neutron.agent.linux.interface.OVSInterfaceDriver',
-        notify            => Service['neutron-lbaas-agent'],
-    }
-    ini_setting { "haproxy agent device driver":
-        ensure            => present,
-        path              => '/etc/neutron/lbaas_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'device_driver',
-        value             => 'neutron.services.loadbalancer.drivers.haproxy.namespace_driver.HaproxyNSDriver',
-        notify            => Service['neutron-lbaas-agent'],
-    }
-    service { "haproxy":
-        ensure            => running,
-        enable            => true,
-        require           => Package['haproxy'],
-    }
-    service { "neutron-lbaas-agent":
-        ensure            => running,
-        enable            => true,
-        require           => Package['haproxy'],
-    }
-    service { "keepalived":
-        ensure            => running,
-        enable            => true,
-        require           => Package['keepalived'],
-    }
-    file_line { "net.ipv4.ip_nonlocal_bind=1":
-        path  => '/etc/sysctl.conf',
-        line  => "net.ipv4.ip_nonlocal_bind=1",
-        match => "^net.ipv4.ip_nonlocal_bind=1",
-    }
-}
-
 # ovs_neutron_plugin for packstack
-file { "/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini":
-    ensure  => file,
-    mode    => 0777,
-}
 ini_setting { "disable tunneling":
   ensure            => present,
   path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',

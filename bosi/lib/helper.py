@@ -61,8 +61,6 @@ class Helper(object):
     @staticmethod
     def chmod_node(node):
         Helper.run_command_on_remote_without_timeout(
-            node, "sudo chmod -R 777 /etc/neutron")
-        Helper.run_command_on_remote_without_timeout(
             node, "sudo chmod -R 777 %s" % node.dst_dir)
         Helper.run_command_on_remote_without_timeout(
             node, "sudo touch %s" % node.log)
@@ -362,7 +360,6 @@ class Helper(object):
                  'br_fw_admin_address': node.br_fw_admin_address,
                  'default_gw': node.get_default_gw(),
                  'uplinks': node.get_all_uplinks(),
-                 'deploy_haproxy': str(node.deploy_haproxy).lower(),
                  'rhosp_automate_register':
                      str(node.rhosp_automate_register).lower(),
                  'rhosp_undercloud_dns': str(node.rhosp_undercloud_dns),
@@ -408,7 +405,6 @@ class Helper(object):
                  'deploy_dhcp_agent': str(node.deploy_dhcp_agent).lower(),
                  'deploy_l3_agent': str(node.deploy_l3_agent).lower(),
                  'neutron_id': node.get_neutron_id(),
-                 'deploy_haproxy': str(node.deploy_haproxy).lower(),
                  'uname': node.uname,
                  'bond': node.bond,
                  'rabbit_hosts': node.rabbit_hosts})
@@ -474,7 +470,6 @@ class Helper(object):
                  'br_fw_admin_address': node.br_fw_admin_address,
                  'default_gw': node.get_default_gw(),
                  'uplinks': node.get_all_uplinks(),
-                 'deploy_haproxy': str(node.deploy_haproxy).lower(),
                  'bond': node.bond,
                  'br_bond': node.br_bond,
                  'skip_ivs_version_check': str(node.skip_ivs_version_check).lower()})
@@ -516,7 +511,6 @@ class Helper(object):
                  'deploy_dhcp_agent': str(node.deploy_dhcp_agent).lower(),
                  'deploy_l3_agent': str(node.deploy_l3_agent).lower(),
                  'neutron_id': node.get_neutron_id(),
-                 'deploy_haproxy': str(node.deploy_haproxy).lower(),
                  'uname': node.uname,
                  'bond': node.bond})
         puppet_script_path = (
@@ -581,7 +575,6 @@ class Helper(object):
                  'br_fw_admin_address': node.br_fw_admin_address,
                  'default_gw': node.get_default_gw(),
                  'uplinks': node.get_all_uplinks(),
-                 'deploy_haproxy': str(node.deploy_haproxy).lower(),
                  'bond': node.bond,
                  'br_bond': node.br_bond,
                  'skip_ivs_version_check': str(node.skip_ivs_version_check).lower()})
@@ -623,7 +616,6 @@ class Helper(object):
                  'deploy_l3_agent': str(node.deploy_l3_agent).lower(),
                  'neutron_id': node.get_neutron_id(),
                  'selinux_mode': node.selinux_mode,
-                 'deploy_haproxy': str(node.deploy_haproxy).lower(),
                  'br_int': const.BR_NAME_INT,
                  'network_vlan_ranges': node.get_network_vlan_ranges(),
                  'br_mappings': node.get_bridge_mappings(),
@@ -691,8 +683,6 @@ class Helper(object):
             node_config['deploy_dhcp_agent'] = env.deploy_dhcp_agent
         if 'deploy_l3_agent' not in node_config:
             node_config['deploy_l3_agent'] = env.deploy_l3_agent
-        if 'deploy_haproxy' not in node_config:
-            node_config['deploy_haproxy'] = env.deploy_haproxy
         return node_config
 
     @staticmethod

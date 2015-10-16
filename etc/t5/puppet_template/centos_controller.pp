@@ -198,22 +198,6 @@ ini_setting { "neutron.conf notification driver":
   value             => 'messaging',
   notify            => Service['neutron-server'],
 }
-ini_setting { "ensure absent of neutron.conf service providers":
-  ensure            => absent,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'service_providers',
-  key_val_separator => '=',
-  setting           => 'service_provider',
-}->
-ini_setting { "neutron.conf service providers":
-  ensure            => present,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'service_providers',
-  key_val_separator => '=',
-  setting           => 'service_provider',
-  value             => 'LOADBALANCER:Haproxy:neutron.services.loadbalancer.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default',
-  notify            => Service['neutron-server'],
-}
 
 # config /etc/neutron/plugin.ini
 ini_setting { "neutron plugin.ini firewall_driver":
@@ -387,10 +371,6 @@ package { "device-mapper-libs":
 }
 
 # ovs_neutron_plugin for packstack
-file { "/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini":
-    ensure  => file,
-    mode    => 0777,
-}
 ini_setting { "disable tunneling":
   ensure            => present,
   path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',

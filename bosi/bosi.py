@@ -91,11 +91,6 @@ def verify_node_setup(q):
                 node, "neutron-l3-agent")
             all_service_status = (all_service_status +
                                   ' | L3 Agent ' + l3_status)
-        if node.deploy_haproxy:
-            lbaas_status = Helper.check_os_service_status(
-                node, "neutron-lbaas-agent")
-            all_service_status = (all_service_status +
-                                  ' | LBAAS Agent ' + lbaas_status)
         # for T5 deployment, check LLDP service status on compute nodes
         if node.deploy_mode == const.T5 and node.role == const.ROLE_COMPUTE:
             lldp_status = Helper.check_os_service_status(node, "send_lldp")
