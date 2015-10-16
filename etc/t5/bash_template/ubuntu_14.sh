@@ -10,7 +10,6 @@ is_controller=%(is_controller)s
 deploy_horizon_patch=%(deploy_horizon_patch)s
 fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
-deploy_haproxy=%(deploy_haproxy)s
 
 
 controller() {
@@ -120,12 +119,6 @@ compute() {
         mv /etc/init/neutron-l3-agent.conf /etc/init/neutron-l3-agent.conf.disabled
     fi
 
-    if [[ $deploy_haproxy == true ]]; then
-        echo "Deploy and stop neutron-lbaas-agent"
-        apt-get install -y neutron-lbaas-agent haproxy
-        service neutron-lbaas-agent restart
-    fi
-
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
@@ -141,13 +134,6 @@ compute() {
         echo "Restart neutron-l3-agent"
         mv /etc/init/neutron-l3-agent.conf.disabled /etc/init/neutron-l3-agent.conf
         service neutron-l3-agent restart
-    fi
-
-    # we install this before puppet so the conf files are present and restart after puppet
-    # so that changes made by puppet are reflected correctly
-    if [[ $deploy_haproxy == true ]]; then
-        echo "Restart neutron-lbaas-agent"
-        service neutron-lbaas-agent restart
     fi
 }
 

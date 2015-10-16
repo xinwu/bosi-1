@@ -128,7 +128,7 @@ ini_setting { "neutron.conf service_plugins":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'service_plugins',
-  value             => 'bsn_l3,lbaas',
+  value             => 'bsn_l3',
 }
 ini_setting { "neutron.conf dhcp_agents_per_network":
   ensure            => present,
@@ -145,21 +145,6 @@ ini_setting { "neutron.conf notification driver":
   key_val_separator => '=',
   setting           => 'notification_driver',
   value             => 'messaging',
-}
-ini_setting { "ensure absent of neutron.conf service providers":
-  ensure            => absent,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'service_providers',
-  key_val_separator => '=',
-  setting           => 'service_provider',
-}->
-ini_setting { "neutron.conf service providers":
-  ensure            => present,
-  path              => '/etc/neutron/neutron.conf',
-  section           => 'service_providers',
-  key_val_separator => '=',
-  setting           => 'service_provider',
-  value             => 'LOADBALANCER:Haproxy:neutron.services.loadbalancer.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default',
 }
 
 # config neutron-bsn-agent conf
@@ -268,56 +253,6 @@ if %(deploy_dhcp_agent)s {
         setting           => 'dhcp_delete_namespaces',
         value             => 'False',
         notify            => Service['neutron-dhcp-agent'],
-    }
-}
-
-# haproxy
-if %(deploy_haproxy)s {
-    package { "neutron-lbaas-agent":
-        ensure  => installed,
-    }
-    package { "haproxy":
-        ensure  => installed,
-    }
-    ini_setting { "haproxy agent periodic interval":
-        ensure            => present,
-        path              => '/etc/neutron/lbaas_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'periodic_interval',
-        value             => '10',
-        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
-        notify            => Service['neutron-lbaas-agent'],
-    }
-    ini_setting { "haproxy agent interface driver":
-        ensure            => present,
-        path              => '/etc/neutron/lbaas_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'interface_driver',
-        value             => 'neutron.agent.linux.interface.IVSInterfaceDriver',
-        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
-        notify            => Service['neutron-lbaas-agent'],
-    }
-    ini_setting { "haproxy agent device driver":
-        ensure            => present,
-        path              => '/etc/neutron/lbaas_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'device_driver',
-        value             => 'neutron.services.loadbalancer.drivers.haproxy.namespace_driver.HaproxyNSDriver',
-        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
-        notify            => Service['neutron-lbaas-agent'],
-    }
-    service { "haproxy":
-        ensure            => running,
-        enable            => true,
-        require           => Package['haproxy'],
-    }
-    service { "neutron-lbaas-agent":
-        ensure            => running,
-        enable            => true,
-        require           => [Package['neutron-lbaas-agent'], Package['haproxy']],
     }
 }
 

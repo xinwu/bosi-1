@@ -10,7 +10,6 @@ is_controller=%(is_controller)s
 deploy_horizon_patch=%(deploy_horizon_patch)s
 fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
-deploy_haproxy=%(deploy_haproxy)s
 default_gw=%(default_gw)s
 
 rhosp_automate_register=%(rhosp_automate_register)s
@@ -55,12 +54,6 @@ controller() {
 }
 
 compute() {
-
-    if [[ $deploy_haproxy == true ]]; then
-        sudo groupadd nogroup
-        sudo yum install -y keepalived haproxy
-        sudo sysctl -w net.ipv4.ip_nonlocal_bind=1
-    fi
 
     # copy send_lldp to /bin
     sudo cp %(dst_dir)s/send_lldp /bin/

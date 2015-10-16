@@ -35,7 +35,6 @@ class Node(object):
         self.br_fw_admin_address = node_config.get('br_fw_admin_address')
         self.tagged_intfs = node_config.get('tagged_intfs')
         self.ex_gw = node_config.get('ex_gw')
-        self.deploy_haproxy = node_config.get('deploy_haproxy')
         self.tag = node_config.get('tag')
         self.env_tag = env.tag
         self.cleanup = env.cleanup
@@ -320,7 +319,6 @@ class Node(object):
             br_fw_admin_address: %(br_fw_admin_address)s,
             tagged_intfs: %(tagged_intfs)s,
             ex_gw: %(ex_gw)s,
-            deploy_haproxy: %(deploy_haproxy)s,
             tag: %(tag)s,
             env_tag: %(env_tag)s,
             cleanup: %(cleanup)s,
@@ -396,7 +394,6 @@ class Node(object):
             'br_fw_admin_address': self.br_fw_admin_address,
             'tagged_intfs': self.tagged_intfs,
             'ex_gw': self.ex_gw,
-            'deploy_haproxy': self.deploy_haproxy,
             'tag': self.tag,
             'env_tag': self.env_tag,
             'cleanup': self.cleanup,

@@ -9,7 +9,6 @@ is_controller=%(is_controller)s
 deploy_horizon_patch=%(deploy_horizon_patch)s
 fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
-deploy_haproxy=%(deploy_haproxy)s
 skip_ivs_version_check=%(skip_ivs_version_check)s
 
 
@@ -122,12 +121,6 @@ compute() {
         else
             echo "ivs upgrade fails version validation"
         fi
-    fi
-
-    if [[ $deploy_haproxy == true ]]; then
-        groupadd nogroup
-        yum install -y keepalived haproxy
-        sysctl -w net.ipv4.ip_nonlocal_bind=1
     fi
 
     # full installation

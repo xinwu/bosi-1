@@ -9,7 +9,6 @@ is_controller=%(is_controller)s
 deploy_horizon_patch=%(deploy_horizon_patch)s
 fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
-deploy_haproxy=%(deploy_haproxy)s
 skip_ivs_version_check=%(skip_ivs_version_check)s
 
 controller() {
@@ -159,11 +158,6 @@ compute() {
         else
             echo "ivs upgrade fails version validation"
         fi
-    fi
-
-    if [[ $deploy_haproxy == true ]]; then
-        apt-get install -y neutron-lbaas-agent haproxy
-        service neutron-lbaas-agent restart
     fi
 
     # full installation
