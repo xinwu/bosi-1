@@ -138,8 +138,7 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
 
     # Generate detailed node information
     safe_print("Start to setup Big Cloud Fabric\n")
-    if 'nodes' in config:
-        nodes_yaml_config = config['nodes']
+    nodes_yaml_config = config['nodes'] if 'nodes' in config else None
     node_dic = Helper.load_nodes(nodes_yaml_config, env)
 
     # copy neutron config from neutron server to setup node
@@ -147,7 +146,8 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
         if node.role == const.ROLE_NEUTRON_SERVER:
             controller_nodes.append(node)
     Helper.copy_neutron_config_from_controllers(controller_nodes)
-    Helper.copy_dhcp_scheduler_from_controllers(controller_nodes)
+    if env.openstack_release == const.OS_RELEASE_JUNO:
+        Helper.copy_dhcp_scheduler_from_controllers(controller_nodes)
 
     # Generate scripts for each node
     for hostname, node in node_dic.iteritems():

@@ -948,6 +948,17 @@ class Helper(object):
                 node_config['uplink_interfaces'] = tran['interfaces']
                 break
 
+        # Fuel 7 doesn't have vlan info in endpoints,
+        # Build bridge vlan from tran
+        bridge_vlan_map = {}
+        for tran in trans:
+            if (tran['action'] == 'add-port' and
+                    node_config['bond'] in tran['name'] and
+                    '.' in tran['name']):
+                bridge_vlan_map[tran['bridge']] = (
+                    int(tran['name'].split('.')[1]))
+        node_config['bridge_vlan_map'] = bridge_vlan_map
+
         # get br-fw-admin information
         endpoints = node_yaml_config['network_scheme']['endpoints']
         node_config['br_fw_admin'] = roles[const.BR_KEY_FW_ADMIN]
@@ -965,10 +976,10 @@ class Helper(object):
             break
 
         # get bridge ip, vlan and construct bridge obj
-        bridges = []
-        bridge_names = []
+        bridges = set()
+        bridge_names = set()
         for br_key, br_name in roles.iteritems():
-            if br_key in const.BR_KEY_EXCEPTION:
+            if br_name == node_config['br_fw_admin']:
                 continue
 
             vlan = None
@@ -985,14 +996,16 @@ class Helper(object):
                         # we don't touch the bridge which doesn't use bond
                         continue
 
+            if not vlan:
+                vlan = node_config['bridge_vlan_map'].get(br_name)
             ip = endpoints[br_name].get('IP')
             if (not ip) or (ip == const.NONE_IP):
                 ip = None
             else:
                 ip = ip[0]
             bridge = Bridge(br_key, br_name, ip, vlan)
-            bridges.append(bridge)
-            bridge_names.append(br_name)
+            bridges.add(bridge)
+            bridge_names.add(br_name)
 
             # get default gw, most likely on br-ex
             gw = endpoints[br_name].get('gateway')

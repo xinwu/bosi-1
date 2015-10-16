@@ -7,7 +7,7 @@ default_deploy_dhcp_agent: true
 default_deploy_l3_agent: true
 default_deploy_haproxy: false
 ivs_packages:
-- https://10.2.3.100/job/ivs-bsn-3.0.0/lastSuccessfulBuild/artifact/pkg/all/BCF-SL-VX-3.0.0-2015-08-12.tar.gz
+- https://10.2.3.100/job/ivs-bsn-3.0.0/lastSuccessfulBuild/artifact/pkg/all/BCF-SL-VX-3.0.0-2015-08-14.tar.gz
 bcf_controllers:
 - 10.212.1.231:8000
 - 10.212.1.230:8000
