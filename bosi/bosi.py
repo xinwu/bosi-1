@@ -92,7 +92,7 @@ def verify_node_setup(q):
             all_service_status = (all_service_status +
                                   ' | L3 Agent ' + l3_status)
         # for T5 deployment, check LLDP service status on compute nodes
-        if node.deploy_mode == const.T5 and node.role == const.ROLE_COMPUTE:
+        if node.deploy_mode == const.T5 and node.role != const.ROLE_NEUTRON_SERVER:
             lldp_status = Helper.check_os_service_status(node, "send_lldp")
             all_service_status = (all_service_status +
                                   ' | LLDP Service ' + lldp_status)

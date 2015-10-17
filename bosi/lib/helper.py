@@ -440,6 +440,8 @@ class Helper(object):
             is_controller = False
             if node.role == const.ROLE_NEUTRON_SERVER:
                 is_controller = True
+            if node.role == const.ROLE_CEPH:
+                is_ceph = True
             bash = (
                 bash_template %
                 {'install_ivs': str(node.install_ivs).lower(),
@@ -448,6 +450,7 @@ class Helper(object):
                  'deploy_dhcp_agent': str(node.deploy_dhcp_agent).lower(),
                  'deploy_l3_agent': str(node.deploy_l3_agent).lower(),
                  'is_controller': str(is_controller).lower(),
+                 'is_ceph':str(is_ceph).lower(),
                  'deploy_horizon_patch':
                      str(node.deploy_horizon_patch).lower(),
                  'ivs_version': node.ivs_version,
@@ -840,7 +843,8 @@ class Helper(object):
         node_config['hostname'] = hostname
         node_config['role'] = role
         if ((role != const.ROLE_NEUTRON_SERVER) and
-                (role != const.ROLE_COMPUTE)):
+                (role != const.ROLE_COMPUTE) and
+                (role != const.ROLE_CEPH)):
             node_config['skip'] = True
             node_config['error'] = "node role is %s" % (role)
 
@@ -1052,8 +1056,12 @@ class Helper(object):
 
                 if const.ROLE_NEUTRON_SERVER in role:
                     role = const.ROLE_NEUTRON_SERVER
-                else:
+                elif const.COMPUTE in role:
                     role = const.ROLE_COMPUTE
+                elif const.CEPH in role:
+                    role = const.ROLE_CEPH
+                else:
+                    continue
 
                 node = Helper.__load_fuel_node__(
                     hostname, role, node_yaml_config_map, env)
