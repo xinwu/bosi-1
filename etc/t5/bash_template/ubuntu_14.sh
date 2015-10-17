@@ -7,6 +7,7 @@ deploy_dhcp_agent=%(deploy_dhcp_agent)s
 deploy_l3_agent=%(deploy_l3_agent)s
 ivs_version=%(ivs_version)s
 is_controller=%(is_controller)s
+is_ceph=%(is_ceph)s
 deploy_horizon_patch=%(deploy_horizon_patch)s
 fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
@@ -105,6 +106,12 @@ compute() {
     fi
 }
 
+ceph() {
+    # copy send_lldp to /bin and start send_lldp service
+    sudo cp %(dst_dir)s/send_lldp /bin/
+    sudo chmod 777 /bin/send_lldp
+    puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
+}
 
 set +e
 
@@ -148,6 +155,8 @@ fi
 
 if [[ $is_controller == true ]]; then
     controller
+elif [[ $is_ceph == true ]]; then
+    ceph
 else
     compute
 fi

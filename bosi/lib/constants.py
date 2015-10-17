@@ -10,6 +10,7 @@ DEFAULT_USER = 'root'
 # key words to specify node role in yaml config
 ROLE_NEUTRON_SERVER = 'controller'
 ROLE_COMPUTE = 'compute'
+ROLE_CEPH = 'ceph-osd'
 
 # deployment t6/t5
 T6 = 't6'
