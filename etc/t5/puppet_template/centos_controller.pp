@@ -1,5 +1,15 @@
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 
+# install selinux policies
+Package { allow_virtual => true }
+class { selinux:
+    mode => '%(selinux_mode)s'
+}
+selinux::module { 'selinux-bcf':
+    ensure => 'present',
+    source => 'puppet:///modules/selinux/centos.te',
+}
+
 # comment out heat domain related configurations
 $heat_config = file('/etc/heat/heat.conf','/dev/null')
 if($heat_config != '') {

@@ -132,15 +132,15 @@ exec { "load 8021q":
     path    => $binpath,
 }
 
-# TODO install selinux policies
-#Package { allow_virtual => true }
-#class { selinux:
-#    mode => '%(selinux_mode)s'
-#}
-#selinux::module { 'selinux-bcf':
-#    ensure => 'present',
-#    source => 'puppet:///modules/selinux/centos.te',
-#}
+# install selinux policies
+Package { allow_virtual => true }
+class { selinux:
+    mode => '%(selinux_mode)s'
+}
+selinux::module { 'selinux-bcf':
+    ensure => 'present',
+    source => 'puppet:///modules/selinux/centos.te',
+}
 
 # disable neutron-bsn-agent service
 service {'neutron-bsn-agent':

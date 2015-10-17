@@ -165,8 +165,8 @@ easy_install pip
 puppet module install --force puppetlabs-inifile
 puppet module install --force puppetlabs-stdlib
 puppet module install jfryman-selinux
-#mkdir -p /etc/puppet/modules/selinux/files
-#cp %(dst_dir)s/%(hostname)s.te /etc/puppet/modules/selinux/files/centos.te
+mkdir -p /etc/puppet/modules/selinux/files
+cp %(dst_dir)s/%(hostname)s.te /etc/puppet/modules/selinux/files/centos.te
 
 # install bsnstacklib
 if [[ $install_bsnstacklib == true ]]; then

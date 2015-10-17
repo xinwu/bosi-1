@@ -1592,14 +1592,14 @@ class Helper(object):
            node.dst_dir,
            "%(hostname)s.pp" % {'hostname': node.hostname})
 
-        # TODO: copy selinux script to node
-        #if node.os in const.RPM_OS_SET:
-        #    safe_print("Copy bsn selinux policy to %(hostname)s\n" %
-        #               {'hostname': node.hostname})
-        #    Helper.copy_file_to_remote(node,
-        #       node.selinux_script_path,
-        #       node.dst_dir,
-        #       "%(hostname)s.te" % {'hostname': node.hostname})
+        # copy selinux script to node
+        if node.os in const.RPM_OS_SET:
+            safe_print("Copy bsn selinux policy to %(hostname)s\n" %
+                       {'hostname': node.fqdn})
+            Helper.copy_file_to_remote(node,
+               node.selinux_script_path,
+               node.dst_dir,
+               "%(hostname)s.te" % {'hostname': node.hostname})
 
         if node.role == const.ROLE_NEUTRON_SERVER:
             # copy ospurge script to node
