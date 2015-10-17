@@ -45,9 +45,9 @@ controller() {
     rm -f /etc/init/neutron-bsn-agent.conf
     
 
-    if [[ $deploy_horizon_patch == true ]]; then
+    #if [[ $deploy_horizon_patch == true ]]; then
         # TODO: new way to plugin horizon
-    fi
+    #fi
 
     # schedule cron job to reschedule network in case dhcp agent fails
     chmod a+x /bin/dhcp_reschedule.sh

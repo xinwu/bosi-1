@@ -32,9 +32,9 @@ controller() {
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
     # deploy bcf horizon patch to controller node
-    if [[ $deploy_horizon_patch == true ]]; then
+    #if [[ $deploy_horizon_patch == true ]]; then
         # TODO: new way to plugin horizon
-    fi
+    #fi
 
     # restart keystone and horizon
     systemctl restart httpd
