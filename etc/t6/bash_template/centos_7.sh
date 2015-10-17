@@ -44,6 +44,12 @@ controller() {
     crontab -r
     (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
 
+    echo "Restart nova"
+    systemctl restart openstack-nova-consoleauth
+    systemctl restart openstack-nova-scheduler
+    systemctl restart openstack-nova-conductor
+    systemctl restart openstack-nova-cert
+
     echo 'Restart neutron-server'
     rm -rf /etc/neutron/plugins/ml2/host_certs/*
     systemctl restart neutron-server
