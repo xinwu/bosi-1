@@ -71,7 +71,7 @@ class Environment(object):
                         break
 
         # neutron vlan ranges
-        self.network_vlan_ranges = config['network_vlan_ranges']
+        self.network_vlan_ranges = config.get('network_vlan_ranges')
         network_vlan_range_pattern = re.compile(
             const.NETWORK_VLAN_RANGE_EXPRESSION, re.IGNORECASE)
         match = network_vlan_range_pattern.match(self.network_vlan_ranges)
