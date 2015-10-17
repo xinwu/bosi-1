@@ -37,7 +37,7 @@ controller() {
     #fi
 
     # restart keystone and horizon
-    systemctl restart httpd
+    #systemctl restart httpd
 
     # schedule cron job to reschedule network in case dhcp agent fails
     chmod a+x /bin/dhcp_reschedule.sh
@@ -204,8 +204,6 @@ if [[ $install_bsnstacklib == true ]]; then
     sleep 2
     pip uninstall -y bsnstacklib
     sleep 2
-    #fix for packstack BVS-4022
-    #pip install "bsnstacklib==2014.2.36"
     pip install --upgrade "bsnstacklib<%(bsnstacklib_version)s"
 fi
 

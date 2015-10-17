@@ -37,7 +37,7 @@ controller() {
     #fi
 
     # restart keystone and httpd
-    systemctl restart httpd
+    #systemctl restart httpd
 
     # schedule cron job to reschedule network in case dhcp agent fails
     chmod a+x /bin/dhcp_reschedule.sh
