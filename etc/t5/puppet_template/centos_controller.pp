@@ -187,7 +187,7 @@ ini_setting { "neutron.conf service_plugins":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'service_plugins',
-  value             => 'router,lbaas',
+  value             => 'router',
   notify            => Service['neutron-server'],
 }
 ini_setting { "neutron.conf dhcp_agents_per_network":
@@ -381,6 +381,9 @@ package { "device-mapper-libs":
 }
 
 # ovs_neutron_plugin for packstack
+file { "/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini":
+    ensure  => file,
+}
 ini_setting { "disable tunneling":
   ensure            => present,
   path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
