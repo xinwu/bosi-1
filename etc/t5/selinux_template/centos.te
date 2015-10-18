@@ -1,14 +1,19 @@
 module bsn-selinux-policy 1.0;
 
 require {
+        type unconfined_t;
         type neutron_t;
         type etc_t;
+        type sysfs_t;
+        type init_t;
         type httpd_t;
         type keystone_log_t;
         class dir search;
         class dir create;
         class file create;
         class file write;
+        class service disable;
+        class filesystem getattr;
         class netlink_socket { bind create setopt getattr };
 }
 
@@ -17,4 +22,8 @@ allow httpd_t keystone_log_t:dir search;
 allow neutron_t etc_t:dir create;
 allow neutron_t etc_t:file create;
 allow neutron_t etc_t:file write;
+allow neutron_t sysfs_t:filesystem getattr;
 allow neutron_t self:netlink_socket { bind create setopt getattr };
+
+#============= unconfined_t ==============
+allow unconfined_t init_t:service disable;
