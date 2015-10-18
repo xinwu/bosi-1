@@ -32,17 +32,23 @@ controller() {
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
     # deploy bcf horizon patch to controller node
-    if [[ $deploy_horizon_patch == true ]]; then
+    #if [[ $deploy_horizon_patch == true ]]; then
         # TODO: new way to plugin horizon
-    fi
+    #fi
 
     # restart keystone and httpd
-    systemctl restart httpd
+    #systemctl restart httpd
 
     # schedule cron job to reschedule network in case dhcp agent fails
     chmod a+x /bin/dhcp_reschedule.sh
     crontab -r
     (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
+
+    echo "Restart nova"
+    systemctl restart openstack-nova-consoleauth
+    systemctl restart openstack-nova-scheduler
+    systemctl restart openstack-nova-conductor
+    systemctl restart openstack-nova-cert
 
     echo "Restart neutron-server"
     rm -rf /var/lib/neutron/host_certs/*
@@ -159,8 +165,8 @@ easy_install pip
 puppet module install --force puppetlabs-inifile
 puppet module install --force puppetlabs-stdlib
 puppet module install jfryman-selinux
-#mkdir -p /etc/puppet/modules/selinux/files
-#cp %(dst_dir)s/%(hostname)s.te /etc/puppet/modules/selinux/files/centos.te
+mkdir -p /etc/puppet/modules/selinux/files
+cp %(dst_dir)s/%(hostname)s.te /etc/puppet/modules/selinux/files/centos.te
 
 # install bsnstacklib
 if [[ $install_bsnstacklib == true ]]; then

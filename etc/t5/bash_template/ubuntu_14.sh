@@ -39,9 +39,9 @@ controller() {
     mv /etc/init/neutron-l3-agent.conf /etc/init/neutron-l3-agent.conf.disabled
     
 
-    if [[ $deploy_horizon_patch == true ]]; then
+    #if [[ $deploy_horizon_patch == true ]]; then
         # TODO: new way to plugin horizon
-    fi
+    #fi
 
     # schedule cron job to reschedule network in case dhcp agent fails
     chmod a+x /bin/dhcp_reschedule.sh
