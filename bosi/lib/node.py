@@ -1,4 +1,5 @@
 import constants as const
+import socket
 
 
 class Node(object):
@@ -12,7 +13,12 @@ class Node(object):
         self.dhcp_agent_scheduler_dir = None
         self.log = const.LOG_FILE
         self.hostname = node_config['hostname']
-        self.fqdn = node_config['fqdn']
+        self.fqdn = node_config.get('fqdn')
+        if not self.fqdn:
+            try:
+                self.fqdn = socket.gethostbyaddr(self.hostname)[0]
+            except Exception:
+                self.fqdn = self.hostname
         self.uname = node_config.get('uname')
         self.role = node_config['role'].lower()
         self.skip = node_config['skip']

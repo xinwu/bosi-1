@@ -438,6 +438,7 @@ class Helper(object):
                   "r") as bash_template_file:
             bash_template = bash_template_file.read()
             is_controller = False
+            is_ceph = False
             if node.role == const.ROLE_NEUTRON_SERVER:
                 is_controller = True
             if node.role == const.ROLE_CEPH:
