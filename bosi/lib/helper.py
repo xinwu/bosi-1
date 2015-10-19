@@ -1056,9 +1056,9 @@ class Helper(object):
 
                 if const.ROLE_NEUTRON_SERVER in role:
                     role = const.ROLE_NEUTRON_SERVER
-                elif const.COMPUTE in role:
+                elif const.ROLE_COMPUTE in role:
                     role = const.ROLE_COMPUTE
-                elif const.CEPH in role:
+                elif const.ROLE_CEPH in role:
                     role = const.ROLE_CEPH
                 else:
                     continue
