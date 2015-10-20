@@ -106,7 +106,7 @@ USERCTL=no
 BOOTPROTO=none
 ONBOOT=yes
 NM_CONTROLLED=no
-BONDING_OPTS='mode=2 miimon=50 updelay=15000 xmit_hash_policy=1'
+BONDING_OPTS='mode=4 lacp_rate=1 miimon=50 updelay=15000 xmit_hash_policy=1'
 ",
 }
 
