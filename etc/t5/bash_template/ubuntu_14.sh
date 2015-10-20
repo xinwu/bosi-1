@@ -58,7 +58,8 @@ controller() {
 
 compute() {
     # update bond mode to balance-xor
-    sed -i 's/bond-mode.*/bond-mode balance-xor/' /etc/network/interfaces.d/ifcfg-%(bond)s
+    sed -i 's/bond-mode.*/bond-mode 4/' /etc/network/interfaces.d/ifcfg-%(bond)s
+    grep -q -e 'bond-lacp-rate 1' /etc/network/interfaces.d/ifcfg-%(bond)s || sed -i '$a\bond-lacp-rate 1' /etc/network/interfaces.d/ifcfg-%(bond)s
 
     # copy send_lldp to /bin
     sudo cp %(dst_dir)s/send_lldp /bin/
