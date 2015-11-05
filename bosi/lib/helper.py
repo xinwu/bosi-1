@@ -1052,7 +1052,8 @@ class Helper(object):
                 online = n.get('online')
 
                 if not online or (const.ROLE_NEUTRON_SERVER not in role and
-                                  const.ROLE_COMPUTE not in role):
+                                  const.ROLE_COMPUTE not in role and
+                                  const.ROLE_CEPH not in role):
                     continue
 
                 if const.ROLE_NEUTRON_SERVER in role:
