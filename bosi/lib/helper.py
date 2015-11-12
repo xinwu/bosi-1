@@ -407,7 +407,7 @@ class Helper(object):
                  'neutron_id': node.get_neutron_id(),
                  'uname': node.uname,
                  'bond': node.bond,
-                 'uplink_mtu': node.uplink_mtu,
+                 'mtu': node.uplink_mtu,
                  'rabbit_hosts': node.rabbit_hosts})
         puppet_script_path = (
             r'''%(setup_node_dir)s/%(generated_script_dir)s/'''
@@ -517,7 +517,7 @@ class Helper(object):
                  'deploy_l3_agent': str(node.deploy_l3_agent).lower(),
                  'neutron_id': node.get_neutron_id(),
                  'uname': node.uname,
-                 'uplink_mtu': node.uplink_mtu,
+                 'mtu': node.uplink_mtu,
                  'bond': node.bond})
         puppet_script_path = (
             r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp'''
@@ -626,7 +626,7 @@ class Helper(object):
                  'network_vlan_ranges': node.get_network_vlan_ranges(),
                  'br_mappings': node.get_bridge_mappings(),
                  'uname': node.uname,
-                 'uplink_mtu': node.uplink_mtu,
+                 'mtu': node.uplink_mtu,
                  'bond': node.bond})
         puppet_script_path = (
             r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp'''
