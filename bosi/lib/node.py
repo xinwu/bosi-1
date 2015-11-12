@@ -28,6 +28,9 @@ class Node(object):
         self.user = node_config.get('user')
         self.passwd = node_config.get('passwd')
         self.uplink_interfaces = node_config.get('uplink_interfaces')
+        self.uplink_mtu = node_config.get('uplink_mtu')
+        if not self.uplink_mtu:
+            self.uplink_mtu = 1500
         self.install_ivs = node_config.get('install_ivs')
         self.install_bsnstacklib = node_config.get('install_bsnstacklib')
         self.install_all = node_config.get('install_all')
@@ -318,6 +321,7 @@ class Node(object):
             user: %(user)s,
             passwd: %(passwd)s,
             uplink_interfaces: %(uplink_interfaces)s,
+            uplink_mtu: %(uplink_mtu)s,
             install_ivs: %(install_ivs)s,
             install_bsnstacklib: %(install_bsnstacklib)s,
             install_all: %(install_all)s,
@@ -394,6 +398,7 @@ class Node(object):
             'user': self.user,
             'passwd': self.passwd,
             'uplink_interfaces': self.uplink_interfaces,
+            'uplink_mtu': self.uplink_mtu,
             'install_ivs': self.install_ivs,
             'install_bsnstacklib': self.install_bsnstacklib,
             'install_all': self.install_all,
