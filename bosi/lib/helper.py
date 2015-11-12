@@ -407,6 +407,7 @@ class Helper(object):
                  'neutron_id': node.get_neutron_id(),
                  'uname': node.uname,
                  'bond': node.bond,
+                 'mtu': node.uplink_mtu,
                  'rabbit_hosts': node.rabbit_hosts})
         puppet_script_path = (
             r'''%(setup_node_dir)s/%(generated_script_dir)s/'''
@@ -516,6 +517,7 @@ class Helper(object):
                  'deploy_l3_agent': str(node.deploy_l3_agent).lower(),
                  'neutron_id': node.get_neutron_id(),
                  'uname': node.uname,
+                 'mtu': node.uplink_mtu,
                  'bond': node.bond})
         puppet_script_path = (
             r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp'''
@@ -624,6 +626,7 @@ class Helper(object):
                  'network_vlan_ranges': node.get_network_vlan_ranges(),
                  'br_mappings': node.get_bridge_mappings(),
                  'uname': node.uname,
+                 'mtu': node.uplink_mtu,
                  'bond': node.bond})
         puppet_script_path = (
             r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp'''
@@ -687,6 +690,8 @@ class Helper(object):
             node_config['deploy_dhcp_agent'] = env.deploy_dhcp_agent
         if 'deploy_l3_agent' not in node_config:
             node_config['deploy_l3_agent'] = env.deploy_l3_agent
+        if 'uplink_mtu' not in node_config:
+            node_config['uplink_mtu'] = env.uplink_mtu
         return node_config
 
     @staticmethod

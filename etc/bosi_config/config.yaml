@@ -65,6 +65,8 @@ default_role: compute
 default_uplink_interfaces:
 - p2p1
 - p2p2
+# optional, will be 1500 by default
+default_uplink_mtu: 1500
 # list of nodes to be deployed
 nodes:
 - hostname: 10.4.9.100

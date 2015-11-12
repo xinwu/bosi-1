@@ -125,6 +125,7 @@ class Environment(object):
         self.user = config.get('default_user')
         self.passwd = config.get('default_passwd')
         self.uplink_interfaces = config.get('default_uplink_interfaces')
+        self.uplink_mtu = config.get('default_uplink_mtu')
 
         # openstack bsnstacklib version and horizon patch
         self.openstack_release = str(config['openstack_release']).lower()

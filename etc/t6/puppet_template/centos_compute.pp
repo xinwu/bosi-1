@@ -20,8 +20,19 @@ define ivs_internal_port_ip {
         match => "^ifconfig ${port_ip[0]} ${port_ip[1]}$",
     }
 }
+
+# uplink mtu
+define uplink_mtu {
+    file_line { "ifconfig $name mtu %(mtu)s":
+        path  => '/etc/rc.d/rc.local',
+        line  => "ifconfig $name mtu %(mtu)s",
+        match => "^ifconfig $name mtu %(mtu)s",
+    }
+}
+
 # example ['storage,192.168.1.1/24', 'ex,192.168.2.1/24', 'management,192.168.3.1/24']
 class ivs_internal_port_ips {
+    $uplinks = [%(uplinks)s]
     $port_ips = [%(port_ips)s]
     file { "/etc/rc.d/rc.local":
         ensure  => file,
@@ -32,6 +43,8 @@ class ivs_internal_port_ips {
         path    => '/etc/rc.d/rc.local',
         line    => "systemctl restart ivs",
         match   => "^systemctl restart ivs$",
+    }->
+    uplink_mtu { $uplinks:
     }->
     ivs_internal_port_ip { $port_ips:
     }

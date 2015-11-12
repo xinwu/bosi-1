@@ -52,10 +52,22 @@ if($heat_config != '') {
     }
 }
 
+# uplink mtu
+define uplink_mtu {
+    file_line { "ifconfig $name mtu %(mtu)s":
+        path  => '/etc/rc.d/rc.local',
+        line  => "ifconfig $name mtu %(mtu)s",
+        match => "^ifconfig $name mtu %(mtu)s",
+    }
+}
+
 # edit rc.local for cron job
+$uplinks = [%(uplinks)s]
 file { "/etc/rc.d/rc.local":
     ensure  => file,
     mode    => 0777,
+}->
+uplink_mtu { $uplinks:
 }->
 file_line { "remove crontab -r":
     path    => '/etc/rc.d/rc.local',

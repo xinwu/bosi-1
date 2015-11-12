@@ -24,7 +24,17 @@ service { "send_lldp":
     require => [File['/bin/send_lldp'], File['/etc/init/send_lldp.conf']],
 }
 
+# uplink mtu
+define uplink_mtu {
+    file_line { "ifconfig $name mtu %(mtu)s":
+        path  => '/etc/rc.local',
+        line  => "ifconfig $name mtu %(mtu)s",
+        match => "^ifconfig $name mtu %(mtu)s",
+    }
+}
+
 # edit rc.local for cron job and default gw
+$uplinks = [%(uplinks)s]
 file { "/etc/rc.local":
     ensure  => file,
     mode    => 0777,
@@ -33,6 +43,8 @@ file_line { "remove exit 0":
     path    => '/etc/rc.local',
     ensure  => absent,
     line    => "exit 0",
+}->
+uplink_mtu { $uplinks:
 }->
 file_line { "remove crontab -r":
     path    => '/etc/rc.local',
