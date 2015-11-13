@@ -1571,8 +1571,7 @@ class Helper(object):
                       'ivs_debug_pkg': node.ivs_debug_pkg}),
                     node.dst_dir, node.ivs_debug_pkg)
 
-        if (node.deploy_mode == const.T5 and
-                (node.role == const.ROLE_COMPUTE or node.role == const.ROLE_CEPH)):
+        if (node.role == const.ROLE_CEPH or node.deploy_mode == const.T5):
             # copy send_lldp to t5 compute nodes
             safe_print("Copy send_lldp to %(hostname)s\n" %
                        {'hostname': node.fqdn})
