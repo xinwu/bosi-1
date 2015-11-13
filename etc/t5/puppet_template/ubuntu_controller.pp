@@ -1,5 +1,6 @@
 
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
+$uplinks = [%(uplinks)s]
 
 # uplink mtu
 define uplink_mtu {
@@ -11,7 +12,6 @@ define uplink_mtu {
 }
 
 # edit rc.local for cron job and default gw
-$uplinks = [%(uplinks)s]
 file { "/etc/rc.local":
     ensure  => file,
     mode    => 0777,

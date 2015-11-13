@@ -1,13 +1,17 @@
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
+$uplinks = [%(uplinks)s]
 
 # install selinux policies
-Package { allow_virtual => true }
-class { selinux:
-    mode => '%(selinux_mode)s'
-}
-selinux::module { 'selinux-bcf':
-    ensure => 'present',
-    source => 'puppet:///modules/selinux/centos.te',
+$selinux_enabled = generate('/bin/sh', '-c', "sestatus | grep 'enabled' | tr -d '\n'")
+if $selinux_enabled {
+    Package { allow_virtual => true }
+    class { selinux:
+      mode => '%(selinux_mode)s',
+    }
+    selinux::module { 'selinux-bcf':
+      ensure => 'present',
+      source => 'puppet:///modules/selinux/centos.te',
+    }
 }
 
 # comment out heat domain related configurations
@@ -71,7 +75,6 @@ define uplink_mtu {
 }
 
 # edit rc.local for default gw
-$uplinks = [%(uplinks)s]
 file { "/etc/rc.d/rc.local":
     ensure  => file,
     mode    => 0777,

@@ -1,13 +1,17 @@
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
+$uplinks = [%(uplinks)s]
 
 # install selinux policies
-Package { allow_virtual => true }
-class { selinux:
-    mode => '%(selinux_mode)s'
-}
-selinux::module { 'selinux-bcf':
-    ensure => 'present',
-    source => 'puppet:///modules/selinux/centos.te',
+$selinux_enabled = generate('/bin/sh', '-c', "sestatus | grep 'enabled' | tr -d '\n'")
+if $selinux_enabled {
+    Package { allow_virtual => true }
+    class { selinux:
+      mode => '%(selinux_mode)s',
+    }
+    selinux::module { 'selinux-bcf':
+      ensure => 'present',
+      source => 'puppet:///modules/selinux/centos.te',
+    }
 }
 
 # uplink mtu
@@ -20,7 +24,6 @@ define uplink_mtu {
 }
 
 # edit rc.local for default gw
-$uplinks = [%(uplinks)s]
 file { "/etc/rc.d/rc.local":
     ensure  => file,
     mode    => 0777,
@@ -121,8 +124,6 @@ NM_CONTROLLED=no
 BONDING_OPTS='mode=4 lacp_rate=1 miimon=50 updelay=15000 xmit_hash_policy=1'
 ",
 }
-
-$uplinks=[%(uplinks)s]
 
 define bond_intf {
     $uplink = split($name, ',')
