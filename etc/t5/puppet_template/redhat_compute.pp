@@ -1,5 +1,6 @@
 
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
+$uplinks = [%(uplinks)s]
 
 define uplink_mtu {
     file_line { "ifconfig $name mtu %(mtu)s":
@@ -10,7 +11,6 @@ define uplink_mtu {
 }
 
 # edit rc.local for default gw
-$uplinks = [%(uplinks)s]
 file { "/etc/rc.d/rc.local":
     ensure  => file,
     mode    => 0777,
@@ -89,8 +89,6 @@ NM_CONTROLLED=no
 BONDING_OPTS='mode=4 lacp_rate=1 miimon=50 updelay=15000 xmit_hash_policy=1'
 ",
 }
-
-$uplinks=[%(uplinks)s]
 
 define bond_intf {
     $uplink = split($name, ',')

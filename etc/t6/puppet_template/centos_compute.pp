@@ -52,13 +52,16 @@ class ivs_internal_port_ips {
 include ivs_internal_port_ips
 
 # install selinux policies
-Package { allow_virtual => true }
-class { selinux:
-  mode => '%(selinux_mode)s'
-}
-selinux::module { 'selinux-bcf':
-  ensure => 'present',
-  source => 'puppet:///modules/selinux/centos.te',
+$selinux_enabled = generate('/bin/sh', '-c', "sestatus | grep 'enabled' | tr -d '\n'")
+if $selinux_enabled {
+    Package { allow_virtual => true }
+    class { selinux:
+      mode => '%(selinux_mode)s',
+    }
+    selinux::module { 'selinux-bcf':
+      ensure => 'present',
+      source => 'puppet:///modules/selinux/centos.te',
+    }
 }
 
 # install and enable ntp
