@@ -313,7 +313,7 @@ class Node(object):
 
     def get_bsnstacklib_version_upper(self):
         if self.openstack_release == const.OS_RELEASE_KILO:
-            if self.tenant_api_version == const.TENANT_NAME_API_VERSION::
+            if self.tenant_api_version == const.TENANT_NAME_API_VERSION:
                 return const.OS_RELEASE_TO_BSN_LIB_UPPER.get(
                     const.OS_RELEASE_KILO_V2)
             if self.tenant_api_version == const.TENANT_UUID_API_VERSION:
