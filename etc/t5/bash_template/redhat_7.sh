@@ -148,7 +148,7 @@ sudo puppet module install --force puppetlabs-stdlib
 # install bsnstacklib
 if [[ $install_bsnstacklib == true ]]; then
     pip uninstall -y bsnstacklib
-    sudo pip install --upgrade "bsnstacklib<%(bsnstacklib_version)s"
+    sudo pip install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
 fi
 sudo systemctl stop neutron-bsn-agent
 sudo systemctl disable neutron-bsn-agent
