@@ -21,12 +21,27 @@ MODE_DICT = {'pfabric': T5,
 
 OS_RELEASE_JUNO = 'juno'
 OS_RELEASE_KILO = 'kilo'
+OS_RELEASE_KILO_V2 = 'kilo_v2'
 OS_RELEASE_LIBERTY = 'liberty'
 
 # openstack release to bsnstacklib version
-OS_RELEASE_TO_BSN_LIB = {OS_RELEASE_JUNO: '2015.1',
-                         OS_RELEASE_KILO: '2015.2',
-                         OS_RELEASE_LIBERTY: '2016.1'}
+OS_RELEASE_TO_BSN_LIB_LOWER = {OS_RELEASE_JUNO: '2015.0',
+                               OS_RELEASE_KILO_V2: '2015.1',
+                               OS_RELEASE_KILO: '2015.2',
+                               OS_RELEASE_LIBERTY: '2016.0'}
+OS_RELEASE_TO_BSN_LIB_UPPER = {OS_RELEASE_JUNO: '2015.1',
+                               OS_RELEASE_KILO_V2: '2015.2',
+                               OS_RELEASE_KILO: '2015.3',
+                               OS_RELEASE_LIBERTY: '2016.1'}
+
+# Since kilo and BCF 3.5, we use tenant name
+# instead of tenant uuid to configure tenants,
+# The default version is 2. However, in case
+# of upgrade, where tenant configuraion was
+# using uuid, user needs to use version 1
+# to make upgrade happen.
+TENANT_UUID_API_VERSION = 1
+TENANT_NAME_API_VERSION = 2
 
 IVS_TAR_PKG_DIRS = ["pkg/centos7-x86_64", "pkg/trusty-amd64"]
 

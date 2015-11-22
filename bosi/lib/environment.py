@@ -24,6 +24,11 @@ class Environment(object):
         # neutron_id for ml2 plugin restproxy
         self.neutron_id = config.get('neutron_id')
 
+        # tenant api version
+        self.tenant_api_version = config.get('tenant_api_version')
+        if not self.tenant_api_version:
+            self.tenant_api_version = const.TENANT_NAME_API_VERSION
+
         # installer pxe interface ip
         self.installer_pxe_interface_ip = config.get(
             'installer_pxe_interface_ip')
@@ -129,8 +134,10 @@ class Environment(object):
 
         # openstack bsnstacklib version and horizon patch
         self.openstack_release = str(config['openstack_release']).lower()
-        self.bsnstacklib_version = (
-            const.OS_RELEASE_TO_BSN_LIB[self.openstack_release])
+        self.bsnstacklib_version_lower = (
+            const.OS_RELEASE_TO_BSN_LIB_LOWER[self.openstack_release])
+        self.bsnstacklib_version_upper = (
+            const.OS_RELEASE_TO_BSN_LIB_UPPER[self.openstack_release])
         self.deploy_horizon_patch = const.DEPLOY_HORIZON_PATCH
         self.horizon_patch_url = (
             const.HORIZON_PATCH_URL[self.openstack_release])

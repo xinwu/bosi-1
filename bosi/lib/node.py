@@ -66,8 +66,10 @@ class Node(object):
         self.installer_pxe_interface_ip = env.installer_pxe_interface_ip
 
         self.neutron_id = env.neutron_id
+        self.tenant_api_version = env.tenant_api_version
         self.openstack_release = env.openstack_release
-        self.bsnstacklib_version = env.bsnstacklib_version
+        self.bsnstacklib_version_lower = env.bsnstacklib_version_lower
+        self.bsnstacklib_version_upper = env.bsnstacklib_version_upper
         self.bcf_controllers = env.bcf_controllers
         self.bcf_controller_ips = env.bcf_controller_ips
         self.bcf_controller_user = env.bcf_controller_user
@@ -299,6 +301,26 @@ class Node(object):
             return "neutron-%s" % str(self.fuel_cluster_id)
         return self.neutron_id
 
+    def get_bsnstacklib_version_lower(self):
+        if self.openstack_release == const.OS_RELEASE_KILO:
+            if self.tenant_api_version == const.TENANT_NAME_API_VERSION:
+                return const.OS_RELEASE_TO_BSN_LIB_LOWER.get(
+                    const.OS_RELEASE_KILO_V2)
+            if self.tenant_api_version == const.TENANT_UUID_API_VERSION:
+                return const.OS_RELEASE_TO_BSN_LIB_LOWER.get(
+                    const.OS_RELEASE_KILO)
+        return self.bsnstacklib_version_lower
+
+    def get_bsnstacklib_version_upper(self):
+        if self.openstack_release == const.OS_RELEASE_KILO:
+            if self.tenant_api_version == const.TENANT_NAME_API_VERSION:
+                return const.OS_RELEASE_TO_BSN_LIB_UPPER.get(
+                    const.OS_RELEASE_KILO_V2)
+            if self.tenant_api_version == const.TENANT_UUID_API_VERSION:
+                return const.OS_RELEASE_TO_BSN_LIB_UPPER.get(
+                    const.OS_RELEASE_KILO)
+        return self.bsnstacklib_version_upper
+
     def __str__(self):
         return (
             r'''
@@ -351,8 +373,10 @@ class Node(object):
             rhosp_register_passwd: %(rhosp_register_passwd)s,
             installer_pxe_interface_ip: %(installer_pxe_interface_ip)s,
             neutron_id: %(neutron_id)s,
+            tenant_api_version: %(tenant_api_version)s,
             openstack_release: %(openstack_release)s,
-            bsnstacklib_version: %(bsnstacklib_version)s,
+            bsnstacklib_version_lower: %(bsnstacklib_version_lower)s,
+            bsnstacklib_version_upper: %(bsnstacklib_version_upper)s,
             bcf_controllers: %(bcf_controllers)s,
             bcf_controller_ips: %(bcf_controller_ips)s,
             bcf_controller_user: %(bcf_controller_user)s,
@@ -428,8 +452,10 @@ class Node(object):
             'rhosp_register_passwd': self.rhosp_register_passwd,
             'installer_pxe_interface_ip': self.installer_pxe_interface_ip,
             'neutron_id': self.neutron_id,
+            'tenant_api_version': self.tenant_api_version,
             'openstack_release': self.openstack_release,
-            'bsnstacklib_version': self.bsnstacklib_version,
+            'bsnstacklib_version_lower': self.get_bsnstacklib_version_lower(),
+            'bsnstacklib_version_upper': self.get_bsnstacklib_version_upper(),
             'bcf_controllers': self.bcf_controllers,
             'bcf_controller_ips': self.bcf_controller_ips,
             'bcf_controller_user': self.bcf_controller_user,

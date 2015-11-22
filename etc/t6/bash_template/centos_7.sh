@@ -204,7 +204,7 @@ if [[ $install_bsnstacklib == true ]]; then
     sleep 2
     pip uninstall -y bsnstacklib
     sleep 2
-    pip install --upgrade "bsnstacklib<%(bsnstacklib_version)s"
+    pip install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
 fi
 
 if [[ $is_controller == true ]]; then

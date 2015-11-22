@@ -341,7 +341,8 @@ class Helper(object):
                  'deploy_horizon_patch':
                      str(node.deploy_horizon_patch).lower(),
                  'ivs_version': node.ivs_version,
-                 'bsnstacklib_version': node.bsnstacklib_version,
+                 'bsnstacklib_version_lower': node.get_bsnstacklib_version_lower(),
+                 'bsnstacklib_version_upper': node.get_bsnstacklib_version_upper(),
                  'openstack_release': node.openstack_release,
                  'dst_dir': node.dst_dir,
                  'hostname': node.hostname,
@@ -456,7 +457,8 @@ class Helper(object):
                  'deploy_horizon_patch':
                      str(node.deploy_horizon_patch).lower(),
                  'ivs_version': node.ivs_version,
-                 'bsnstacklib_version': node.bsnstacklib_version,
+                 'bsnstacklib_version_lower': node.get_bsnstacklib_version_lower(),
+                 'bsnstacklib_version_upper': node.get_bsnstacklib_version_upper(),
                  'openstack_release': node.openstack_release,
                  'dst_dir': node.dst_dir,
                  'hostname': node.hostname,
@@ -562,7 +564,8 @@ class Helper(object):
                  'deploy_horizon_patch':
                      str(node.deploy_horizon_patch).lower(),
                  'ivs_version': node.ivs_version,
-                 'bsnstacklib_version': node.bsnstacklib_version,
+                 'bsnstacklib_version_lower': node.get_bsnstacklib_version_lower(),
+                 'bsnstacklib_version_upper': node.get_bsnstacklib_version_upper(),
                  'openstack_release': node.openstack_release,
                  'dst_dir': node.dst_dir,
                  'hostname': node.hostname,
