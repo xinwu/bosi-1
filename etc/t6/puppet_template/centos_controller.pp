@@ -372,7 +372,7 @@ ini_setting { "ml2 restproxy keystone_auth_url":
   section           => 'restproxy',
   key_val_separator => '=',
   setting           => 'keystone_auth_url',
-  value             => %(keystone_auth_url)s,
+  value             => '%(keystone_auth_url)s',
   notify            => Service['neutron-server'],
 }
 ini_setting { "ml2 restproxy keystone_auth_user":
