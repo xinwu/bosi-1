@@ -144,6 +144,10 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
     if env.openstack_release == const.OS_RELEASE_JUNO:
         Helper.copy_dhcp_scheduler_from_controllers(controller_nodes)
 
+    # prepare keystone client from /etc/neutron/api-paste.ini
+    if env.openstack_release != const.OS_RELEASE_JUNO:
+        Helper.prepare_keystone_client(controller_nodes)
+
     # Generate scripts for each node
     for hostname, node in node_dic.iteritems():
         if node.skip:

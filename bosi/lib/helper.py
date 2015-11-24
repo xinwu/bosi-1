@@ -409,6 +409,10 @@ class Helper(object):
                  'uname': node.uname,
                  'bond': node.bond,
                  'mtu': node.uplink_mtu,
+                 'keystone_auth_url': node.keystone_auth_url,
+                 'keystone_auth_user': node.keystone_auth_user,
+                 'keystone_password': node.keystone_password,
+                 'keystone_auth_tenant': node.keystone_auth_tenant,
                  'rabbit_hosts': node.rabbit_hosts})
         puppet_script_path = (
             r'''%(setup_node_dir)s/%(generated_script_dir)s/'''
@@ -520,6 +524,10 @@ class Helper(object):
                  'neutron_id': node.get_neutron_id(),
                  'uname': node.uname,
                  'mtu': node.uplink_mtu,
+                 'keystone_auth_url': node.keystone_auth_url,
+                 'keystone_auth_user': node.keystone_auth_user,
+                 'keystone_password': node.keystone_password,
+                 'keystone_auth_tenant': node.keystone_auth_tenant,
                  'bond': node.bond})
         puppet_script_path = (
             r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp'''
@@ -630,6 +638,10 @@ class Helper(object):
                  'br_mappings': node.get_bridge_mappings(),
                  'uname': node.uname,
                  'mtu': node.uplink_mtu,
+                 'keystone_auth_url': node.keystone_auth_url,
+                 'keystone_auth_user': node.keystone_auth_user,
+                 'keystone_password': node.keystone_password,
+                 'keystone_auth_tenant': node.keystone_auth_tenant,
                  'bond': node.bond})
         puppet_script_path = (
             r'''%(setup_node_dir)s/%(generated_script_dir)s/%(hostname)s.pp'''
@@ -1438,6 +1450,40 @@ class Helper(object):
             '''/%(dhcp_py)s''' %
             {'setup_node_dir': controller_node.setup_node_dir,
              'dhcp_py': dhcp_py})
+
+    @staticmethod
+    def prepare_keystone_client(controller_nodes):
+        keystone_auth_url = None
+        keystone_auth_user = None
+        keystone_password = None
+        keystone_auth_tenant = None
+        if len(controller_nodes) and controller_nodes[0]:
+            controller_node = controller_nodes[0]
+            safe_print(
+                "Copy api-paste.ini from openstack controller "
+                "%(controller_node)s\n" %
+                {'controller_node': controller_node.fqdn})
+            Helper.copy_file_from_remote(
+                controller_node, '/etc/neutron', 'api-paste.ini',
+                controller_node.setup_node_dir)
+            api_paste_conf = open(
+                "%s/api-paste.conf" % controller_node.setup_node_dir, 'r')
+            for line in api_paste_conf:
+                if line.startswith("identity_uri"):
+                    keystone_auth_url = line.split("=")[1].strip()
+                if line.startswith("admin_user"):
+                    keystone_auth_user = line.split("=")[1].strip()
+                if line.startswith("admin_password"):
+                    keystone_password = line.split("=")[1].strip()
+                if line.startswith("admin_tenant_name"):
+                    keystone_auth_tenant = line.split("=")[1].strip()
+       if not keystone_auth_url:
+           return
+       for controller_node in controller_nodes:
+           controller_node.set_keystone_auth_url(keystone_auth_url)
+           controller_node.set_keystone_auth_user(keystone_auth_user)
+           controller_node.set_keystone_password(keystone_password)
+           controller_node.set_keystone_auth_tenant(keystone_auth_tenant)
 
     @staticmethod
     def copy_neutron_config_from_controllers(controller_nodes):
