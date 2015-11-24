@@ -146,6 +146,14 @@ ini_setting { "neutron.conf dhcp_agents_per_network":
   setting           => 'dhcp_agents_per_network',
   value             => '1',
 }
+ini_setting { "neutron.conf network_scheduler_driver":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'network_scheduler_driver',
+  value             => 'neutron.scheduler.dhcp_agent_scheduler.WeightScheduler',
+}
 ini_setting { "neutron.conf notification driver":
   ensure            => present,
   path              => '/etc/neutron/neutron.conf',
