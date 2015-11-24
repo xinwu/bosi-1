@@ -1529,28 +1529,28 @@ class Helper(object):
             Helper.copy_file_to_remote(
                 node,
                 r'''%(dir)s/neutron.conf''' % {'dir': node.setup_node_dir},
-                '/etc/neutron', 'neutron.conf')
+                '/etc/neutron', 'neutron.conf', mode=644)
         if node.deploy_dhcp_agent:
             safe_print("Copy dhcp_agent.ini to %(hostname)s\n" %
                        {'hostname': node.fqdn})
             Helper.copy_file_to_remote(
                 node,
                 r'''%(dir)s/dhcp_agent.ini''' % {'dir': node.setup_node_dir},
-                '/etc/neutron', 'dhcp_agent.ini')
+                '/etc/neutron', 'dhcp_agent.ini', mode=644)
             safe_print("Copy metadata_agent.ini to %(hostname)s\n" %
                        {'hostname': node.fqdn})
             Helper.copy_file_to_remote(
                 node,
                 r'''%(dir)s/metadata_agent.ini'''
                 % {'dir': node.setup_node_dir},
-                '/etc/neutron', 'metadata_agent.ini')
+                '/etc/neutron', 'metadata_agent.ini', mode=644)
         if node.deploy_l3_agent:
             safe_print("Copy l3_agent.ini to %(hostname)s\n" %
                        {'hostname': node.fqdn})
             Helper.copy_file_to_remote(
                 node, r'''%(dir)s/l3_agent.ini'''
                 % {'dir': node.setup_node_dir},
-                '/etc/neutron', 'l3_agent.ini')
+                '/etc/neutron', 'l3_agent.ini', mode=644)
 
         # copy ivs to node
         if (node.deploy_mode == const.T6 and
