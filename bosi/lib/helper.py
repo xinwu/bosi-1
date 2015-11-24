@@ -1469,8 +1469,8 @@ class Helper(object):
             api_paste_conf = open(
                 "%s/api-paste.ini" % controller_node.setup_node_dir, 'r')
             for line in api_paste_conf:
-                if line.startswith("identity_uri"):
-                    keystone_auth_url = line.split("=")[1].strip()
+                if line.startswith("auth_uri"):
+                    keystone_auth_url = line.split("=")[1].strip().split("/v2.0")[0]
                 if line.startswith("admin_user"):
                     keystone_auth_user = line.split("=")[1].strip()
                 if line.startswith("admin_password"):
