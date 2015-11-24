@@ -51,6 +51,12 @@ class Node(object):
         self.skip_ivs_version_check = env.skip_ivs_version_check
         self.rabbit_hosts = None
 
+        # keystone client
+        self.keystone_auth_url = None
+        self.keystone_auth_user = None
+        self.keystone_password = None
+        self.keystone_auth_tenant = None
+
         # setup result
         self.time_diff = 0
         self.last_log = None
@@ -187,6 +193,18 @@ class Node(object):
 
     def set_rabbit_hosts(self, rabbit_hosts):
         self.rabbit_hosts = rabbit_hosts
+
+    def set_keystone_auth_url(self, keystone_auth_url):
+        self.keystone_auth_url = keystone_auth_url
+
+    def set_keystone_auth_user(self, keystone_auth_user):
+        self.keystone_auth_user = keystone_auth_user
+
+    def set_keystone_password(self, keystone_password):
+        self.keystone_password = keystone_password
+
+    def set_keystone_auth_tenant(self, keystone_auth_tenant):
+        self.keystone_auth_tenant = keystone_auth_tenant
 
     def get_network_vlan_ranges(self):
         return (r'''%(physnet)s:%(lower_vlan)s:%(upper_vlan)s''' %
@@ -361,6 +379,10 @@ class Node(object):
             env_tag: %(env_tag)s,
             cleanup: %(cleanup)s,
             rabbit_hosts: %(rabbit_hosts)s,
+            keystone_auth_url: %(keystone_auth_url)s,
+            keystone_auth_user: %(keystone_auth_user)s,
+            keystone_password: %(keystone_password)s,
+            keystone_auth_tenant: %(keystone_auth_tenant)s,
             time_diff: %(time_diff)s,
             last_log: %(last_log)s,
             rhosp_automate_register: %(rhosp_automate_register)s,
@@ -440,6 +462,10 @@ class Node(object):
             'env_tag': self.env_tag,
             'cleanup': self.cleanup,
             'rabbit_hosts': self.rabbit_hosts,
+            'keystone_auth_url': self.keystone_auth_url,
+            'keystone_auth_user': self.keystone_auth_user,
+            'keystone_password': self.keystone_password,
+            'keystone_auth_tenant': self.keystone_auth_tenant,
             'time_diff': self.time_diff,
             'last_log': self.last_log,
             'rhosp_automate_register': self.rhosp_automate_register,
