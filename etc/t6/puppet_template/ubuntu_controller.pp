@@ -331,7 +331,7 @@ ini_setting { "ml2 restproxy neutron_id":
   section           => 'restproxy',
   key_val_separator => '=',
   setting           => 'neutron_id',
-  value             => %(neutron_id)s,
+  value             => '%(neutron_id)s',
   notify            => Service['neutron-server'],
 }
 ini_setting { "ml2 restproxy keystone_auth_url":
@@ -340,7 +340,7 @@ ini_setting { "ml2 restproxy keystone_auth_url":
   section           => 'restproxy',
   key_val_separator => '=',
   setting           => 'keystone_auth_url',
-  value             => %(keystone_auth_url)s,
+  value             => '%(keystone_auth_url)s',
   notify            => Service['neutron-server'],
 }
 ini_setting { "ml2 restproxy keystone_auth_user":
@@ -349,7 +349,7 @@ ini_setting { "ml2 restproxy keystone_auth_user":
   section           => 'restproxy',
   key_val_separator => '=',
   setting           => 'keystone_auth_user',
-  value             => %(keystone_auth_user)s,
+  value             => '%(keystone_auth_user)s',
   notify            => Service['neutron-server'],
 }
 ini_setting { "ml2 restproxy keystone_password":
@@ -358,7 +358,7 @@ ini_setting { "ml2 restproxy keystone_password":
   section           => 'restproxy',
   key_val_separator => '=',
   setting           => 'keystone_password',
-  value             => %(keystone_password)s,
+  value             => '%(keystone_password)s',
   notify            => Service['neutron-server'],
 }
 ini_setting { "ml2 restproxy keystone_auth_tenant":
@@ -367,7 +367,7 @@ ini_setting { "ml2 restproxy keystone_auth_tenant":
   section           => 'restproxy',
   key_val_separator => '=',
   setting           => 'keystone_auth_tenant',
-  value             => %(keystone_auth_tenant)s,
+  value             => '%(keystone_auth_tenant)s',
   notify            => Service['neutron-server'],
 }
 

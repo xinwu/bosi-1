@@ -1467,7 +1467,7 @@ class Helper(object):
                 controller_node, '/etc/neutron', 'api-paste.ini',
                 controller_node.setup_node_dir)
             api_paste_conf = open(
-                "%s/api-paste.conf" % controller_node.setup_node_dir, 'r')
+                "%s/api-paste.ini" % controller_node.setup_node_dir, 'r')
             for line in api_paste_conf:
                 if line.startswith("identity_uri"):
                     keystone_auth_url = line.split("=")[1].strip()
@@ -1477,13 +1477,13 @@ class Helper(object):
                     keystone_password = line.split("=")[1].strip()
                 if line.startswith("admin_tenant_name"):
                     keystone_auth_tenant = line.split("=")[1].strip()
-       if not keystone_auth_url:
-           return
-       for controller_node in controller_nodes:
-           controller_node.set_keystone_auth_url(keystone_auth_url)
-           controller_node.set_keystone_auth_user(keystone_auth_user)
-           controller_node.set_keystone_password(keystone_password)
-           controller_node.set_keystone_auth_tenant(keystone_auth_tenant)
+        if not keystone_auth_url:
+            return
+        for controller_node in controller_nodes:
+            controller_node.set_keystone_auth_url(keystone_auth_url)
+            controller_node.set_keystone_auth_user(keystone_auth_user)
+            controller_node.set_keystone_password(keystone_password)
+            controller_node.set_keystone_auth_tenant(keystone_auth_tenant)
 
     @staticmethod
     def copy_neutron_config_from_controllers(controller_nodes):
