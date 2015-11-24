@@ -115,6 +115,9 @@ class RestLib(object):
     @staticmethod
     def program_segment_and_membership_rule(server, cookie, rule, tenant,
                                             port=const.BCF_CONTROLLER_PORT):
+        if rule.segment not in const.IVS_INTERNAL_PORT_DIC:
+            return
+
         existing_segments = RestLib.get_os_mgmt_segments(
             server, cookie, tenant, port)
         if rule.segment not in existing_segments:
