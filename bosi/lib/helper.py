@@ -963,6 +963,17 @@ class Helper(object):
                 node_config['uplink_interfaces'] = tran['interfaces']
                 break
 
+        # to support sr-iov, we don't use bond
+        if not node_config.get('bond'):
+            for tran in trans:
+                if (tran['action'] == 'add-port'
+                    and tran['bridge'] == node_config['br_bond']):
+                    node_config['bond'] = tran['name'] 
+                    node_config['uplink_interfaces'] = []
+                    node_config['uplink_interfaces'].append(tran['name'])
+                    break
+            
+
         # Fuel 7 doesn't have vlan info in endpoints,
         # Build bridge vlan from tran
         bridge_vlan_map = {}
