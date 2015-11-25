@@ -236,6 +236,7 @@ def main():
     if code != 0:
         safe_print("Network is not working properly, quit deployment\n")
         exit(1)
+    subprocess.call("rm -f index.html*", shell=True)
 
     # Parse configuration
     parser = argparse.ArgumentParser()
