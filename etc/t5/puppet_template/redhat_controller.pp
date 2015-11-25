@@ -283,7 +283,7 @@ ini_setting { "ml2 restproxy keystone_auth_url":
   path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
   section           => 'restproxy',
   key_val_separator => '=',
-  setting           => 'keystone_auth_url',
+  setting           => 'auth_url',
   value             => '%(keystone_auth_url)s',
   notify            => Service['neutron-server'],
 }
@@ -292,7 +292,7 @@ ini_setting { "ml2 restproxy keystone_auth_user":
   path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
   section           => 'restproxy',
   key_val_separator => '=',
-  setting           => 'keystone_auth_user',
+  setting           => 'auth_user',
   value             => '%(keystone_auth_user)s',
   notify            => Service['neutron-server'],
 }
@@ -301,7 +301,7 @@ ini_setting { "ml2 restproxy keystone_password":
   path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
   section           => 'restproxy',
   key_val_separator => '=',
-  setting           => 'keystone_password',
+  setting           => 'auth_password',
   value             => '%(keystone_password)s',
   notify            => Service['neutron-server'],
 }
@@ -310,7 +310,7 @@ ini_setting { "ml2 restproxy keystone_auth_tenant":
   path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
   section           => 'restproxy',
   key_val_separator => '=',
-  setting           => 'keystone_auth_tenant',
+  setting           => 'auth_tenant',
   value             => '%(keystone_auth_tenant)s',
   notify            => Service['neutron-server'],
 }
