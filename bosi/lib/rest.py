@@ -129,8 +129,8 @@ class RestLib(object):
                 log_file.write(msg)
             return
 
-        segment_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
-                       '''segment[name="%(segment)s"]''' %
+        segment_url = (r'''applications/bcf/tenant[name=%(tenant)s]/'''
+                       '''segment[name=%(segment)s]''' %
                        {'tenant': tenant, 'segment': rule.segment})
         segment_data = {"name": rule.segment}
         safe_print("Configuring BCF Segment: Tenant %s, Segment %s\n" %
@@ -145,10 +145,10 @@ class RestLib(object):
         else:
             vlan = -1
 
-        intf_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
-                         '''segment[name="%(segment)s"]/'''
-                         '''switch-port-membership-rule[interface="'''
-                         '''%(interface)s"][switch="%(switch)s"]'''
+        intf_rule_url = (r'''applications/bcf/tenant[name=%(tenant)s]/'''
+                         '''segment[name=%(segment)s]/'''
+                         '''switch-port-membership-rule[interface='''
+                         '''%(interface)s][switch=%(switch)s]'''
                          '''[vlan=%(vlan)d]''' %
                          {'tenant': tenant,
                           'segment': rule.segment,
@@ -164,9 +164,9 @@ class RestLib(object):
         if ret[0] != 204:
             raise Exception(ret)
 
-        pg_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
-                       '''segment[name="%(segment)s"]/'''
-                       '''port-group-membership-rule[port-group="%(pg)s"]'''
+        pg_rule_url = (r'''applications/bcf/tenant[name=%(tenant)s]/'''
+                       '''segment[name=%(segment)s]/'''
+                       '''port-group-membership-rule[port-group=%(pg)s]'''
                        '''[vlan=%(vlan)d]''' %
                        {'tenant': tenant,
                         'segment': rule.segment,
@@ -181,11 +181,11 @@ class RestLib(object):
         if ret[0] != 204:
             raise Exception(ret)
 
-        specific_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
-                             '''segment[name="%(segment)s"]/'''
+        specific_rule_url = (r'''applications/bcf/tenant[name=%(tenant)s]/'''
+                             '''segment[name=%(segment)s]/'''
                              '''switch-port-membership-rule'''
-                             '''[interface="%(interface)s"]'''
-                             '''[switch="%(switch)s"][vlan=%(vlan)d]''' %
+                             '''[interface=%(interface)s]'''
+                             '''[switch=%(switch)s][vlan=%(vlan)d]''' %
                              {'tenant': tenant,
                               'segment': rule.segment,
                               'interface': rule.internal_port,
