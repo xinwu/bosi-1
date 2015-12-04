@@ -1,7 +1,7 @@
 # configuration won't be overrided by any openstack installer
 
 # mandatory, openstack release, supporting juno and kilo
-openstack_release: juno
+openstack_release: kilo
 
 # mandatory, skip all nodes if true
 default_skip: false
