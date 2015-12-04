@@ -11,6 +11,7 @@ DEFAULT_USER = 'root'
 ROLE_NEUTRON_SERVER = 'controller'
 ROLE_COMPUTE = 'compute'
 ROLE_CEPH = 'ceph-osd'
+ROLE_MONGO = 'mongo'
 
 # deployment t6/t5
 T6 = 't6'

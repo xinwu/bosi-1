@@ -445,10 +445,13 @@ class Helper(object):
             bash_template = bash_template_file.read()
             is_controller = False
             is_ceph = False
+            is_mongo = False
             if node.role == const.ROLE_NEUTRON_SERVER:
                 is_controller = True
             if node.role == const.ROLE_CEPH:
                 is_ceph = True
+            if node.role == const.ROLE_MONGO:
+                is_mongo = True
             bash = (
                 bash_template %
                 {'install_ivs': str(node.install_ivs).lower(),
@@ -457,7 +460,8 @@ class Helper(object):
                  'deploy_dhcp_agent': str(node.deploy_dhcp_agent).lower(),
                  'deploy_l3_agent': str(node.deploy_l3_agent).lower(),
                  'is_controller': str(is_controller).lower(),
-                 'is_ceph':str(is_ceph).lower(),
+                 'is_ceph' : str(is_ceph).lower(),
+                 'is_mongo': str(is_mongo).lower(),
                  'deploy_horizon_patch':
                      str(node.deploy_horizon_patch).lower(),
                  'ivs_version': node.ivs_version,
@@ -865,7 +869,8 @@ class Helper(object):
         node_config['role'] = role
         if ((role != const.ROLE_NEUTRON_SERVER) and
                 (role != const.ROLE_COMPUTE) and
-                (role != const.ROLE_CEPH)):
+                (role != const.ROLE_CEPH) and
+                (role != const.ROLE_MONGO)):
             node_config['skip'] = True
             node_config['error'] = "node role is %s" % (role)
 
@@ -1084,7 +1089,8 @@ class Helper(object):
 
                 if not online or (const.ROLE_NEUTRON_SERVER not in role and
                                   const.ROLE_COMPUTE not in role and
-                                  const.ROLE_CEPH not in role):
+                                  const.ROLE_CEPH not in role and
+                                  const.ROLE_MONGO not in role):
                     continue
 
                 if const.ROLE_NEUTRON_SERVER in role:
@@ -1093,6 +1099,8 @@ class Helper(object):
                     role = const.ROLE_COMPUTE
                 elif const.ROLE_CEPH in role:
                     role = const.ROLE_CEPH
+                elif const.ROLE_MONGO in role:
+                    role = const.ROLE_MONGO
                 else:
                     continue
 
@@ -1631,7 +1639,9 @@ class Helper(object):
                       'ivs_debug_pkg': node.ivs_debug_pkg}),
                     node.dst_dir, node.ivs_debug_pkg)
 
-        if (node.role == const.ROLE_CEPH or node.deploy_mode == const.T5):
+        if (node.role == const.ROLE_CEPH or
+                node.role == const.ROLE_MONGO or
+                node.deploy_mode == const.T5):
             # copy send_lldp to t5 compute nodes
             safe_print("Copy send_lldp to %(hostname)s\n" %
                        {'hostname': node.fqdn})
