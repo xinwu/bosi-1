@@ -86,27 +86,9 @@ file_line { "remove touch /var/lock/subsys/local":
 }->
 uplink_mtu { $uplinks:
 }->
-file_line { "remove clear default gw":
-    path    => '/etc/rc.d/rc.local',
-    ensure  => absent,
-    line    => "sudo ip route del default",
-}->
-file_line { "remove ip route add default":
-    path    => '/etc/rc.d/rc.local',
-    ensure  => absent,
-    line    => "sudo ip route add default via %(default_gw)s",
-}->
 file_line { "touch /var/lock/subsys/local":
     path    => '/etc/rc.d/rc.local',
     line    => "touch /var/lock/subsys/local",
-}->
-file_line { "clear default gw":
-    path    => '/etc/rc.d/rc.local',
-    line    => "sudo ip route del default",
-}->
-file_line { "add default gw":
-    path    => '/etc/rc.d/rc.local',
-    line    => "sudo ip route add default via %(default_gw)s",
 }
 
 # make sure known_hosts is cleaned up
@@ -230,6 +212,15 @@ ini_setting { "neutron.conf notification driver":
   key_val_separator => '=',
   setting           => 'notification_driver',
   value             => 'messaging',
+  notify            => Service['neutron-server'],
+}
+ini_setting { "neutron.conf allow_automatic_l3agent_failover":
+  ensure            => present,
+  path              => '/etc/neutron/neutron.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'allow_automatic_l3agent_failover',
+  value             => 'True',
   notify            => Service['neutron-server'],
 }
 

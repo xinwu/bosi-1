@@ -28,34 +28,16 @@ file { "/etc/rc.d/rc.local":
     ensure  => file,
     mode    => 0777,
 }->
-uplink_mtu { $uplinks:
-}->
 file_line { "remove touch /var/lock/subsys/local":
     path    => '/etc/rc.d/rc.local',
     ensure  => absent,
     line    => "touch /var/lock/subsys/local",
 }->
-file_line { "remove clear default gw":
-    path    => '/etc/rc.d/rc.local',
-    ensure  => absent,
-    line    => "sudo ip route del default",
-}->
-file_line { "remove ip route add default":
-    path    => '/etc/rc.d/rc.local',
-    ensure  => absent,
-    line    => "sudo ip route add default via %(default_gw)s",
+uplink_mtu { $uplinks:
 }->
 file_line { "touch /var/lock/subsys/local":
     path    => '/etc/rc.d/rc.local',
     line    => "touch /var/lock/subsys/local",
-}->
-file_line { "clear default gw":
-    path    => '/etc/rc.d/rc.local',
-    line    => "sudo ip route del default",
-}->
-file_line { "add default gw":
-    path    => '/etc/rc.d/rc.local',
-    line    => "sudo ip route add default via %(default_gw)s",
 }
 
 # install and enable ntp
