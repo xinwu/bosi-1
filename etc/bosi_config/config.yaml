@@ -36,7 +36,6 @@ bcf_controller_passwd: adminadmin
 # mandatory for fuel deployment, the tenant name for fuel networks
 bcf_openstack_management_tenant: os-mgmt
 
-
 # mandatory if the openstack installer takes over pxe boot (fuel, rhosp)
 # It will be the default gw for all nodes if external gw is not specified.
 installer_pxe_interface_ip: 192.168.1.1
