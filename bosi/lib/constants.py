@@ -123,3 +123,6 @@ ANY = 'any'
 # T5 for Centos requires extra params when using packstack
 T5_CENTOS_BOND_BRIDGE = 'br-bond0'
 T5_CENTOS_BOND_NAME = 'bond0'
+
+# big db error message
+ELEMENT_EXISTS = "List element already exists"
