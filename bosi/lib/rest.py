@@ -129,74 +129,84 @@ class RestLib(object):
                 log_file.write(msg)
             return
 
-        segment_url = (r'''applications/bcf/tenant[name=%(tenant)s]/'''
-                       '''segment[name=%(segment)s]''' %
-                       {'tenant': tenant, 'segment': rule.segment})
+        segment_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/segment''' %
+                       {'tenant': tenant})
         segment_data = {"name": rule.segment}
         safe_print("Configuring BCF Segment: Tenant %s, Segment %s\n" %
                    (tenant, rule.segment))
-        ret = RestLib.post(cookie, segment_url, server, port,
-                           json.dumps(segment_data))
+        try:
+            ret = RestLib.post(cookie, segment_url, server, port,
+                               json.dumps(segment_data))
+        except Exception:
+            ret = RestLib.patch(cookie, segment_url, server, port,
+                                json.dumps(segment_data))
         if ret[0] != 204:
-            raise Exception(ret)
+            if (ret[0] != 409 or
+                const.ELEMENT_EXISTS not in ret[2]):
+                raise Exception(ret)
 
         if rule.br_vlan:
             vlan = int(rule.br_vlan)
         else:
             vlan = -1
 
-        intf_rule_url = (r'''applications/bcf/tenant[name=%(tenant)s]/'''
-                         '''segment[name=%(segment)s]/'''
-                         '''switch-port-membership-rule[interface='''
-                         '''%(interface)s][switch=%(switch)s]'''
-                         '''[vlan=%(vlan)d]''' %
+        intf_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
+                         '''segment[name="%(segment)s"]/'''
+                         '''switch-port-membership-rule''' %
                          {'tenant': tenant,
-                          'segment': rule.segment,
-                          'interface': const.ANY,
-                          'switch': const.ANY,
-                          'vlan': vlan})
+                          'segment': rule.segment})
         rule_data = {"interface": const.ANY, "switch": const.ANY, "vlan": vlan}
         safe_print("Configuring BCF Segment rule: Tenant %s, Segment "
                    "%s Rule: member switch any interface any vlan %d\n"
                    % (tenant, rule.segment, vlan))
-        ret = RestLib.post(cookie, intf_rule_url, server, port,
-                           json.dumps(rule_data))
+        try:
+            ret = RestLib.post(cookie, intf_rule_url, server, port,
+                               json.dumps(rule_data))
+        except Exception:
+            ret = RestLib.patch(cookie, intf_rule_url, server, port,
+                                json.dumps(rule_data))
         if ret[0] != 204:
-            raise Exception(ret)
+            if (ret[0] != 409 or
+                const.ELEMENT_EXISTS not in ret[2]):
+                raise Exception(ret)
 
-        pg_rule_url = (r'''applications/bcf/tenant[name=%(tenant)s]/'''
-                       '''segment[name=%(segment)s]/'''
-                       '''port-group-membership-rule[port-group=%(pg)s]'''
-                       '''[vlan=%(vlan)d]''' %
+        pg_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
+                       '''segment[name="%(segment)s"]/'''
+                       '''port-group-membership-rule''' %
                        {'tenant': tenant,
-                        'segment': rule.segment,
-                        'pg': const.ANY,
-                        'vlan': vlan})
+                        'segment': rule.segment})
         rule_data = {"port-group": const.ANY, "vlan": vlan}
         safe_print("Configuring BCF Segment rule: Tenant %s, "
                    "Segment %s Rule: member port-group any vlan %d\n"
                    % (tenant, rule.segment, vlan))
-        ret = RestLib.post(cookie, pg_rule_url, server, port,
-                           json.dumps(rule_data))
+        try:
+            ret = RestLib.post(cookie, pg_rule_url, server, port,
+                               json.dumps(rule_data))
+        except Exception:
+            ret = RestLib.patch(cookie, pg_rule_url, server, port,
+                                json.dumps(rule_data))
         if ret[0] != 204:
-            raise Exception(ret)
+            if (ret[0] != 409 or
+                const.ELEMENT_EXISTS not in ret[2]):
+                raise Exception(ret)
 
-        specific_rule_url = (r'''applications/bcf/tenant[name=%(tenant)s]/'''
-                             '''segment[name=%(segment)s]/'''
-                             '''switch-port-membership-rule'''
-                             '''[interface=%(interface)s]'''
-                             '''[switch=%(switch)s][vlan=%(vlan)d]''' %
+        specific_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
+                             '''segment[name="%(segment)s"]/'''
+                             '''switch-port-membership-rule''' %
                              {'tenant': tenant,
-                              'segment': rule.segment,
-                              'interface': rule.internal_port,
-                              'switch': const.ANY,
-                              'vlan': -1})
+                              'segment': rule.segment})
         rule_data = {"interface": rule.internal_port,
                      "switch": const.ANY, "vlan": -1}
         safe_print("Configuring BCF Segment rule: Tenant %s, Segment %s Rule: "
                    "member switch any interface %s vlan untagged\n"
                    % (tenant, rule.segment, rule.internal_port))
-        ret = RestLib.post(cookie, specific_rule_url, server, port,
-                           json.dumps(rule_data))
+        try:
+            ret = RestLib.post(cookie, specific_rule_url, server, port,
+                               json.dumps(rule_data))
+        except Exception:
+            ret = RestLib.patch(cookie, specific_rule_url, server, port,
+                                json.dumps(rule_data))
         if ret[0] != 204:
-            raise Exception(ret)
+            if (ret[0] != 409 or
+                const.ELEMENT_EXISTS not in ret[2]):
+                raise Exception(ret)
