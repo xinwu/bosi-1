@@ -26,7 +26,7 @@ OS_RELEASE_KILO_V2 = 'kilo_v2'
 OS_RELEASE_LIBERTY = 'liberty'
 
 # openstack release to bsnstacklib version
-OS_RELEASE_TO_BSN_LIB_LOWER = {OS_RELEASE_JUNO: '2015.0',
+OS_RELEASE_TO_BSN_LIB_LOWER = {OS_RELEASE_JUNO: '2014.2',
                                OS_RELEASE_KILO_V2: '2015.1',
                                OS_RELEASE_KILO: '2015.2',
                                OS_RELEASE_LIBERTY: '2016.0'}
