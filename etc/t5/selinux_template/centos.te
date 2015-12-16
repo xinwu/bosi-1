@@ -14,6 +14,7 @@ require {
         class file write;
         class service disable;
         class filesystem getattr;
+        class netlink_socket setopt;
         class netlink_socket { bind create setopt getattr };
 }
 
@@ -23,6 +24,7 @@ allow neutron_t etc_t:dir create;
 allow neutron_t etc_t:file create;
 allow neutron_t etc_t:file write;
 allow neutron_t sysfs_t:filesystem getattr;
+allow neutron_t self:netlink_socket setopt;
 allow neutron_t self:netlink_socket { bind create setopt getattr };
 
 #============= unconfined_t ==============
