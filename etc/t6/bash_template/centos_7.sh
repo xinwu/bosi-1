@@ -195,7 +195,7 @@ yum update -y
 easy_install pip
 puppet module install --force puppetlabs-inifile
 puppet module install --force puppetlabs-stdlib
-puppet module install jfryman-selinux
+puppet module install jfryman-selinux --version 0.2.5 --force
 mkdir -p /etc/puppet/modules/selinux/files
 cp %(dst_dir)s/%(hostname)s.te /etc/puppet/modules/selinux/files/centos.te
 
