@@ -1,6 +1,22 @@
 module bsn-selinux-policy 1.0;
 
 require {
+        type auditd_t;
+        type firewalld_t;
+        type devpts_t;
+        type loadkeys_t;
+        type load_policy_t;
+        type hwclock_t;
+        type initrc_tmp_t;
+        type devpts_t;
+        type lvm_control_t;
+        type systemd_localed_t;
+        type iptables_t;
+        type hostname_t;
+        type ldconfig_t;
+        type initrc_t;
+        type systemd_tmpfiles_t;
+        type var_log_t;
         type unconfined_t;
         type lib_t;
         type neutron_t;
@@ -9,15 +25,14 @@ require {
         type init_t;
         type httpd_t;
         type keystone_log_t;
-        class dir search;
-        class dir create;
-        class dir { remove_name add_name };
-        class file create;
-        class file write;
-        class file { write create unlink };
+        class dbus send_msg;
+        class fifo_file write;
+        class chr_file { write ioctl read open getattr };
+        class lnk_file unlink;
+        class dir { read write search create remove_name add_name relabelfrom relabelto setattr };
+        class file { read write create unlink setattr };
         class service disable;
         class filesystem getattr;
-        class netlink_socket setopt;
         class netlink_socket { bind create setopt getattr };
 }
 
@@ -27,10 +42,47 @@ allow neutron_t etc_t:dir create;
 allow neutron_t etc_t:file create;
 allow neutron_t etc_t:file write;
 allow neutron_t sysfs_t:filesystem getattr;
-allow neutron_t self:netlink_socket setopt;
 allow neutron_t self:netlink_socket { bind create setopt getattr };
 allow neutron_t lib_t:dir { remove_name add_name };
 allow neutron_t lib_t:file { write create unlink };
 
 #============= unconfined_t ==============
 allow unconfined_t init_t:service disable;
+
+#============= systemd_tmpfiles_t ==============
+allow systemd_tmpfiles_t var_log_t:dir { relabelfrom relabelto setattr };
+
+#============= hostname_t ==============
+allow hostname_t lvm_control_t:chr_file { read write };
+
+#============= iptables_t ==============
+allow iptables_t lvm_control_t:chr_file { read write };
+
+#============= ldconfig_t ==============
+allow ldconfig_t devpts_t:chr_file { read write };
+allow ldconfig_t initrc_tmp_t:dir { read write add_name };
+allow ldconfig_t initrc_tmp_t:fifo_file write;
+allow ldconfig_t initrc_tmp_t:file { create setattr };
+
+#============= systemd_localed_t ==============
+allow systemd_localed_t initrc_t:dbus send_msg;
+
+
+#============= auditd_t ==============
+allow auditd_t lvm_control_t:chr_file { read write };
+
+#============= firewalld_t ==============
+allow firewalld_t lib_t:dir { write remove_name add_name };
+allow firewalld_t lib_t:file { write create };
+allow firewalld_t lib_t:lnk_file unlink;
+
+#============= hwclock_t ==============
+allow hwclock_t devpts_t:chr_file { read write ioctl getattr };
+allow hwclock_t initrc_t:file read;
+allow hwclock_t lvm_control_t:chr_file { read write };
+
+#============= load_policy_t ==============
+allow load_policy_t devpts_t:chr_file { read write };
+
+#============= loadkeys_t ==============
+allow loadkeys_t devpts_t:chr_file { read write open };
