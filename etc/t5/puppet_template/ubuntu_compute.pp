@@ -286,6 +286,8 @@ if %(deploy_l3_agent)s {
       setting           => 'enable_metadata_proxy',
       value             => 'False',
     }
+    # don't specify bridge for external networks so
+    # they are treated like a normal VLAN network
     ini_setting { "l3 agent external network bridge":
       ensure            => present,
       path              => '/etc/neutron/l3_agent.ini',

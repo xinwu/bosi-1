@@ -388,21 +388,6 @@ file { '/etc/neutron/plugins/ml2':
   notify  => Service['neutron-server'],
 }
 
-# heat-engine, neutron-server, neutron-dhcp-agent and neutron-metadata-agent
-ini_setting { "heat debug":
-    ensure            => present,
-    path              => '/etc/heat/heat.conf',
-    section           => 'DEFAULT',
-    key_val_separator => '=',
-    setting           => 'debug',
-    value             => 'True',
-    notify            => Service['heat-engine'],
-}
-service { 'heat-engine':
-  ensure  => running,
-  enable  => true,
-}
-
 service { 'neutron-server':
   ensure  => running,
   enable  => true,
