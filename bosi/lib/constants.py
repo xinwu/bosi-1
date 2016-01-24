@@ -29,11 +29,11 @@ OS_RELEASE_LIBERTY = 'liberty'
 OS_RELEASE_TO_BSN_LIB_LOWER = {OS_RELEASE_JUNO: '2014.2',
                                OS_RELEASE_KILO_V2: '2015.1',
                                OS_RELEASE_KILO: '2015.2',
-                               OS_RELEASE_LIBERTY: '2016.1'}
+                               OS_RELEASE_LIBERTY: '2015.3'}
 OS_RELEASE_TO_BSN_LIB_UPPER = {OS_RELEASE_JUNO: '2015.1',
                                OS_RELEASE_KILO_V2: '2015.2',
                                OS_RELEASE_KILO: '2015.3',
-                               OS_RELEASE_LIBERTY: '2016.2'}
+                               OS_RELEASE_LIBERTY: '2015.4'}
 
 # Since kilo and BCF 3.5, we use tenant name
 # instead of tenant uuid to configure tenants,
