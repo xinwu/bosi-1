@@ -47,16 +47,19 @@ TENANT_NAME_API_VERSION = 2
 IVS_TAR_PKG_DIRS = ["pkg/centos7-x86_64", "pkg/trusty-amd64"]
 
 # horizon patch
-DEPLOY_HORIZON_PATCH = True
+DEPLOY_HORIZON_PATCH = False
 HORIZON_PATCH_URL = {
-    OS_RELEASE_JUNO: 'https://github.com/bigswitch/horizon/archive/'
-                     'juno-bcf-3.0-beta1.tar.gz',
-    OS_RELEASE_KILO: 'https://github.com/bigswitch/horizon/archive/'
-                     'stable/kilo2.tar.gz',
+    OS_RELEASE_JUNO:    'https://github.com/bigswitch/horizon/archive/'
+                        'juno-bcf-3.0-beta1.tar.gz',
+    OS_RELEASE_KILO:    'https://github.com/bigswitch/horizon/archive/'
+                        'stable/kilo2.tar.gz',
+    OS_RELEASE_LIBERTY: 'https://github.com/bigswitch/horizon/archive/'
+                        'stable/liberty.tar.gz',
 }
 HORIZON_PATCH_DIR = {
-    OS_RELEASE_JUNO: 'horizon-juno-bcf-3.0-beta1',
-    OS_RELEASE_KILO: 'horizon-stable-kilo2',
+    OS_RELEASE_JUNO:    'horizon-juno-bcf-3.0-beta1',
+    OS_RELEASE_KILO:    'horizon-stable-kilo2',
+    OS_RELEASE_LIBERTY: 'horizon-stable-liberty',
 }
 HORIZON_BASE_DIR = '/usr/share/openstack-dashboard'
 
