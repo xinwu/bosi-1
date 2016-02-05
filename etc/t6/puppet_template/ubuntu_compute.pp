@@ -248,6 +248,15 @@ if %(deploy_dhcp_agent)s {
         value             => 'bsnstacklib.plugins.bigswitch.dhcp_driver.DnsmasqWithMetaData',
         notify            => Service['neutron-dhcp-agent'],
     }
+    ini_setting { "force to use dhcp for metadata":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'force_metadata',
+        value             => 'True',
+        notify            => Service['neutron-dhcp-agent'],
+    }
     ini_setting { "dhcp agent enable isolated metadata":
         ensure            => present,
         path              => '/etc/neutron/dhcp_agent.ini',
