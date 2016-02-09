@@ -179,7 +179,7 @@ ini_setting { "neutron-bsn-agent.service ExecStart":
   section           => 'Service',
   key_val_separator => '=',
   setting           => 'ExecStart',
-  value             => '/usr/bin/neutron-bsn-agent --config-file /usr/share/neutron/neutron-dist.conf --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini --log-file /var/log/neutron/neutron-bsn-agent.log',
+  value             => '/usr/bin/neutron-bsn-agent --config-file /usr/share/neutron/neutron-dist.conf --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/conf.d/common --log-file /var/log/neutron/neutron-bsn-agent.log',
 }
 file { '/etc/systemd/system/multi-user.target.wants/neutron-bsn-agent.service':
    ensure => link,
