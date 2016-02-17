@@ -263,7 +263,6 @@ if %(deploy_dhcp_agent)s {
         key_val_separator => '=',
         setting           => 'force_metadata',
         value             => 'True',
-        notify            => Service['neutron-dhcp-agent'],
     }
     ini_setting { "dhcp agent enable isolated metadata":
         ensure            => present,
