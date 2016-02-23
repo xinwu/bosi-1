@@ -13,7 +13,6 @@ from node import Node
 from rest import RestLib
 from util import safe_print
 
-
 class Helper(object):
 
     @staticmethod
@@ -741,6 +740,21 @@ class Helper(object):
                     node_yaml_config['old_ivs_version'] = output.split()[1]
 
             node = Node(node_yaml_config, env)
+            # copy dpid.py to remote node
+            safe_print("Copy dpid.py to %(hostname)s\n" %
+                       {'hostname': node.fqdn})
+            Helper.copy_file_to_remote(
+                node,
+                r'''%(setup_node_dir)s/%(deploy_mode)s/'''
+                '''%(python_template_dir)s/dpid.py''' %
+                {'setup_node_dir': node.setup_node_dir,
+                 'deploy_mode': node.deploy_mode,
+                 'python_template_dir': const.PYTHON_TEMPLATE_DIR},
+                node.dst_dir, 'dpid.py')
+            # get dpid mac
+            node_yaml_config['mac'] = Helper.run_command_on_remote(node,
+                "python %s/dpid.py" % node.dst_dir)
+
             uname = Helper.get_uname(node, node_yaml_config)
             if uname:
                 node_yaml_config['uname'] = uname
@@ -1056,6 +1070,21 @@ class Helper(object):
         node_config['tagged_intfs'] = tagged_intfs
 
         node = Node(node_config, env)
+        # copy dpid.py to remote node
+        safe_print("Copy dpid.py to %(hostname)s\n" %
+                   {'hostname': node.fqdn})
+        Helper.copy_file_to_remote(
+            node,
+            r'''%(setup_node_dir)s/%(deploy_mode)s/'''
+            '''%(python_template_dir)s/dpid.py''' %
+            {'setup_node_dir': node.setup_node_dir,
+             'deploy_mode': node.deploy_mode,
+             'python_template_dir': const.PYTHON_TEMPLATE_DIR},
+            node.dst_dir, 'dpid.py')
+        # get dpid mac
+        node_config['mac'] = Helper.run_command_on_remote(node,
+            "python %s/dpid.py" % node.dst_dir)
+
         uname = Helper.get_uname(node, node_config)
         if uname:
             node_config['uname'] = uname
@@ -1199,6 +1228,8 @@ class Helper(object):
                     env.bcf_openstack_management_tenant)
             return node_dic
         elif env.rhosp:
+            # TODO: no longer supported after BCF 3.5. We moved to
+            # the integrated solution with RHOSP8
             node_dic, membership_rules = Helper.load_nodes_from_rhosp(
                 node_yaml_config_map, env)
             for br_key, rule in membership_rules.iteritems():
@@ -1776,3 +1807,32 @@ class Helper(object):
         else:
             return (':-( Expected ' + node.ivs_version +
                     ' Actual ' + split_version[1])
+
+    @staticmethod
+    def certify_node(node):
+        if not node.certificate_dir:
+            safe_print("Node %(hostname)s does not have certificate directory"
+                       % {'hostname' : node.fqdn})
+            return
+        if not node.mac:
+            safe_print("Node %s does not have mac" % node.fqdn)
+            continue
+        mac = node.mac.replace(":", "-")
+        macs = [mac.upper(), mac.lower()]
+        for mac in macs:
+            fname = ("%(cert_dir)s/%(mac)s.switch.cluster.pem" %
+                    {'cert_dir': node.certificate_dir,
+                     'mac': mac})
+            if not os.path.isfile(fname):
+                safe_print("Node %(hostname)s does not have %(fname)s" %
+                           {'hostname' : node.fqdn,
+                            'fname' : fname})
+                continue
+            safe_print("Copy %(fname)s to %(hostname)s" %
+                       {'hostname' : node.fqdn,
+                        'fname' : fname})
+            Helper.copy_file_to_remote(node, fname, dst_dir="/root/.ssh/",
+                dst_file="ivs", mode=644)
+            safe_print("Restart ivs on %s" % node.fqdn)
+            Helper.run_command_on_remote(node, "service ivs restart")
+
