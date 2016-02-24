@@ -112,7 +112,7 @@ class Helper(object):
             return msg
 
     @staticmethod
-    def run_command_on_remote_with_passwd(node, command):
+    def run_command_on_remote_with_passwd(node, command, timeout=600):
         """
         Run cmd on remote node.
         """
@@ -123,7 +123,7 @@ class Helper(object):
                      {'user': node.user, 'hostname': node.hostname,
                       'pwd': node.passwd, 'log': node.log,
                       'remote_cmd': command})
-        return Helper.run_command_on_local(local_cmd)
+        return Helper.run_command_on_local(local_cmd, timeout)
 
     @staticmethod
     def run_command_on_remote_with_passwd_without_timeout(
@@ -195,7 +195,7 @@ class Helper(object):
         Helper.run_command_on_local(chmod_cmd)
 
     @staticmethod
-    def run_command_on_remote_with_key(node, command):
+    def run_command_on_remote_with_key(node, command, timeout=600):
         """
         Run cmd on remote node.
         """
@@ -204,7 +204,7 @@ class Helper(object):
                      '''"%(remote_cmd)s | tee %(log)s 2>&1"''' %
                      {'hostname': node.hostname, 'log': node.log,
                       'remote_cmd': command, 'user': node.user})
-        return Helper.run_command_on_local(local_cmd)
+        return Helper.run_command_on_local(local_cmd, timeout)
 
     @staticmethod
     def copy_dir_to_remote_with_key(node, src_dir, dst_dir):
@@ -723,6 +723,10 @@ class Helper(object):
         for hostname, node_yaml_config in node_yaml_config_map.iteritems():
             node_yaml_config = Helper.__load_node_yaml_config__(
                 node_yaml_config, env)
+
+            node = Node(node_yaml_config, env)
+            if not Helper.is_connected(node):
+                continue
 
             node_yaml_config['old_ivs_version'] = None
             if node_yaml_config['deploy_mode'] == const.T6:
@@ -1378,13 +1382,13 @@ class Helper(object):
                 node.hostname, node.user, node.passwd, command)
 
     @staticmethod
-    def run_command_on_remote(node, command):
+    def run_command_on_remote(node, command, timeout=600):
         if node.rhosp:
-            return Helper.run_command_on_remote_with_key(node, command)
+            return Helper.run_command_on_remote_with_key(node, command, timeout)
         elif node.fuel_cluster_id:
-            return Helper.run_command_on_remote_with_key(node, command)
+            return Helper.run_command_on_remote_with_key(node, command, timeout)
         else:
-            return Helper.run_command_on_remote_with_passwd(node, command)
+            return Helper.run_command_on_remote_with_passwd(node, command, timeout)
 
     @staticmethod
     def copy_file_from_remote(node, src_dir, src_file, dst_dir, mode=777):
@@ -1836,7 +1840,6 @@ class Helper(object):
             safe_print("Restart ivs on %s.\n" % node.fqdn)
             Helper.run_command_on_remote(node, "service ivs restart")
 
-
     @staticmethod
     def generate_csr(node):
         if not node.mac:
@@ -1857,3 +1860,41 @@ class Helper(object):
                    'csr_dir': const.CSR_DIR, 'csr_name' : csr_name,
                    'sub': const.CSR_SUB})
         subprocess.call(csr_cmd, shell=True)
+
+    @staticmethod
+    def support_node(node):
+        if not Helper.is_connected(node):
+            safe_print("Cannot access node %s.\n" % node.fqdn)
+            return
+        mkdir_cmd = "mkdir -p ~/%s" % node.fqdn
+        safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
+                  {"cmd": mkdir_cmd, "fqdn": node.fqdn})
+        Helper.run_command_on_remote(node, mkdir_cmd, timeout=3)
+
+        cp_cmd = "cp -r /var/log/neutron/* ~/%s/" % node.fqdn
+        safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
+                  {"cmd": cp_cmd, "fqdn": node.fqdn})
+        Helper.run_command_on_remote(node, cp_cmd, timeout=10)
+
+        compress_cmd = "tar -czf %(fqdn)s.tar.gz %(fqdn)s" % {'fqdn': node.fqdn}
+        safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
+                  {"cmd": compress_cmd, "fqdn": node.fqdn})
+        Helper.run_command_on_remote(node, compress_cmd, timeout=20)
+
+        Helper.copy_file_from_remote(node,
+            src_dir="~",
+            src_file=("%s.tar.gz" % node.fqdn),
+            dst_dir=const.SUPPORT_DIR)
+
+    @staticmethod
+    def is_connected(node):
+        '''check if installer can ssh to a node'''
+        ret = Helper.run_command_on_local_without_timeout("ping %s -c1" % node.hostname)
+        if "0 received" in str(ret):
+            safe_print("Cannot ping node %s\n" % node.fqdn)
+            return False
+        ret = Helper.run_command_on_remote_without_timeout(node, "pwd")
+        if "not" in str(ret):
+            safe_print("Cannot ssh node %s\n" % node.fqdn)
+            return False
+        return True

@@ -21,6 +21,7 @@ node_q = Queue.Queue()
 # copy the node_q to this when original list is created
 certify_node_q = Queue.Queue()
 verify_node_q = Queue.Queue()
+support_node_q = Queue.Queue()
 # keep track of verified nodes
 node_pass = {}
 node_fail = {}
@@ -80,6 +81,13 @@ def certify_node_setup(q):
         q.task_done()
 
 
+def support_node_setup(q):
+    while True:
+        node = q.get()
+        Helper.support_node(node)
+        q.task_done()
+
+
 def verify_node_setup(q):
     while True:
         node = q.get()
@@ -132,7 +140,8 @@ def verify_node_setup(q):
 
 def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
                verify, verify_only, skip_ivs_version_check,
-               certificate_dir, certificate_only, generate_csr):
+               certificate_dir, certificate_only, generate_csr,
+               support):
     # Deploy setup node
     safe_print("Start to prepare setup node\n")
     env = Environment(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
@@ -179,6 +188,9 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
 
     # Generate scripts for each node
     for hostname, node in node_dic.iteritems():
+        if support:
+            support_node_q.put(node)
+
         if node.skip:
             safe_print("skip node %(fqdn)s due to %(error)s\n" %
                        {'fqdn': node.fqdn, 'error': node.error})
@@ -211,6 +223,29 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
     for hostname, node in node_dic.iteritems():
         with open(const.LOG_FILE, "a") as log_file:
             log_file.write(str(node))
+
+    if support:
+        safe_print("Start to collect logs.\n")
+        # copy installer logs to ~/support
+        Helper.run_command_on_local("mkdir -p %s" % const.SUPPORT_DIR)
+        Helper.run_command_on_local("cp -r %(src)s %(dst)s" %
+                                   {"src": const.LOG_FILE,
+                                    "dst": const.SUPPORT_DIR})
+        Helper.run_command_on_local("cp -r %(setup_node_dir)s/%(generated_script_dir)s %(dst)s" %
+                                   {"setup_node_dir": env.setup_node_dir,
+                                    "generated_script_dir": const.GENERATED_SCRIPT_DIR,
+                                    "dst": const.SUPPORT_DIR})
+
+        for i in range(const.MAX_WORKERS):
+            t = threading.Thread(target=support_node_setup,
+                                 args=(support_node_q,))
+            t.daemon = True
+            t.start()
+        support_node_q.join()
+        # compress ~/support
+        Helper.run_command_on_local("cd /tmp; tar -czf support.tar.gz support")
+        safe_print("Finish collecting logs. logs are at ~/support.tar.gz.\n")
+        return
 
     # in case of verify_only or certificate_only, do not deploy
     if (not verify_only) and (not certificate_only):
@@ -319,6 +354,8 @@ def main():
                         help=("By turning on this flag, bosi will generate csr on behalf of "
                               "virtual switches. User needs to certify these csr and use "
                               "--certificate-dir to specify the certificate directory."))
+    parser.add_argument('--support', action='store_true', default=False,
+                        help=("Collect openstack logs."))
 
     args = parser.parse_args()
     if args.fuel_cluster_id and args.rhosp:
@@ -334,7 +371,7 @@ def main():
                args.verify, args.verifyonly,
                args.skip_ivs_version_check,
                args.certificate_dir, args.certificate_only,
-               args.generate_csr)
+               args.generate_csr, args.support)
 
 
 if __name__ == '__main__':

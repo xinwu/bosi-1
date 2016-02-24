@@ -137,3 +137,6 @@ KEY_DIR = "~/key"
 
 # constants for csr
 CSR_SUB = "/C=US/ST=California/L=Santa Clara/O=BSN/CN=www.bigswitch.com"
+
+# support constants
+SUPPORT_DIR = "/tmp/support"
