@@ -1866,20 +1866,29 @@ class Helper(object):
         if not Helper.is_connected(node):
             safe_print("Cannot access node %s.\n" % node.fqdn)
             return
-        mkdir_cmd = "mkdir -p ~/%s" % node.fqdn
-        safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
-                  {"cmd": mkdir_cmd, "fqdn": node.fqdn})
-        Helper.run_command_on_remote(node, mkdir_cmd, timeout=3)
+        cmd = "mkdir -p ~/%s/log" % node.fqdn
+        Helper.run_command_on_remote(node, cmd, timeout=3)
 
-        cp_cmd = "cp -r /var/log/neutron/* ~/%s/" % node.fqdn
-        safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
-                  {"cmd": cp_cmd, "fqdn": node.fqdn})
-        Helper.run_command_on_remote(node, cp_cmd, timeout=10)
+        cmd = "mkdir -p ~/%s/config" % node.fqdn
+        Helper.run_command_on_remote(node, cmd, timeout=3)
 
-        compress_cmd = "tar -czf %(fqdn)s.tar.gz %(fqdn)s" % {'fqdn': node.fqdn}
+        cmd = "pip show bsnstacklib > ~/%s/log/version" % node.fqdn
+        Helper.run_command_on_remote(node, cmd, timeout=3)
+
+        cmd = "cp -r /etc/neutron/* ~/%s/config/" % node.fqdn
         safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
-                  {"cmd": compress_cmd, "fqdn": node.fqdn})
-        Helper.run_command_on_remote(node, compress_cmd, timeout=20)
+                  {"cmd": cmd, "fqdn": node.fqdn})
+        Helper.run_command_on_remote(node, cmd, timeout=10)
+
+        cmd = "cp -r /var/log/neutron/* ~/%s/log/" % node.fqdn
+        safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
+                  {"cmd": cmd, "fqdn": node.fqdn})
+        Helper.run_command_on_remote(node, cmd, timeout=10)
+
+        cmd = "tar -czf %(fqdn)s.tar.gz %(fqdn)s" % {'fqdn': node.fqdn}
+        safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
+                  {"cmd": cmd, "fqdn": node.fqdn})
+        Helper.run_command_on_remote(node, cmd, timeout=20)
 
         Helper.copy_file_from_remote(node,
             src_dir="~",

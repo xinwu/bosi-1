@@ -220,8 +220,10 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
         if node.rhosp:
             Helper.chmod_node(node)
 
-    for hostname, node in node_dic.iteritems():
-        with open(const.LOG_FILE, "a") as log_file:
+    with open(const.LOG_FILE, "a") as log_file:
+        version = Helper.run_command_on_local("pip show bosi")
+        log_file.write(str(version))
+        for hostname, node in node_dic.iteritems():
             log_file.write(str(node))
 
     if support:
