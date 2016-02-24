@@ -1867,13 +1867,13 @@ class Helper(object):
             safe_print("Cannot access node %s.\n" % node.fqdn)
             return
         cmd = "mkdir -p ~/%s/log" % node.fqdn
-        Helper.run_command_on_remote(node, cmd, timeout=3)
+        Helper.run_command_on_remote(node, cmd, timeout=10)
 
         cmd = "mkdir -p ~/%s/config" % node.fqdn
-        Helper.run_command_on_remote(node, cmd, timeout=3)
+        Helper.run_command_on_remote(node, cmd, timeout=10)
 
         cmd = "pip show bsnstacklib > ~/%s/log/version" % node.fqdn
-        Helper.run_command_on_remote(node, cmd, timeout=3)
+        Helper.run_command_on_remote(node, cmd, timeout=10)
 
         cmd = "cp -r /etc/neutron/* ~/%s/config/" % node.fqdn
         safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
