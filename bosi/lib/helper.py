@@ -1824,19 +1824,47 @@ class Helper(object):
         mac = node.mac.replace(":", "-")
         macs = [mac.upper(), mac.lower()]
         for mac in macs:
-            fname = ("%(cert_dir)s/%(mac)s.switch.cluster.pem" %
-                    {'cert_dir': node.certificate_dir,
-                     'mac': mac})
-            if not os.path.isfile(fname):
-                safe_print("Node %(fqdn)s does not have %(fname)s.\n" %
-                           {'fqdn' : node.fqdn,
-                            'fname' : fname})
-                continue
-            safe_print("Copy %(fname)s to %(fqdn)s.\n" %
-                       {'fqdn' : node.fqdn,
-                        'fname' : fname})
-            Helper.copy_file_to_remote(node, fname, dst_dir="/root/.ssh/",
-                dst_file="ivs", mode=644)
+            cert = ("%(dir)s/%(mac)s.switch.cluster.pem" %
+                   {'dir': node.certificate_dir,
+                    'mac': mac})
+            key = ("%(dir)s/%(mac)s.switch.cluster.key" %
+                  {'dir': const.KEY_DIR,
+                   'mac': mac})
+            csr = ("%(dir)s/%(mac)s.switch.cluster.csr" %
+                  {'dir': const.CSR_DIR,
+                   'mac': mac})
+
+            # copy key pairs, certificate to /root/.ssh/ivs/
+            if os.path.isfile(cert):
+                safe_print("Copy %(f)s to %(fqdn)s\n" %
+                          {'fqdn' : node.fqdn,
+                           'f' : cert})
+                Helper.copy_file_to_remote(node,
+                    src_file=cert,
+                    dst_dir="/root/.ssh/ivs",
+                    dst_file=("%s.switch.cluster.pem" % mac),
+                    mode=644)
+
+            if os.path.isfile(key):
+                safe_print("Copy %(f)s to %(fqdn)s\n" %
+                          {'fqdn' : node.fqdn,
+                           'f' : key})
+                Helper.copy_file_to_remote(node,
+                    src_file=key,
+                    dst_dir="/root/.ssh/ivs",
+                    dst_file=("%s.switch.cluster.key" % mac),
+                    mode=644)
+
+            if os.path.isfile(csr):
+                safe_print("Copy %(f)s to %(fqdn)s\n" %
+                          {'fqdn' : node.fqdn,
+                           'f' : csr})
+                Helper.copy_file_to_remote(node,
+                    src_file=csr,
+                    dst_dir="/root/.ssh/ivs",
+                    dst_file=("%s.switch.cluster.csr" % mac),
+                    mode=644)
+
             safe_print("Restart ivs on %s.\n" % node.fqdn)
             Helper.run_command_on_remote(node, "service ivs restart")
 

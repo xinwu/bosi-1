@@ -132,8 +132,8 @@ T5_CENTOS_BOND_NAME = 'bond0'
 ELEMENT_EXISTS = "List element already exists"
 
 # directory for csr
-CSR_DIR = "~/csr"
-KEY_DIR = "~/key"
+CSR_DIR = "/tmp/csr"
+KEY_DIR = "/tmp/key"
 
 # constants for csr
 CSR_SUB = "/C=US/ST=California/L=Santa Clara/O=BSN/CN=www.bigswitch.com"
