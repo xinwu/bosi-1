@@ -1816,7 +1816,7 @@ class Helper(object):
             return
         if not node.mac:
             safe_print("Node %s does not have mac" % node.fqdn)
-            continue
+            return
         mac = node.mac.replace(":", "-")
         macs = [mac.upper(), mac.lower()]
         for mac in macs:
@@ -1841,7 +1841,7 @@ class Helper(object):
     def generate_csr(node):
         if not node.mac:
             safe_print("Node %s does not have mac" % node.fqdn)
-            continue
+            return
         mac = node.mac.lower().replace(':', '-')
         key_name = "%s.switch.cluster.key" % mac
         csr_name = "%s.switch.cluster.csr" % mac
@@ -1851,9 +1851,9 @@ class Helper(object):
                    "key_name" : key_name})
         subprocess.call(key_cmd, shell=True)
 
-        csr_cmd = (r'''sudo openssl req -new -key %(key_dir)s/%(key_name)s '''
-                   '''-out %(csr_dir)s/%(csr_name)s -subj "const.CSR_SUB"''' %
+        csr_cmd = ("sudo openssl req -new -key %(key_dir)s/%(key_name)s "
+                   "-out %(csr_dir)s/%(csr_name)s -subj \"%(sub)s\"" %
                   {'key_dir': const.KEY_DIR, 'key_name' : key_name,
-                   'csr_dir': const.CSR_DIR, 'csr_name' : csr_name})
+                   'csr_dir': const.CSR_DIR, 'csr_name' : csr_name,
+                   'sub': const.CSR_SUB})
         subprocess.call(csr_cmd, shell=True)
-

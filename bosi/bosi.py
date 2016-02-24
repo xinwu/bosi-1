@@ -146,7 +146,7 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
     node_dic = Helper.load_nodes(nodes_yaml_config, env)
 
     if generate_csr:
-        safe_print("Start to generate csr for virtual switches.")
+        safe_print("Start to generate csr for virtual switches.\n")
         # create ~/csr and ~/key directory
         Helper.run_command_on_local("mkdir -p %s" % const.CSR_DIR)
         Helper.run_command_on_local("mkdir -p %s" % const.KEY_DIR)
@@ -162,7 +162,7 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
                 continue
             if node.deploy_mode == const.T6 and node.role == const.ROLE_COMPUTE:
                 Helper.generate_csr(node)
-        safe_print("Finish generating csr for virtual switches.")
+        safe_print("Finish generating csr for virtual switches.\n")
         return
 
     # copy neutron config from neutron server to setup node
@@ -313,8 +313,8 @@ def main():
                               "certificate to the corresponding node based on the mac "
                               "address. Virtual switch will talk TLS afterward."))
     parser.add_argument('--certificate-only', action='store_true', default=False,
-                        help=("By turning on this flag, bosi will only deploy certificate
-                               to each node. It requires --certificate-dir to be specified."))
+                        help=("By turning on this flag, bosi will only deploy certificate "
+                              "to each node. It requires --certificate-dir to be specified."))
     parser.add_argument('--generate-csr', action='store_true', default=False,
                         help=("By turning on this flag, bosi will generate csr on behalf of "
                               "virtual switches. User needs to certify these csr and use "

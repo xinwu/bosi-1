@@ -20,7 +20,9 @@ class Node(object):
             except Exception:
                 self.fqdn = self.hostname
         self.uname = node_config.get('uname')
-        self.mac = node_config.get('mac').lower()
+        self.mac = node_config.get('mac')
+        if self.mac:
+            self.mac = self.mac.lower().strip()
         self.role = node_config['role'].lower()
         self.skip = node_config['skip']
         self.deploy_mode = node_config.get('deploy_mode')
