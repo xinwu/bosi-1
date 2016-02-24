@@ -1880,6 +1880,16 @@ class Helper(object):
                   {"cmd": cmd, "fqdn": node.fqdn})
         Helper.run_command_on_remote(node, cmd, timeout=10)
 
+        cmd = "cp -r /var/log/upstart ~/%s/log/" % node.fqdn
+        safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
+                  {"cmd": cmd, "fqdn": node.fqdn})
+        Helper.run_command_on_remote(node, cmd, timeout=10)
+
+        cmd = "cp -r /var/crash ~/%s/log/" % node.fqdn
+        safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
+                  {"cmd": cmd, "fqdn": node.fqdn})
+        Helper.run_command_on_remote(node, cmd, timeout=10)
+
         cmd = "cp -r /var/log/neutron/* ~/%s/log/" % node.fqdn
         safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
                   {"cmd": cmd, "fqdn": node.fqdn})
