@@ -132,7 +132,7 @@ def verify_node_setup(q):
 
 def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
                verify, verify_only, skip_ivs_version_check,
-               certificate_dir, certificate_only):
+               certificate_dir, certificate_only, generate_csr):
     # Deploy setup node
     safe_print("Start to prepare setup node\n")
     env = Environment(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
@@ -144,6 +144,26 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
     safe_print("Start to setup Big Cloud Fabric\n")
     nodes_yaml_config = config['nodes'] if 'nodes' in config else None
     node_dic = Helper.load_nodes(nodes_yaml_config, env)
+
+    if generate_csr:
+        safe_print("Start to generate csr for virtual switches.")
+        # create ~/csr and ~/key directory
+        Helper.run_command_on_local("mkdir -p %s" % const.CSR_DIR)
+        Helper.run_command_on_local("mkdir -p %s" % const.KEY_DIR)
+        for hostname, node in node_dic.iteritems():
+            if node.skip:
+                safe_print("skip node %(fqdn)s due to %(error)s\n" %
+                           {'fqdn': node.fqdn, 'error': node.error})
+                continue
+
+            if node.tag != node.env_tag:
+                safe_print("skip node %(fqdn)s due to mismatched tag\n" %
+                           {'fqdn': node.fqdn})
+                continue
+            if node.deploy_mode == const.T6 and node.role == const.ROLE_COMPUTE:
+                Helper.generate_csr(node)
+        safe_print("Finish generating csr for virtual switches.")
+        return
 
     # copy neutron config from neutron server to setup node
     for hostname, node in node_dic.iteritems():
@@ -287,14 +307,18 @@ def main():
                               "after deployment. Does not deploy BCF "
                               "specific changes."))
     parser.add_argument('--certificate-dir', required=False,
-                        help=("The directory that has the certificates for
-                               virtual switches. This option requires certificates
-                               to be ready in the directory. This option will deploy
-                               certificate to the corresponding node based on the mac
-                               address. Virtual switch will talk TLS afterward."))
+                        help=("The directory that has the certificates for "
+                              "virtual switches. This option requires certificates "
+                              "to be ready in the directory. This option will deploy "
+                              "certificate to the corresponding node based on the mac "
+                              "address. Virtual switch will talk TLS afterward."))
     parser.add_argument('--certificate-only', action='store_true', default=False,
                         help=("By turning on this flag, bosi will only deploy certificate
                                to each node. It requires --certificate-dir to be specified."))
+    parser.add_argument('--generate-csr', action='store_true', default=False,
+                        help=("By turning on this flag, bosi will generate csr on behalf of "
+                              "virtual switches. User needs to certify these csr and use "
+                              "--certificate-dir to specify the certificate directory."))
 
     args = parser.parse_args()
     if args.fuel_cluster_id and args.rhosp:
@@ -309,7 +333,8 @@ def main():
                args.tag, args.cleanup,
                args.verify, args.verifyonly,
                args.skip_ivs_version_check,
-               args.certificate_dir, args.certificate_only)
+               args.certificate_dir, args.certificate_only,
+               args.generate_csr)
 
 
 if __name__ == '__main__':

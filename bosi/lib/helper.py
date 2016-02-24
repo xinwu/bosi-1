@@ -1811,8 +1811,8 @@ class Helper(object):
     @staticmethod
     def certify_node(node):
         if not node.certificate_dir:
-            safe_print("Node %(hostname)s does not have certificate directory"
-                       % {'hostname' : node.fqdn})
+            safe_print("Node %(fqdn)s does not have certificate directory"
+                       % {'fqdn' : node.fqdn})
             return
         if not node.mac:
             safe_print("Node %s does not have mac" % node.fqdn)
@@ -1824,15 +1824,36 @@ class Helper(object):
                     {'cert_dir': node.certificate_dir,
                      'mac': mac})
             if not os.path.isfile(fname):
-                safe_print("Node %(hostname)s does not have %(fname)s" %
-                           {'hostname' : node.fqdn,
+                safe_print("Node %(fqdn)s does not have %(fname)s" %
+                           {'fqdn' : node.fqdn,
                             'fname' : fname})
                 continue
-            safe_print("Copy %(fname)s to %(hostname)s" %
-                       {'hostname' : node.fqdn,
+            safe_print("Copy %(fname)s to %(fqdn)s" %
+                       {'fqdn' : node.fqdn,
                         'fname' : fname})
             Helper.copy_file_to_remote(node, fname, dst_dir="/root/.ssh/",
                 dst_file="ivs", mode=644)
             safe_print("Restart ivs on %s" % node.fqdn)
             Helper.run_command_on_remote(node, "service ivs restart")
+
+
+    @staticmethod
+    def generate_csr(node):
+        if not node.mac:
+            safe_print("Node %s does not have mac" % node.fqdn)
+            continue
+        mac = node.mac.lower().replace(':', '-')
+        key_name = "%s.switch.cluster.key" % mac
+        csr_name = "%s.switch.cluster.csr" % mac
+
+        key_cmd = ("sudo openssl genrsa -out %(dir)s/%(key_name)s 2048" %
+                  {"dir" : const.KEY_DIR,
+                   "key_name" : key_name})
+        subprocess.call(key_cmd, shell=True)
+
+        csr_cmd = (r'''sudo openssl req -new -key %(key_dir)s/%(key_name)s '''
+                   '''-out %(csr_dir)s/%(csr_name)s -subj "const.CSR_SUB"''' %
+                  {'key_dir': const.KEY_DIR, 'key_name' : key_name,
+                   'csr_dir': const.CSR_DIR, 'csr_name' : csr_name})
+        subprocess.call(csr_cmd, shell=True)
 
