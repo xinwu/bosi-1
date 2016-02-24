@@ -1834,14 +1834,14 @@ class Helper(object):
                   {'dir': const.CSR_DIR,
                    'mac': mac})
 
-            # copy key pairs, certificate to /root/.ssh/ivs/
+            # copy key pairs, certificate to /etc/ivs/
             if os.path.isfile(cert):
                 safe_print("Copy %(f)s to %(fqdn)s\n" %
                           {'fqdn' : node.fqdn,
                            'f' : cert})
                 Helper.copy_file_to_remote(node,
                     src_file=cert,
-                    dst_dir="/root/.ssh/ivs",
+                    dst_dir="/etc/ivs",
                     dst_file=("%s.switch.cluster.pem" % mac),
                     mode=644)
 
@@ -1851,7 +1851,7 @@ class Helper(object):
                            'f' : key})
                 Helper.copy_file_to_remote(node,
                     src_file=key,
-                    dst_dir="/root/.ssh/ivs",
+                    dst_dir="/etc/ivs",
                     dst_file=("%s.switch.cluster.key" % mac),
                     mode=644)
 
@@ -1861,7 +1861,7 @@ class Helper(object):
                            'f' : csr})
                 Helper.copy_file_to_remote(node,
                     src_file=csr,
-                    dst_dir="/root/.ssh/ivs",
+                    dst_dir="/etc/ivs",
                     dst_file=("%s.switch.cluster.csr" % mac),
                     mode=644)
 
