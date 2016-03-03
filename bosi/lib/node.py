@@ -20,6 +20,9 @@ class Node(object):
             except Exception:
                 self.fqdn = self.hostname
         self.uname = node_config.get('uname')
+        self.mac = node_config.get('mac')
+        if self.mac:
+            self.mac = self.mac.lower().strip()
         self.role = node_config['role'].lower()
         self.skip = node_config['skip']
         self.deploy_mode = node_config.get('deploy_mode')
@@ -47,6 +50,10 @@ class Node(object):
         self.ex_gw = node_config.get('ex_gw')
         self.tag = node_config.get('tag')
         self.env_tag = env.tag
+        self.pip_proxy = env.pip_proxy
+        if not env.pip_proxy:
+            self.pip_proxy = "false"
+        self.certificate_dir = env.certificate_dir
         self.cleanup = env.cleanup
         self.skip_ivs_version_check = env.skip_ivs_version_check
         self.rabbit_hosts = None
@@ -353,6 +360,7 @@ class Node(object):
             hostname: %(hostname)s,
             fqdn: %(fqdn)s,
             uname: %(uname)s,
+            mac: %(mac)s,
             role: %(role)s,
             skip: %(skip)s,
             deploy_mode: %(deploy_mode)s,
@@ -377,6 +385,8 @@ class Node(object):
             ex_gw: %(ex_gw)s,
             tag: %(tag)s,
             env_tag: %(env_tag)s,
+            pip_proxy: %(pip_proxy),
+            certificate_dir: %(certificate_dir)s,
             cleanup: %(cleanup)s,
             rabbit_hosts: %(rabbit_hosts)s,
             keystone_auth_url: %(keystone_auth_url)s,
@@ -436,6 +446,7 @@ class Node(object):
             'hostname': self.hostname,
             'fqdn': self.fqdn,
             'uname': self.uname,
+            'mac': self.mac,
             'role': self.role,
             'skip': self.skip,
             'deploy_mode': self.deploy_mode,
@@ -460,6 +471,8 @@ class Node(object):
             'ex_gw': self.ex_gw,
             'tag': self.tag,
             'env_tag': self.env_tag,
+            'pip_proxy': self.pip_proxy,
+            'certificate_dir': self.certificate_dir,
             'cleanup': self.cleanup,
             'rabbit_hosts': self.rabbit_hosts,
             'keystone_auth_url': self.keystone_auth_url,

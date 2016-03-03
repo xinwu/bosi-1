@@ -19,7 +19,9 @@ controller_node_q = Queue.Queue()
 # queue to store all nodes
 node_q = Queue.Queue()
 # copy the node_q to this when original list is created
+certify_node_q = Queue.Queue()
 verify_node_q = Queue.Queue()
+support_node_q = Queue.Queue()
 # keep track of verified nodes
 node_pass = {}
 node_fail = {}
@@ -69,6 +71,20 @@ def worker_setup_node(q):
 
         safe_print("Finish deploying %(fqdn)s, cost time: %(diff).2f\n" %
                    {'fqdn': node.fqdn, 'diff': node.time_diff})
+        q.task_done()
+
+
+def certify_node_setup(q):
+    while True:
+        node = q.get()
+        Helper.certify_node(node)
+        q.task_done()
+
+
+def support_node_setup(q):
+    while True:
+        node = q.get()
+        Helper.support_node(node)
         q.task_done()
 
 
@@ -123,11 +139,13 @@ def verify_node_setup(q):
 
 
 def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
-               verify, verify_only, skip_ivs_version_check):
+               verify, verify_only, skip_ivs_version_check,
+               certificate_dir, certificate_only, generate_csr,
+               support):
     # Deploy setup node
     safe_print("Start to prepare setup node\n")
     env = Environment(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
-                      skip_ivs_version_check)
+                      skip_ivs_version_check, certificate_dir)
     Helper.common_setup_node_preparation(env)
     controller_nodes = []
 
@@ -135,6 +153,26 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
     safe_print("Start to setup Big Cloud Fabric\n")
     nodes_yaml_config = config['nodes'] if 'nodes' in config else None
     node_dic = Helper.load_nodes(nodes_yaml_config, env)
+
+    if generate_csr:
+        safe_print("Start to generate csr for virtual switches.\n")
+        # create ~/csr and ~/key directory
+        Helper.run_command_on_local("mkdir -p %s" % const.CSR_DIR)
+        Helper.run_command_on_local("mkdir -p %s" % const.KEY_DIR)
+        for hostname, node in node_dic.iteritems():
+            if node.skip:
+                safe_print("skip node %(fqdn)s due to %(error)s\n" %
+                           {'fqdn': node.fqdn, 'error': node.error})
+                continue
+
+            if node.tag != node.env_tag:
+                safe_print("skip node %(fqdn)s due to mismatched tag\n" %
+                           {'fqdn': node.fqdn})
+                continue
+            if node.deploy_mode == const.T6 and node.role == const.ROLE_COMPUTE:
+                Helper.generate_csr(node)
+        safe_print("Finish generating csr for virtual switches.\n")
+        return
 
     # copy neutron config from neutron server to setup node
     for hostname, node in node_dic.iteritems():
@@ -150,6 +188,9 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
 
     # Generate scripts for each node
     for hostname, node in node_dic.iteritems():
+        if support:
+            support_node_q.put(node)
+
         if node.skip:
             safe_print("skip node %(fqdn)s due to %(error)s\n" %
                        {'fqdn': node.fqdn, 'error': node.error})
@@ -170,19 +211,46 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
         if node.role == const.ROLE_NEUTRON_SERVER:
             controller_node_q.put(node)
         else:
-            # python doesn't have deep copy for Queue, hence add to both
+            # python doesn't have deep copy for Queue, hence add to all
             node_q.put(node)
             verify_node_q.put(node)
+            if node.deploy_mode == const.T6 and node.role == const.ROLE_COMPUTE:
+                certify_node_q.put(node)
 
         if node.rhosp:
             Helper.chmod_node(node)
 
-    for hostname, node in node_dic.iteritems():
-        with open(const.LOG_FILE, "a") as log_file:
+    with open(const.LOG_FILE, "a") as log_file:
+        version = Helper.run_command_on_local("pip show bosi")
+        log_file.write(str(version))
+        for hostname, node in node_dic.iteritems():
             log_file.write(str(node))
 
-    # in case of verify_only, do not deploy, just verify
-    if not verify_only:
+    if support:
+        safe_print("Start to collect logs.\n")
+        # copy installer logs to ~/support
+        Helper.run_command_on_local("mkdir -p %s" % const.SUPPORT_DIR)
+        Helper.run_command_on_local("cp -r %(src)s %(dst)s" %
+                                   {"src": const.LOG_FILE,
+                                    "dst": const.SUPPORT_DIR})
+        Helper.run_command_on_local("cp -r %(setup_node_dir)s/%(generated_script_dir)s %(dst)s" %
+                                   {"setup_node_dir": env.setup_node_dir,
+                                    "generated_script_dir": const.GENERATED_SCRIPT_DIR,
+                                    "dst": const.SUPPORT_DIR})
+
+        for i in range(const.MAX_WORKERS):
+            t = threading.Thread(target=support_node_setup,
+                                 args=(support_node_q,))
+            t.daemon = True
+            t.start()
+        support_node_q.join()
+        # compress ~/support
+        Helper.run_command_on_local("cd /tmp; tar -czf support.tar.gz support")
+        safe_print("Finish collecting logs. logs are at ~/support.tar.gz.\n")
+        return
+
+    # in case of verify_only or certificate_only, do not deploy
+    if (not verify_only) and (not certificate_only):
         # Use single thread to setup controller nodes
         t = threading.Thread(target=worker_setup_node,
                              args=(controller_node_q,))
@@ -208,6 +276,17 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
         safe_print("Big Cloud Fabric deployment finished! "
                    "Check %(log)s on each node for details.\n" %
                    {'log': const.LOG_FILE})
+
+    if certificate_dir or certificate_only:
+        # certify each node
+        safe_print("Start to certify virtual switches.\n")
+        for i in range(const.MAX_WORKERS):
+            t = threading.Thread(target=certify_node_setup,
+                                 args=(certify_node_q,))
+            t.daemon = True
+            t.start()
+        certify_node_q.join()
+        safe_print('Certifying virtual switches done.\n')
 
     if verify or verify_only:
         # verify each node and post results
@@ -264,15 +343,37 @@ def main():
                         help=("Verify service status for compute nodes "
                               "after deployment. Does not deploy BCF "
                               "specific changes."))
+    parser.add_argument('--certificate-dir', required=False,
+                        help=("The directory that has the certificates for "
+                              "virtual switches. This option requires certificates "
+                              "to be ready in the directory. This option will deploy "
+                              "certificate to the corresponding node based on the mac "
+                              "address. Virtual switch will talk TLS afterward."))
+    parser.add_argument('--certificate-only', action='store_true', default=False,
+                        help=("By turning on this flag, bosi will only deploy certificate "
+                              "to each node. It requires --certificate-dir to be specified."))
+    parser.add_argument('--generate-csr', action='store_true', default=False,
+                        help=("By turning on this flag, bosi will generate csr on behalf of "
+                              "virtual switches. User needs to certify these csr and use "
+                              "--certificate-dir to specify the certificate directory."))
+    parser.add_argument('--support', action='store_true', default=False,
+                        help=("Collect openstack logs."))
+
     args = parser.parse_args()
     if args.fuel_cluster_id and args.rhosp:
         safe_print("Cannot have both fuel and rhosp as openstack installer.\n")
         return
+    if args.certificate_only and (not args.certificate_dir):
+        safe_print("--certificate-only requires the existence of --certificate-dir.\n")
+        return
     with open(args.config_file, 'r') as config_file:
         config = yaml.load(config_file)
     deploy_bcf(config, args.deploy_mode, args.fuel_cluster_id, args.rhosp,
-               args.tag, args.cleanup, args.verify, args.verifyonly,
-               args.skip_ivs_version_check)
+               args.tag, args.cleanup,
+               args.verify, args.verifyonly,
+               args.skip_ivs_version_check,
+               args.certificate_dir, args.certificate_only,
+               args.generate_csr, args.support)
 
 
 if __name__ == '__main__':

@@ -11,6 +11,7 @@ deploy_horizon_patch=%(deploy_horizon_patch)s
 fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
 default_gw=%(default_gw)s
+pip_proxy=%(pip_proxy)s
 
 
 controller() {
@@ -173,7 +174,11 @@ if [[ $install_bsnstacklib == true ]]; then
     sleep 2
     pip uninstall -y bsnstacklib
     sleep 2
-    pip install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+    if [[ $pip_proxy == false ]]; then
+        pip install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+    else
+        pip --proxy $pip_proxy  install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+    fi
 fi
 
 if [[ $is_controller == true ]]; then

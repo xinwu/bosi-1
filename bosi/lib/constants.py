@@ -76,7 +76,10 @@ LOG_FILE = "/var/log/bcf_setup.log"
 
 # constants for ivs config
 INBAND_VLAN = 4092
-IVS_DAEMON_ARGS = (r'''DAEMON_ARGS=\"--hitless --certificate /root/.ssh/ivs '''
+#IVS_DAEMON_ARGS = (r'''DAEMON_ARGS=\"--hitless --certificate /etc/ivs '''
+#                   '''--inband-vlan %(inband_vlan)d'''
+#                   '''%(uplink_interfaces)s%(internal_ports)s\\"''')
+IVS_DAEMON_ARGS = (r'''DAEMON_ARGS=\"--hitless '''
                    '''--inband-vlan %(inband_vlan)d'''
                    '''%(uplink_interfaces)s%(internal_ports)s\\"''')
 
@@ -130,3 +133,13 @@ T5_CENTOS_BOND_NAME = 'bond0'
 
 # big db error message
 ELEMENT_EXISTS = "List element already exists"
+
+# directory for csr
+CSR_DIR = "/tmp/csr"
+KEY_DIR = "/tmp/key"
+
+# constants for csr
+CSR_SUB = "/C=US/ST=California/L=Santa Clara/O=BSN/CN=www.bigswitch.com"
+
+# support constants
+SUPPORT_DIR = "/tmp/support"
