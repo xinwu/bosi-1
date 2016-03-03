@@ -727,6 +727,8 @@ class Helper(object):
             node = Node(node_yaml_config, env)
             if not Helper.is_connected(node):
                 continue
+            if node.skip:
+                continue
 
             node_yaml_config['old_ivs_version'] = None
             if node_yaml_config['deploy_mode'] == const.T6:
@@ -1074,6 +1076,8 @@ class Helper(object):
         node_config['tagged_intfs'] = tagged_intfs
 
         node = Node(node_config, env)
+        if node.skip:
+            return None
         # copy dpid.py to remote node
         safe_print("Copy dpid.py to %(hostname)s\n" %
                    {'hostname': node.fqdn})
