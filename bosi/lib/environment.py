@@ -25,6 +25,9 @@ class Environment(object):
 
         self.skip_ivs_version_check = skip_ivs_version_check
 
+        # pip proxy
+        self.pip_proxy = config.get('pip_proxy')
+
         # neutron_id for ml2 plugin restproxy
         self.neutron_id = config.get('neutron_id')
 

@@ -11,6 +11,7 @@ deploy_horizon_patch=%(deploy_horizon_patch)s
 fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
 default_gw=%(default_gw)s
+pip_proxy=%(pip_proxy)s
 
 rhosp_automate_register=%(rhosp_automate_register)s
 rhosp_register_username=%(rhosp_register_username)s

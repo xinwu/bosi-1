@@ -50,6 +50,9 @@ class Node(object):
         self.ex_gw = node_config.get('ex_gw')
         self.tag = node_config.get('tag')
         self.env_tag = env.tag
+        self.pip_proxy = env.pip_proxy
+        if not env.pip_proxy:
+            self.pip_proxy = "false"
         self.certificate_dir = env.certificate_dir
         self.cleanup = env.cleanup
         self.skip_ivs_version_check = env.skip_ivs_version_check
@@ -382,6 +385,7 @@ class Node(object):
             ex_gw: %(ex_gw)s,
             tag: %(tag)s,
             env_tag: %(env_tag)s,
+            pip_proxy: %(pip_proxy),
             certificate_dir: %(certificate_dir)s,
             cleanup: %(cleanup)s,
             rabbit_hosts: %(rabbit_hosts)s,
@@ -467,6 +471,7 @@ class Node(object):
             'ex_gw': self.ex_gw,
             'tag': self.tag,
             'env_tag': self.env_tag,
+            'pip_proxy': self.pip_proxy,
             'certificate_dir': self.certificate_dir,
             'cleanup': self.cleanup,
             'rabbit_hosts': self.rabbit_hosts,
