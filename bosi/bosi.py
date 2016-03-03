@@ -246,7 +246,7 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
         support_node_q.join()
         # compress ~/support
         Helper.run_command_on_local("cd /tmp; tar -czf support.tar.gz support")
-        safe_print("Finish collecting logs. logs are at ~/support.tar.gz.\n")
+        safe_print("Finish collecting logs. logs are at /tmp/support.tar.gz.\n")
         return
 
     # in case of verify_only or certificate_only, do not deploy
@@ -310,18 +310,11 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
 
 
 def main():
-    # Check if network is working properly
-    code = subprocess.call("wget www.bigswitch.com --timeout=5", shell=True)
-    if code != 0:
-        safe_print("Network is not working properly, quit deployment\n")
-        exit(1)
-    subprocess.call("rm -f index.html*", shell=True)
-
     # Parse configuration
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config-file", required=True,
                         help="BCF YAML configuration file")
-    parser.add_argument("-m", "--deploy-mode", required=True,
+    parser.add_argument("-m", "--deploy-mode", required=False,
                         choices=['pfabric', 'pvfabric']),
     parser.add_argument('-f', "--fuel-cluster-id", required=False,
                         help=("Fuel cluster ID. Fuel settings may override "
@@ -366,6 +359,14 @@ def main():
     if args.certificate_only and (not args.certificate_dir):
         safe_print("--certificate-only requires the existence of --certificate-dir.\n")
         return
+
+    # Check if network is working properly
+    code = subprocess.call("wget www.bigswitch.com --timeout=5", shell=True)
+    if code != 0:
+        safe_print("Network is not working properly, quit deployment\n")
+        exit(1)
+    subprocess.call("rm -f index.html*", shell=True)
+
     with open(args.config_file, 'r') as config_file:
         config = yaml.load(config_file)
     deploy_bcf(config, args.deploy_mode, args.fuel_cluster_id, args.rhosp,
