@@ -172,12 +172,12 @@ class RestLib(object):
 
         pg_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
                        '''segment[name="%(segment)s"]/'''
-                       '''port-group-membership-rule''' %
+                       '''interface-group-membership-rule''' %
                        {'tenant': tenant,
                         'segment': rule.segment})
-        rule_data = {"port-group": const.ANY, "vlan": vlan}
+        rule_data = {"interface-group": const.ANY, "vlan": vlan}
         safe_print("Configuring BCF Segment rule: Tenant %s, "
-                   "Segment %s Rule: member port-group any vlan %d\n"
+                   "Segment %s Rule: member interface-group any vlan %d\n"
                    % (tenant, rule.segment, vlan))
         try:
             ret = RestLib.post(cookie, pg_rule_url, server, port,
