@@ -96,6 +96,24 @@ file { "/root/.ssh/known_hosts":
     ensure => absent,
 }
 
+# glance paste config
+ini_setting { "glance-api paste config":
+    ensure            => present,
+    path              => '/etc/glance/glance-api.conf',
+    section           => 'paste_deploy',
+    key_val_separator => '=',
+    setting           => 'config_file',
+    value             => '/usr/share/glance/glance-api-dist-paste.ini',
+}
+ini_setting { "glance-registry paste config":
+    ensure            => present,
+    path              => '/etc/glance/glance-registry.conf',
+    section           => 'paste_deploy',
+    key_val_separator => '=',
+    setting           => 'config_file',
+    value             => '/usr/share/glance/glance-registry-dist-paste.ini',
+}
+
 # keystone paste config
 ini_setting { "keystone paste config":
     ensure            => present,
