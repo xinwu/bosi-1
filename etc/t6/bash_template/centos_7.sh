@@ -33,6 +33,8 @@ controller() {
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
     # deploy bcf horizon patch to controller node
+    cp /usr/lib/python2.7/site-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
+    systemctl restart httpd
     #if [[ $deploy_horizon_patch == true ]]; then
         # TODO: new way to plugin horizon
     #fi
@@ -207,10 +209,10 @@ if [[ $install_bsnstacklib == true ]]; then
     sleep 2
     if [[ $pip_proxy == false ]]; then
         pip install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
-        pip install --upgrade "horizon-bsn>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+        pip install --upgrade horizon-bsn
     else
         pip --proxy $pip_proxy  install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
-        pip --proxy $pip_proxy  install --upgrade "horizon-bsn>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+        pip --proxy $pip_proxy  install --upgrade horizon-bsn
     fi
 fi
 

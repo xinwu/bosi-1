@@ -39,6 +39,8 @@ controller() {
     mv /etc/init/neutron-l3-agent.conf /etc/init/neutron-l3-agent.conf.disabled
     
 
+    # deploy horizon plugin
+    cp /usr/local/lib/python2.7/dist-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
     #if [[ $deploy_horizon_patch == true ]]; then
         # TODO: new way to plugin horizon
     #fi
@@ -153,10 +155,10 @@ if [[ $install_bsnstacklib == true ]]; then
     sleep 2
     if [[ $pip_proxy == false ]]; then
         pip install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
-        pip install --upgrade "horizon-bsn>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+        pip install --upgrade horizon-bsn
     else
         pip --proxy $pip_proxy  install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
-        pip --proxy $pip_proxy  install --upgrade "horizon-bsn>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+        pip --proxy $pip_proxy  install --upgrade horizon-bsn
     fi
 fi
 
