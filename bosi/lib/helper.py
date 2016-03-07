@@ -332,6 +332,7 @@ class Helper(object):
             bash = (
                 bash_template %
                 {'install_ivs': str(node.install_ivs).lower(),
+                 'pip_proxy': node.pip_proxy,
                  'install_bsnstacklib': str(node.install_bsnstacklib).lower(),
                  'install_all': str(node.install_all).lower(),
                  'deploy_dhcp_agent': str(node.deploy_dhcp_agent).lower(),
@@ -454,6 +455,7 @@ class Helper(object):
             bash = (
                 bash_template %
                 {'install_ivs': str(node.install_ivs).lower(),
+                 'pip_proxy': node.pip_proxy,
                  'install_bsnstacklib': str(node.install_bsnstacklib).lower(),
                  'install_all': str(node.install_all).lower(),
                  'deploy_dhcp_agent': str(node.deploy_dhcp_agent).lower(),
@@ -567,6 +569,7 @@ class Helper(object):
             bash = (
                 bash_template %
                 {'install_ivs': str(node.install_ivs).lower(),
+                 'pip_proxy': node.pip_proxy,
                  'install_bsnstacklib': str(node.install_bsnstacklib).lower(),
                  'install_all': str(node.install_all).lower(),
                  'deploy_dhcp_agent': str(node.deploy_dhcp_agent).lower(),
