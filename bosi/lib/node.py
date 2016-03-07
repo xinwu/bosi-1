@@ -385,7 +385,7 @@ class Node(object):
             ex_gw: %(ex_gw)s,
             tag: %(tag)s,
             env_tag: %(env_tag)s,
-            pip_proxy: %(pip_proxy),
+            pip_proxy: %(pip_proxy)s,
             certificate_dir: %(certificate_dir)s,
             cleanup: %(cleanup)s,
             rabbit_hosts: %(rabbit_hosts)s,
