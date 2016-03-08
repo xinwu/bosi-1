@@ -76,7 +76,7 @@ ini_setting { "neutron.conf service_plugins":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'service_plugins',
-  value             => 'router',
+  value             => 'router,bsn_service_plugin',
   notify            => Service['neutron-server'],
 }
 ini_setting { "neutron.conf dhcp_agents_per_network":
@@ -178,7 +178,7 @@ ini_setting { "l3 agent disable metadata proxy":
   value             => 'True',
 }
 
-# config /etc/neutron/plugins/ml2/ml2_conf.ini 
+# config /etc/neutron/plugins/ml2/ml2_conf.ini
 ini_setting { "ml2 type dirvers":
   ensure            => present,
   path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',

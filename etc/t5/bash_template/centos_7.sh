@@ -32,6 +32,10 @@ controller() {
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
+    # bsnstacklib installed and property files updated. now perform live db migration
+    echo "Performing live DB migration for Neutron.."
+    neutron-db-manage upgrade heads
+
     # deploy bcf horizon patch to controller node
     cp /usr/lib/python2.7/site-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
     systemctl restart httpd
