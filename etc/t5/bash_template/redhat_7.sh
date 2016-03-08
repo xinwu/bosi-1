@@ -44,6 +44,10 @@ controller() {
     # deploy bcf
     sudo puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
+    # bsnstacklib installed and property files updated. now perform live db migration
+    echo "Performing live DB migration for Neutron.."
+    neutron-db-manage upgrade heads
+
     # restart keystone and httpd
     sudo systemctl daemon-reload
     sudo systemctl restart openstack-keystone

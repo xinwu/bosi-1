@@ -223,7 +223,7 @@ ini_setting { "neutron.conf service_plugins":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'service_plugins',
-  value             => 'bsn_l3',
+  value             => 'bsn_l3,bsn_service_plugin',
   notify            => Service['neutron-server'],
 }
 ini_setting { "neutron.conf dhcp_agents_per_network":
@@ -293,7 +293,7 @@ ini_setting { "l3 agent disable metadata proxy":
   value             => 'False',
 }
 
-# config /etc/neutron/plugins/ml2/ml2_conf.ini 
+# config /etc/neutron/plugins/ml2/ml2_conf.ini
 ini_setting { "ml2 type dirvers":
   ensure            => present,
   path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
@@ -481,7 +481,7 @@ ini_setting { "clear tunnel type":
   section           => 'ovs',
   key_val_separator => '=',
   setting           => 'tunnel_type',
-  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],  
+  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
   notify            => Service['neutron-openvswitch-agent'],
 }
 ini_setting { "clear tunnel types":

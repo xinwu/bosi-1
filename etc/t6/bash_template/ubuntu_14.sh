@@ -23,6 +23,10 @@ controller() {
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
+    # bsnstacklib installed and property files updated. now perform live db migration
+    echo "Performing live DB migration for Neutron.."
+    neutron-db-manage upgrade heads
+
     echo 'Stop and disable neutron-metadata-agent and neutron-dhcp-agent'
     if [[ ${fuel_cluster_id} != 'None' ]]; then
         crm resource stop p_neutron-dhcp-agent
@@ -45,7 +49,7 @@ controller() {
     rm -f /etc/init/neutron-l3-agent.conf
     service neutron-bsn-agent stop
     rm -f /etc/init/neutron-bsn-agent.conf
-    
+
 
     # deploy horizon plugin
     cp /usr/local/lib/python2.7/dist-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
@@ -243,7 +247,7 @@ set +e
 
 # Make sure only root can run this script
 if [[ "$(id -u)" != "0" ]]; then
-   echo -e "Please run as root" 
+   echo -e "Please run as root"
    exit 1
 fi
 
