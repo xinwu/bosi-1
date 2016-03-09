@@ -1831,6 +1831,7 @@ class Helper(object):
         mac = node.mac.replace(":", "-")
         macs = [mac.upper(), mac.lower()]
         for mac in macs:
+            cacert = ("%s/ca.cert" % node.certificate_dir)
             cert = ("%(dir)s/%(mac)s.switch.cluster.pem" %
                    {'dir': node.certificate_dir,
                     'mac': mac})
@@ -1841,7 +1842,17 @@ class Helper(object):
                   {'dir': const.CSR_DIR,
                    'mac': mac})
 
-            # copy key pairs, certificate to /etc/ivs/
+            # copy ca.cert, key pairs, certificate to /etc/ivs/
+            if os.path.isfile(cacert):
+                safe_print("Copy %(f)s to %(fqdn)s\n" %
+                          {'fqdn' : node.fqdn,
+                           'f' : cacert})
+                Helper.copy_file_to_remote(node,
+                    src_file=cacert,
+                    dst_dir="/etc/ivs",
+                    dst_file="ca.cert",
+                    mode=644)
+
             if os.path.isfile(cert):
                 safe_print("Copy %(f)s to %(fqdn)s\n" %
                           {'fqdn' : node.fqdn,
@@ -1849,7 +1860,7 @@ class Helper(object):
                 Helper.copy_file_to_remote(node,
                     src_file=cert,
                     dst_dir="/etc/ivs",
-                    dst_file=("%s.switch.cluster.pem" % mac),
+                    dst_file="ivs.cert",
                     mode=644)
 
             if os.path.isfile(key):
@@ -1859,7 +1870,7 @@ class Helper(object):
                 Helper.copy_file_to_remote(node,
                     src_file=key,
                     dst_dir="/etc/ivs",
-                    dst_file=("%s.switch.cluster.key" % mac),
+                    dst_file="ivs.key",
                     mode=644)
 
             if os.path.isfile(csr):

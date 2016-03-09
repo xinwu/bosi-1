@@ -77,6 +77,10 @@ def worker_setup_node(q):
 def certify_node_setup(q):
     while True:
         node = q.get()
+        if node.certificate_dir:
+            if not os.path.isfile("%s/ca.cert" % node.certificate_dir):
+                safe_print("Missing ca.cert in %s\n" % node.certificate_dir)
+                break
         Helper.certify_node(node)
         q.task_done()
 
