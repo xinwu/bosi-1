@@ -17,6 +17,14 @@ if $selinux_enabled {
 # comment out heat domain related configurations
 $heat_config = file('/etc/heat/heat.conf','/dev/null')
 if($heat_config != '') {
+    ini_setting { "heat paste":
+        ensure            => present,
+        path              => '/etc/heat/heat.conf',
+        section           => 'paste_deploy',
+        key_val_separator => '=',
+        setting           => 'api_paste_config',
+        value             => '/usr/share/heat/api-paste-dist.ini',
+    }
     ini_setting { "heat debug":
         ensure            => present,
         path              => '/etc/heat/heat.conf',
