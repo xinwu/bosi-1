@@ -105,6 +105,14 @@ file { "/root/.ssh/known_hosts":
 }
 
 # glance paste config
+ini_setting { "glance-api filesystem_store_datadir":
+    ensure            => present,
+    path              => '/etc/glance/glance-api.conf',
+    section           => 'glance_store',
+    key_val_separator => '=',
+    setting           => 'filesystem_store_datadir',
+    value             => '/var/lib/glance/images/',
+}
 ini_setting { "glance-api paste config":
     ensure            => present,
     path              => '/etc/glance/glance-api.conf',
