@@ -175,6 +175,8 @@ compute() {
         systemctl enable neutron-dhcp-agent
     fi
 
+    systemctl restart ivs
+
     # restart libvirtd and nova compute on compute node
     echo 'Restart libvirtd, openstack-nova-compute and neutron-bsn-agent'
     systemctl restart libvirtd
