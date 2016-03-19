@@ -80,13 +80,13 @@ file{'/etc/sysconfig/ivs':
     ensure  => file,
     mode    => 0644,
     content => "%(ivs_daemon_args)s",
-    notify  => Service['ivs'],
+    #notify  => Service['ivs'],
 } 
-service{'ivs':
-    ensure  => running,
-    enable  => true,
-    path    => $binpath,
-}
+#service{'ivs':
+#    ensure  => running,
+#    enable  => true,
+#    path    => $binpath,
+#}
 
 # fix centos symbolic link problem for ivs debug logging
 file { '/usr/lib64/debug':
