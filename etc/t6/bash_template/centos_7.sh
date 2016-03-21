@@ -110,6 +110,7 @@ compute() {
             echo "ivs upgrade fails version validation"
         fi
     fi
+    systemctl stop ivs
 
     # full installation
     if [[ $install_all == true ]]; then
