@@ -34,30 +34,30 @@ if($heat_config != '') {
         value             => 'True',
         notify            => Service['openstack-heat-engine'],
     }
-    ini_setting { "heat stack_domain_admin_password":
-        ensure            => absent,
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'stack_domain_admin_password',
-        notify            => Service['openstack-heat-engine'],
-    }
-    ini_setting { "heat stack_domain_admin":
-        ensure            => absent,
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'stack_domain_admin',
-        notify            => Service['openstack-heat-engine'],
-    }
-    ini_setting { "heat stack_user_domain":
-        ensure            => absent,
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'stack_user_domain',
-        notify            => Service['openstack-heat-engine'],
-    }
+    #ini_setting { "heat stack_domain_admin_password":
+    #    ensure            => absent,
+    #    path              => '/etc/heat/heat.conf',
+    #    section           => 'DEFAULT',
+    #    key_val_separator => '=',
+    #    setting           => 'stack_domain_admin_password',
+    #    notify            => Service['openstack-heat-engine'],
+    #}
+    #ini_setting { "heat stack_domain_admin":
+    #    ensure            => absent,
+    #    path              => '/etc/heat/heat.conf',
+    #    section           => 'DEFAULT',
+    #    key_val_separator => '=',
+    #    setting           => 'stack_domain_admin',
+    #    notify            => Service['openstack-heat-engine'],
+    #}
+    #ini_setting { "heat stack_user_domain":
+    #    ensure            => absent,
+    #    path              => '/etc/heat/heat.conf',
+    #    section           => 'DEFAULT',
+    #    key_val_separator => '=',
+    #    setting           => 'stack_user_domain',
+    #    notify            => Service['openstack-heat-engine'],
+    #}
     ini_setting {"heat_deferred_auth_method":
         path              => '/etc/heat/heat.conf',
         section           => 'DEFAULT',
