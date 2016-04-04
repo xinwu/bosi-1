@@ -192,11 +192,11 @@ if $selinux_enabled {
 }
 
 # disable neutron-bsn-agent service
-service {'neutron-bsn-agent':
-    ensure  => stopped,
-    enable  => false,
-    path    => $binpath,
-}
+#service {'neutron-bsn-agent':
+#    ensure  => stopped,
+#    enable  => false,
+#    path    => $binpath,
+#}
 
 # purge bcf controller public key
 exec { 'purge bcf key':
