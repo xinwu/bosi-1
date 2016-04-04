@@ -203,6 +203,7 @@ yum groupinstall -y 'Development Tools'
 yum install -y python-devel puppet python-pip wget libffi-devel openssl-devel
 yum update -y
 easy_install pip
+pip install --upgrade funcsigs
 puppet module install --force puppetlabs-inifile
 puppet module install --force puppetlabs-stdlib
 puppet module install jfryman-selinux --version 0.2.5 --force
