@@ -1547,6 +1547,32 @@ class Helper(object):
             controller_node.set_keystone_auth_tenant(keystone_auth_tenant)
 
     @staticmethod
+    def check_if_vlan_is_used(controller_nodes):
+        if len(controller_nodes) and controller_nodes[0]:
+            controller_node = controller_nodes[0]
+            safe_print(
+                "Copy ml2_conf.ini from openstack controller "
+                "%(controller_node)s\n" %
+                {'controller_node': controller_node.fqdn})
+            Helper.copy_file_from_remote(
+                controller_node, '/etc/neutron/plugins/ml2', 'ml2_conf.ini',
+                controller_node.setup_node_dir)
+            if not controller_node.fuel_cluster_id:
+                # always return true for non-fuel environments
+                return True
+            ml2_conf = open(
+                "%s/ml2_conf.ini" % controller_node.setup_node_dir, 'r')
+            for line in ml2_conf:
+                if line.startswith("tenant_network_types"):
+                    tenant_network_types = line.split("=")[1].strip()
+                    if 'vlan' == tenant_network_types:
+                        return True
+                    break
+            return False
+        # always return true if no controller is specified
+        return True
+
+    @staticmethod
     def copy_neutron_config_from_controllers(controller_nodes):
         if len(controller_nodes) and controller_nodes[0]:
             controller_node = controller_nodes[0]
