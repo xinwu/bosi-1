@@ -187,6 +187,11 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
     if env.openstack_release == const.OS_RELEASE_JUNO:
         Helper.copy_dhcp_scheduler_from_controllers(controller_nodes)
 
+    # check if vlan is the tenant network type for fuel environment
+    if not Helper.check_if_vlan_is_used(controller_nodes):
+        safe_print("tenant network type is not vlan. Stop deploying.\n")
+        return
+
     # prepare keystone client from /etc/neutron/api-paste.ini
     if env.openstack_release != const.OS_RELEASE_JUNO:
         Helper.prepare_keystone_client(controller_nodes)
