@@ -1559,7 +1559,18 @@ class Helper(object):
                 controller_node.setup_node_dir)
             if not controller_node.fuel_cluster_id:
                 # always return true for non-fuel environments
-                return true
+                return True
+            ml2_conf = open(
+                "%s/ml2_conf.ini" % controller_node.setup_node_dir, 'r')
+            for line in ml2_conf:
+                if line.startswith("tenant_network_types"):
+                    tenant_network_types = line.split("=")[1].strip()
+                    if 'vlan' == tenant_network_types:
+                        return True
+                    break
+            return False
+        # always return true if no controller is specified
+        return True
 
     @staticmethod
     def copy_neutron_config_from_controllers(controller_nodes):
