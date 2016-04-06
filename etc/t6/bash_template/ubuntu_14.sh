@@ -1,6 +1,7 @@
 #!/bin/bash
 
 install_bsnstacklib=%(install_bsnstacklib)s
+bsnstacklib_version="2015.1.53"
 install_ivs=%(install_ivs)s
 install_all=%(install_all)s
 deploy_dhcp_agent=%(deploy_dhcp_agent)s
@@ -252,17 +253,7 @@ if [[ "$(id -u)" != "0" ]]; then
 fi
 
 # prepare dependencies
-cat /etc/apt/sources.list | grep "http://archive.ubuntu.com/ubuntu"
-if [[ $? != 0 ]]; then
-    release=$(lsb_release -sc)
-    echo -e "\ndeb http://archive.ubuntu.com/ubuntu $release main\n" >> /etc/apt/sources.list
-fi
 apt-get install ubuntu-cloud-keyring
-if [[ $openstack_release == 'juno' ]]; then
-    echo "deb http://ubuntu-cloud.archive.canonical.com/ubuntu" \
-    "trusty-updates/juno main" > /etc/apt/sources.list.d/cloudarchive-juno.list
-fi
-apt-get update -y
 apt-get install -y linux-headers-$(uname -r) build-essential
 apt-get install -y python-dev python-setuptools
 apt-get install -y puppet dpkg
@@ -271,22 +262,15 @@ apt-get install -y libssl-dev libffi6 libffi-dev
 apt-get install -y libnl-genl-3-200
 apt-get -f install -y
 apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y neutron-common
-easy_install pip
-puppet module install --force puppetlabs-inifile
-puppet module install --force puppetlabs-stdlib
 
 # install bsnstacklib
 if [[ $install_bsnstacklib == true ]]; then
-    sleep 2
-    pip uninstall -y bsnstacklib
-    sleep 2
-    if [[ $pip_proxy == false ]]; then
-        pip install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
-        pip install --upgrade horizon-bsn
-    else
-        pip --proxy $pip_proxy  install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
-        pip --proxy $pip_proxy  install --upgrade horizon-bsn
-    fi
+    rm -rf /tmp/bsnstacklib-${bsnstacklib_version}
+    cd /tmp
+    tar -xzf bsnstacklib-${bsnstacklib_version}.tar.gz
+    cd /tmp/bsnstacklib-${bsnstacklib_version}
+    python setup.py build
+    python setup.py install
 fi
 
 if [[ $is_controller == true ]]; then
