@@ -370,13 +370,6 @@ def main():
         safe_print("--certificate-only requires the existence of --certificate-dir.\n")
         return
 
-    # Check if network is working properly
-    code = subprocess.call("wget www.bigswitch.com --timeout=5", shell=True)
-    if code != 0:
-        safe_print("Network is not working properly, quit deployment\n")
-        exit(1)
-    subprocess.call("rm -f index.html*", shell=True)
-
     with open(args.config_file, 'r') as config_file:
         config = yaml.load(config_file)
     deploy_bcf(config, args.deploy_mode, args.fuel_cluster_id, args.rhosp,

@@ -1,7 +1,7 @@
 # configuration won't be overrided by any openstack installer
 
 # mandatory, openstack release, supporting juno and kilo
-openstack_release: liberty
+openstack_release: kilo
 
 # mandatory, skip all nodes if true
 default_skip: false
@@ -16,7 +16,7 @@ default_install_ivs: true
 default_deploy_dhcp_agent: true
 
 # mandatory, install l3 agent to all compute nodes if true
-default_deploy_l3_agent: true
+default_deploy_l3_agent: false
 
 # mandatory for p+v fabric, the Switch Light VX tar file
 ivs_packages:
@@ -72,13 +72,13 @@ default_user: root
 default_passwd: bsn
 
 # node os
-default_os: centos
+default_os: ubuntu
 
 # node os version
-default_os_version: 7.0.1406
+default_os_version: 14.04
 
 # neutron physnet and vlan ranges
-network_vlan_ranges: physnet1:500:2000
+network_vlan_ranges: physnet2:500:2000
 
 # mandatory, can be controller or compute
 default_role: compute
@@ -101,10 +101,3 @@ tenant_api_version: 2
 
 # list of nodes to be deployed
 nodes:
-- hostname: 10.4.9.100
-  role: controller
-- hostname: 10.4.9.101
-  uplink_interfaces:
-  - p1p1
-  - p1p2
-- hostname: 10.4.9.102

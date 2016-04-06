@@ -177,7 +177,7 @@ start on runlevel [2345]
 stop on runlevel [!2345]
 respawn
 script
-    exec /usr/local/bin/neutron-bsn-agent --config-file=/etc/neutron/neutron.conf --config-dir /etc/neutron/conf.d/common --log-file=/var/log/neutron/neutron-bsn-agent.log
+    exec /usr/local/bin/neutron-bsn-agent --config-file=/etc/neutron/neutron.conf --log-file=/var/log/neutron/neutron-bsn-agent.log
 end script
 ",
 }

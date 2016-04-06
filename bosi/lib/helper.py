@@ -1332,11 +1332,11 @@ class Helper(object):
         code_web = 1
         code_local = 1
         url = env.horizon_patch_url
-        if 'http://' in url or 'https://' in url:
+        if env.deploy_horizon_patch and ('http://' in url or 'https://' in url):
             code_web = subprocess.call(
                 "wget --no-check-certificate %(url)s -P %(setup_node_dir)s" %
                 {'url': url, 'setup_node_dir': setup_node_dir}, shell=True)
-        if os.path.isfile(url):
+        if env.deploy_horizon_patch and os.path.isfile(url):
             code_local = subprocess.call("cp %(url)s %(setup_node_dir)s" %
                                          {'url': url,
                                           'setup_node_dir': setup_node_dir},
