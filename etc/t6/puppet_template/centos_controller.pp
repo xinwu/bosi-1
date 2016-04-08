@@ -316,7 +316,7 @@ ini_setting { "ml2 extension_drivers":
   section           => 'ml2',
   key_val_separator => '=',
   setting           => 'extension_drivers',
-  value             => 'port-security',
+  value             => 'port_security',
   notify            => Service['neutron-server'],
 }
 ini_setting { "ml2 type dirvers":
