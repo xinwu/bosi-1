@@ -1565,7 +1565,7 @@ class Helper(object):
             for line in ml2_conf:
                 if line.startswith("tenant_network_types"):
                     tenant_network_types = line.split("=")[1].strip()
-                    if 'vlan' == tenant_network_types:
+                    if 'vlan' in tenant_network_types:
                         return True
                     break
             return False
