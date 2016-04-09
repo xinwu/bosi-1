@@ -244,15 +244,15 @@ ini_setting { "l3 agent disable metadata proxy":
 }
 
 # config /etc/neutron/plugins/ml2/ml2_conf.ini
-ini_setting { "ml2 extension_drivers":
-  ensure            => present,
-  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-  section           => 'ml2',
-  key_val_separator => '=',
-  setting           => 'extension_drivers',
-  value             => 'port_security',
-  notify            => Service['neutron-server'],
-}
+#ini_setting { "ml2 extension_drivers":
+#  ensure            => present,
+#  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
+#  section           => 'ml2',
+#  key_val_separator => '=',
+#  setting           => 'extension_drivers',
+#  value             => 'port_security',
+#  notify            => Service['neutron-server'],
+#}
 ini_setting { "ml2 type dirvers":
   ensure            => present,
   path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
