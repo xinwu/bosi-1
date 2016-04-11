@@ -487,35 +487,35 @@ package { "device-mapper-libs":
 }
 
 # ovs_neutron_plugin for packstack
-file { "/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini":
+file { "/etc/neutron/plugins/ml2/openvswitch_agent.ini":
     ensure  => file,
 }
 ini_setting { "disable tunneling":
   ensure            => present,
-  path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
+  path              => '/etc/neutron/plugins/ml2/openvswitch_agent.ini',
   section           => 'ovs',
   key_val_separator => '=',
   setting           => 'enable_tunneling',
   value             => 'False',
-  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
+  require           => File['/etc/neutron/plugins/ml2/openvswitch_agent.ini'],
   notify            => Service['neutron-openvswitch-agent'],
 }
 ini_setting { "clear tunnel type":
   ensure            => absent,
-  path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
+  path              => '/etc/neutron/plugins/ml2/openvswitch_agent.ini',
   section           => 'ovs',
   key_val_separator => '=',
   setting           => 'tunnel_type',
-  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
+  require           => File['/etc/neutron/plugins/ml2/openvswitch_agent.ini'],
   notify            => Service['neutron-openvswitch-agent'],
 }
 ini_setting { "clear tunnel types":
   ensure            => absent,
-  path              => '/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini',
+  path              => '/etc/neutron/plugins/ml2/openvswitch_agent.ini',
   section           => 'agent',
   key_val_separator => '=',
   setting           => 'tunnel_types',
-  require           => File['/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini'],
+  require           => File['/etc/neutron/plugins/ml2/openvswitch_agent.ini'],
   notify            => Service['neutron-openvswitch-agent'],
 }
 service { 'neutron-openvswitch-agent':
