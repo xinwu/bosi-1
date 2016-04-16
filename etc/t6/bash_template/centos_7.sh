@@ -221,10 +221,10 @@ if [[ $install_bsnstacklib == true ]]; then
     sleep 2
     if [[ $pip_proxy == false ]]; then
         pip install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
-        pip install --upgrade horizon-bsn
+        pip install --upgrade "horizon-bsn>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
     else
         pip --proxy $pip_proxy  install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
-        pip --proxy $pip_proxy  install --upgrade horizon-bsn
+        pip --proxy $pip_proxy  install --upgrade "horizon-bsn>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
     fi
 fi
 
