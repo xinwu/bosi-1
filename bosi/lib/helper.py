@@ -1967,6 +1967,16 @@ class Helper(object):
                   {"cmd": cmd, "fqdn": node.fqdn})
         Helper.run_command_on_remote(node, cmd, timeout=10)
 
+        cmd = "cp -r /var/log/nova/* ~/%s/log/" % node.fqdn
+        safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
+                  {"cmd": cmd, "fqdn": node.fqdn})
+        Helper.run_command_on_remote(node, cmd, timeout=10)
+
+        cmd = "cp -r /var/log/heat/* ~/%s/log/" % node.fqdn
+        safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
+                  {"cmd": cmd, "fqdn": node.fqdn})
+        Helper.run_command_on_remote(node, cmd, timeout=10)
+
         cmd = "tar -czf %(fqdn)s.tar.gz %(fqdn)s" % {'fqdn': node.fqdn}
         safe_print("Run \"%(cmd)s\" on node %(fqdn)s\n" %
                   {"cmd": cmd, "fqdn": node.fqdn})
