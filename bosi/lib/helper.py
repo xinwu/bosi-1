@@ -1716,7 +1716,7 @@ class Helper(object):
                     node.dst_dir, node.ivs_debug_pkg)
 
         if (node.role == const.ROLE_CEPH or
-                or const.ROLE_CINDER in node.role.lower() or
+                const.ROLE_CINDER in node.role.lower() or
                 node.role == const.ROLE_MONGO or
                 node.deploy_mode == const.T5):
             # copy send_lldp to t5 compute nodes
