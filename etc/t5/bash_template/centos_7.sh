@@ -34,7 +34,7 @@ controller() {
 
     # bsnstacklib installed and property files updated. now perform live db migration
     echo "Performing live DB migration for Neutron.."
-    if [[ $openstack_release == 'kilo_v2' ]]; then
+    if [[ $openstack_release == 'kilo' || $openstack_release == 'kilo_v2' ]]; then
         neutron-db-manage --service bsn_service_plugin upgrade head
     else
         neutron-db-manage upgrade heads
