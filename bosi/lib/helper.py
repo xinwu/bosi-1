@@ -445,11 +445,14 @@ class Helper(object):
             bash_template = bash_template_file.read()
             is_controller = False
             is_ceph = False
+            is_cinder = False
             is_mongo = False
             if node.role == const.ROLE_NEUTRON_SERVER:
                 is_controller = True
             if node.role == const.ROLE_CEPH:
                 is_ceph = True
+            if const.ROLE_CINDER in node.role.lower():
+                is_cinder = True
             if node.role == const.ROLE_MONGO:
                 is_mongo = True
             bash = (
@@ -462,6 +465,7 @@ class Helper(object):
                  'deploy_l3_agent': str(node.deploy_l3_agent).lower(),
                  'is_controller': str(is_controller).lower(),
                  'is_ceph' : str(is_ceph).lower(),
+                 'is_cinder': str(is_cinder).lower(),
                  'is_mongo': str(is_mongo).lower(),
                  'deploy_horizon_patch':
                      str(node.deploy_horizon_patch).lower(),
@@ -892,7 +896,8 @@ class Helper(object):
         node_config['role'] = role
         if ((role != const.ROLE_NEUTRON_SERVER) and
                 (role != const.ROLE_COMPUTE) and
-                (role != const.ROLE_CEPH) and
+                (const.ROLE_CEPH not in role.lower()) and
+                (const.ROLE_CINDER not in role.lower()) and
                 (role != const.ROLE_MONGO)):
             node_config['skip'] = True
             node_config['error'] = "node role is %s" % (role)
@@ -1129,7 +1134,8 @@ class Helper(object):
 
                 if not online or (const.ROLE_NEUTRON_SERVER not in role and
                                   const.ROLE_COMPUTE not in role and
-                                  const.ROLE_CEPH not in role and
+                                  const.ROLE_CEPH not in role.lower() and
+                                  const.ROLE_CINDER not in role.lower() and
                                   const.ROLE_MONGO not in role):
                     continue
 
@@ -1137,8 +1143,10 @@ class Helper(object):
                     role = const.ROLE_NEUTRON_SERVER
                 elif const.ROLE_COMPUTE in role:
                     role = const.ROLE_COMPUTE
-                elif const.ROLE_CEPH in role:
+                elif const.ROLE_CEPH in role.lower():
                     role = const.ROLE_CEPH
+                elif const.ROLE_CINDER in role.lower():
+                    role = const.ROLE_CINDER
                 elif const.ROLE_MONGO in role:
                     role = const.ROLE_MONGO
                 else:
@@ -1708,6 +1716,7 @@ class Helper(object):
                     node.dst_dir, node.ivs_debug_pkg)
 
         if (node.role == const.ROLE_CEPH or
+                const.ROLE_CINDER in node.role.lower() or
                 node.role == const.ROLE_MONGO or
                 node.deploy_mode == const.T5):
             # copy send_lldp to t5 compute nodes
