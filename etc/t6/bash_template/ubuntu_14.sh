@@ -7,6 +7,7 @@ deploy_dhcp_agent=%(deploy_dhcp_agent)s
 ivs_version=%(ivs_version)s
 is_controller=%(is_controller)s
 is_ceph=%(is_ceph)s
+is_cinder=%(is_cinder)s
 is_mongo=%(is_mongo)s
 deploy_horizon_patch=%(deploy_horizon_patch)s
 fuel_cluster_id=%(fuel_cluster_id)s
@@ -239,6 +240,13 @@ ceph() {
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 }
 
+cinder() {
+    # copy send_lldp to /bin and start send_lldp service
+    sudo cp %(dst_dir)s/send_lldp /bin/
+    sudo chmod 777 /bin/send_lldp
+    puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
+}
+
 mongo() {
     # copy send_lldp to /bin and start send_lldp service
     sudo cp %(dst_dir)s/send_lldp /bin/
@@ -297,6 +305,8 @@ if [[ $is_controller == true ]]; then
     controller
 elif [[ $is_ceph == true ]]; then
     ceph
+elif [[ $is_cinder == true ]]; then
+    cinder
 elif [[ $is_mongo == true ]]; then
     mongo
 else
