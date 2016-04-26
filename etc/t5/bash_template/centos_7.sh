@@ -167,7 +167,8 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 # prepare dependencies
-rpm -iUvh http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
+wget -r --no-parent --no-directories --timestamping --accept 'epel-release-7-*.rpm' 'http://dl.fedoraproject.org/pub/epel/7/x86_64/e/'
+rpm -iUvh epel-release-7-*.rpm
 rpm -ivh https://yum.puppetlabs.com/el/7/products/x86_64/puppetlabs-release-7-10.noarch.rpm
 yum groupinstall -y 'Development Tools'
 yum install -y python-devel puppet python-pip wget libffi-devel openssl-devel

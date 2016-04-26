@@ -145,7 +145,8 @@ if [[ $? == 0 ]]; then
 fi
 
 # prepare dependencies
-sudo rpm -iUvh http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
+wget -r --no-parent --no-directories --timestamping --accept 'epel-release-7-*.rpm' 'http://dl.fedoraproject.org/pub/epel/7/x86_64/e/'
+rpm -iUvh epel-release-7-*.rpm
 sudo rpm -ivh https://yum.puppetlabs.com/el/7/products/x86_64/puppetlabs-release-7-10.noarch.rpm
 sudo yum update -y
 sudo yum groupinstall -y 'Development Tools'
