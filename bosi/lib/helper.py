@@ -1927,6 +1927,8 @@ class Helper(object):
             safe_print("Node %s does not have mac.\n" % node.fqdn)
             return
         mac = node.mac.lower().replace(':', '-')
+        cn = "%s.switch.cluster" % mac
+        csr_sub = const.CSR_SUB % {'cn': cn}
         key_name = "%s.switch.cluster.key" % mac
         csr_name = "%s.switch.cluster.csr" % mac
 
@@ -1939,7 +1941,7 @@ class Helper(object):
                    "-out %(csr_dir)s/%(csr_name)s -subj \"%(sub)s\"" %
                   {'key_dir': const.KEY_DIR, 'key_name' : key_name,
                    'csr_dir': const.CSR_DIR, 'csr_name' : csr_name,
-                   'sub': const.CSR_SUB})
+                   'sub': csr_sub})
         subprocess.call(csr_cmd, shell=True)
 
     @staticmethod
