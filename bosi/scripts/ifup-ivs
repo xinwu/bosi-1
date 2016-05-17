@@ -27,6 +27,11 @@ need_config ${CONFIG}
 
 source_config
 
+running=$(systemctl status ivs | grep running)
+if [ -z $running ]; then
+    systemctl start ivs
+fi
+
 case "$TYPE" in
         IVSIntPort)
                 intf=$(ivs-ctl list-ports | grep "$DEVICE")
