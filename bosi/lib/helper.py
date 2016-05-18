@@ -1731,34 +1731,6 @@ class Helper(object):
                  'python_template_dir': const.PYTHON_TEMPLATE_DIR},
                 node.dst_dir, 'send_lldp')
 
-        # we don't support router rule grid in kilo t6. hind it.
-        if (node.openstack_release == const.OS_RELEASE_KILO or
-                node.openstack_release == const.OS_RELEASE_KILO_V2):
-            if (node.deploy_mode == const.T6 and
-                    node.role == const.ROLE_NEUTRON_SERVER):
-                safe_print("Copy project_tabs.py to %(hostname)s\n" %
-                       {'hostname': node.fqdn})
-                Helper.copy_file_to_remote(
-                    node,
-                    r'''%(setup_node_dir)s/%(deploy_mode)s/'''
-                    '''%(python_template_dir)s/project_tabs.py''' %
-                    {'setup_node_dir': node.setup_node_dir,
-                     'deploy_mode': node.deploy_mode,
-                     'python_template_dir': const.PYTHON_TEMPLATE_DIR},
-                    '/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/routers',
-                    'tabs.py')
-                safe_print("Copy admin_tabs.py to %(hostname)s\n" %
-                       {'hostname': node.fqdn})
-                Helper.copy_file_to_remote(
-                    node,
-                    r'''%(setup_node_dir)s/%(deploy_mode)s/'''
-                    '''%(python_template_dir)s/admin_tabs.py''' %
-                    {'setup_node_dir': node.setup_node_dir,
-                     'deploy_mode': node.deploy_mode,
-                     'python_template_dir': const.PYTHON_TEMPLATE_DIR},
-                    '/usr/share/openstack-dashboard/openstack_dashboard/dashboards/admin/routers',
-                    'tabs.py')
-
         # copy bash script to node
         safe_print("Copy bash script to %(hostname)s\n" %
                    {'hostname': node.fqdn})
