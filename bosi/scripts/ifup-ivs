@@ -27,11 +27,6 @@ need_config ${CONFIG}
 
 source_config
 
-running=$(systemctl status ivs | grep running)
-if [ -z $running ]; then
-    systemctl start ivs
-fi
-
 case "$TYPE" in
         IVSIntPort)
                 intf=$(ivs-ctl list-ports | grep "$DEVICE")
@@ -41,9 +36,9 @@ case "$TYPE" in
                 ifconfig "$DEVICE" "$IPADDR" netmask "$NETMASK"
                 ;;
         *)
+                /sbin/ip link set dev ${DEVICE} up
                 intf=$(ivs-ctl list-ports | grep "$DEVICE")
                 if [ -z $intf ]; then
-                    /sbin/ip link set dev ${DEVICE} up
                     ivs-ctl add-port "$DEVICE"
                 fi
                 ;;
