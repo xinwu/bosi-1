@@ -338,8 +338,6 @@ class Helper(object):
                  'deploy_dhcp_agent': str(node.deploy_dhcp_agent).lower(),
                  'deploy_l3_agent': str(node.deploy_l3_agent).lower(),
                  'is_controller': str(is_controller).lower(),
-                 'deploy_horizon_patch':
-                     str(node.deploy_horizon_patch).lower(),
                  'ivs_version': node.ivs_version,
                  'bsnstacklib_version_lower': node.get_bsnstacklib_version_lower(),
                  'bsnstacklib_version_upper': node.get_bsnstacklib_version_upper(),
@@ -347,9 +345,6 @@ class Helper(object):
                  'dst_dir': node.dst_dir,
                  'hostname': node.hostname,
                  'ivs_pkg': node.ivs_pkg,
-                 'horizon_patch': node.horizon_patch,
-                 'horizon_patch_dir': node.horizon_patch_dir,
-                 'horizon_base_dir': node.horizon_base_dir,
                  'ivs_debug_pkg': node.ivs_debug_pkg,
                  'ovs_br': node.get_all_ovs_brs(),
                  'bonds': node.get_all_bonds(),
@@ -467,8 +462,6 @@ class Helper(object):
                  'is_ceph' : str(is_ceph).lower(),
                  'is_cinder': str(is_cinder).lower(),
                  'is_mongo': str(is_mongo).lower(),
-                 'deploy_horizon_patch':
-                     str(node.deploy_horizon_patch).lower(),
                  'ivs_version': node.ivs_version,
                  'bsnstacklib_version_lower': node.get_bsnstacklib_version_lower(),
                  'bsnstacklib_version_upper': node.get_bsnstacklib_version_upper(),
@@ -476,9 +469,6 @@ class Helper(object):
                  'dst_dir': node.dst_dir,
                  'hostname': node.hostname,
                  'ivs_pkg': node.ivs_pkg,
-                 'horizon_patch': node.horizon_patch,
-                 'horizon_patch_dir': node.horizon_patch_dir,
-                 'horizon_base_dir': node.horizon_base_dir,
                  'ivs_debug_pkg': node.ivs_debug_pkg,
                  'ovs_br': node.get_all_ovs_brs(),
                  'bonds': node.get_all_bonds(),
@@ -579,8 +569,6 @@ class Helper(object):
                  'deploy_dhcp_agent': str(node.deploy_dhcp_agent).lower(),
                  'deploy_l3_agent': str(node.deploy_l3_agent).lower(),
                  'is_controller': str(is_controller).lower(),
-                 'deploy_horizon_patch':
-                     str(node.deploy_horizon_patch).lower(),
                  'ivs_version': node.ivs_version,
                  'bsnstacklib_version_lower': node.get_bsnstacklib_version_lower(),
                  'bsnstacklib_version_upper': node.get_bsnstacklib_version_upper(),
@@ -588,9 +576,6 @@ class Helper(object):
                  'dst_dir': node.dst_dir,
                  'hostname': node.hostname,
                  'ivs_pkg': node.ivs_pkg,
-                 'horizon_patch': node.horizon_patch,
-                 'horizon_patch_dir': node.horizon_patch_dir,
-                 'horizon_base_dir': node.horizon_base_dir,
                  'ivs_debug_pkg': node.ivs_debug_pkg,
                  'ovs_br': node.get_all_ovs_brs(),
                  'bonds': node.get_all_bonds(),
@@ -1336,24 +1321,6 @@ class Helper(object):
                              'pkg': pkg},
                             shell=True)
 
-        # wget horizon patch
-        code_web = 1
-        code_local = 1
-        url = env.horizon_patch_url
-        if 'http://' in url or 'https://' in url:
-            code_web = subprocess.call(
-                "wget --no-check-certificate %(url)s -P %(setup_node_dir)s" %
-                {'url': url, 'setup_node_dir': setup_node_dir}, shell=True)
-        if os.path.isfile(url):
-            code_local = subprocess.call("cp %(url)s %(setup_node_dir)s" %
-                                         {'url': url,
-                                          'setup_node_dir': setup_node_dir},
-                                         shell=True)
-        if env.deploy_horizon_patch and code_web != 0 and code_local != 0:
-            safe_print(
-                "Required horizon packages are not correctly downloaded.\n")
-            exit(1)
-
         # prepare for rhosp7
         if env.rhosp:
             subprocess.call("sudo sysctl -w net.ipv4.ip_forward=1", shell=True)
@@ -1779,17 +1746,6 @@ class Helper(object):
                     node,
                     "%s/dhcp_agent_scheduler.py" % node.setup_node_dir,
                     node.dhcp_agent_scheduler_dir, 'dhcp_agent_scheduler.py')
-
-            # copy horizon patch to node
-            if node.deploy_horizon_patch:
-                safe_print("Copy horizon patch to %(hostname)s\n" %
-                           {'hostname': node.fqdn})
-                Helper.copy_file_to_remote(
-                    node,
-                    (r'''%(src_dir)s/%(horizon_patch)s''' %
-                     {'src_dir': node.setup_node_dir,
-                      'horizon_patch': node.horizon_patch}),
-                    node.dst_dir, node.horizon_patch)
 
         # copy rootwrap to remote
         if node.fuel_cluster_id:
