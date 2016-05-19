@@ -9,7 +9,6 @@ ivs_version=%(ivs_version)s
 is_controller=%(is_controller)s
 is_ceph=%(is_ceph)s
 is_cinder=%(is_cinder)s
-deploy_horizon_patch=%(deploy_horizon_patch)s
 fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
 pip_proxy=%(pip_proxy)s
@@ -50,9 +49,6 @@ controller() {
 
     # deploy horizon plugin
     cp /usr/local/lib/python2.7/dist-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
-    #if [[ $deploy_horizon_patch == true ]]; then
-        # TODO: new way to plugin horizon
-    #fi
 
     # schedule cron job to reschedule network in case dhcp agent fails
     chmod a+x /bin/dhcp_reschedule.sh

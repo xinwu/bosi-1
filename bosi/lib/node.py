@@ -98,11 +98,6 @@ class Node(object):
         self.selinux_mode = env.selinux_mode
         self.fuel_cluster_id = env.fuel_cluster_id
         self.rhosp = env.rhosp
-        self.deploy_horizon_patch = env.deploy_horizon_patch
-        self.horizon_patch_url = env.horizon_patch_url
-        self.horizon_patch = env.horizon_patch
-        self.horizon_patch_dir = env.horizon_patch_dir
-        self.horizon_base_dir = env.horizon_base_dir
         self.ivs_pkg_map = env.ivs_pkg_map
         self.ivs_pkg = None
         self.ivs_debug_pkg = None
@@ -424,11 +419,6 @@ class Node(object):
             selinux_mode: %(selinux_mode)s,
             fuel_cluster_id: %(fuel_cluster_id)s,
             rhosp: %(rhosp)s,
-            deploy_horizon_patch: %(deploy_horizon_patch)s,
-            horizon_patch_url: %(horizon_patch_url)s,
-            horizon_patch: %(horizon_patch)s,
-            horizon_patch_dir: %(horizon_patch_dir)s,
-            horizon_base_dir: %(horizon_base_dir)s,
             ivs_pkg: %(ivs_pkg)s,
             ivs_debug_pkg: %(ivs_debug_pkg)s,
             ivs_version: %(ivs_version)s,
@@ -510,11 +500,6 @@ class Node(object):
             'selinux_mode': self.selinux_mode,
             'fuel_cluster_id': self.fuel_cluster_id,
             'rhosp': self.rhosp,
-            'deploy_horizon_patch': self.deploy_horizon_patch,
-            'horizon_patch_url': self.horizon_patch_url,
-            'horizon_patch': self.horizon_patch,
-            'horizon_patch_dir': self.horizon_patch_dir,
-            'horizon_base_dir': self.horizon_base_dir,
             'ivs_pkg': self.ivs_pkg,
             'ivs_debug_pkg': self.ivs_debug_pkg,
             'ivs_version': self.ivs_version,

@@ -139,19 +139,12 @@ class Environment(object):
         self.uplink_interfaces = config.get('default_uplink_interfaces')
         self.uplink_mtu = config.get('default_uplink_mtu')
 
-        # openstack bsnstacklib version and horizon patch
+        # openstack bsnstacklib version - applies to horizon plugin too
         self.openstack_release = str(config['openstack_release']).lower()
         self.bsnstacklib_version_lower = (
             const.OS_RELEASE_TO_BSN_LIB_LOWER[self.openstack_release])
         self.bsnstacklib_version_upper = (
             const.OS_RELEASE_TO_BSN_LIB_UPPER[self.openstack_release])
-        self.deploy_horizon_patch = const.DEPLOY_HORIZON_PATCH
-        self.horizon_patch_url = (
-            const.HORIZON_PATCH_URL[self.openstack_release])
-        self.horizon_patch = os.path.basename(self.horizon_patch_url)
-        self.horizon_patch_dir = (
-            const.HORIZON_PATCH_DIR[self.openstack_release])
-        self.horizon_base_dir = const.HORIZON_BASE_DIR
 
         # master bcf controller and cookie
         self.bcf_master = None

@@ -6,7 +6,6 @@ install_all=%(install_all)s
 deploy_dhcp_agent=%(deploy_dhcp_agent)s
 ivs_version=%(ivs_version)s
 is_controller=%(is_controller)s
-deploy_horizon_patch=%(deploy_horizon_patch)s
 fuel_cluster_id=%(fuel_cluster_id)s
 openstack_release=%(openstack_release)s
 skip_ivs_version_check=%(skip_ivs_version_check)s
@@ -43,9 +42,6 @@ controller() {
     # deploy bcf horizon patch to controller node
     cp /usr/lib/python2.7/site-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
     systemctl restart httpd
-    #if [[ $deploy_horizon_patch == true ]]; then
-        # TODO: new way to plugin horizon
-    #fi
 
     # restart keystone and horizon
     #systemctl restart httpd
