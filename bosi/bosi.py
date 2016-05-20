@@ -31,6 +31,34 @@ node_fail = {}
 node_dict = {}
 time_dict = {}
 
+def worker_upgrade_node(q):
+    while True:
+        node = q.get()
+        # copy ivs pkg to node
+        Helper.copy_pkg_scripts_to_remote(node)
+
+        # deploy node
+        safe_print("Start to deploy %(fqdn)s\n" %
+                   {'fqdn': node.fqdn})
+
+        start_time = datetime.datetime.now()
+        Helper.run_command_on_remote(node,
+            (r'''sudo bash %(dst_dir)s/%(hostname)s_upgrade.sh''' %
+            {'dst_dir': node.dst_dir,
+             'hostname': node.hostname,
+             'log': node.log}))
+        end_time = datetime.datetime.now()
+
+        # parse setup log
+        diff = Helper.timedelta_total_seconds(end_time - start_time)
+        node.set_time_diff(diff)
+        node = Helper.update_last_log(node)
+        node_dict[node.fqdn] = node
+        time_dict[node.fqdn] = diff
+
+        safe_print("Finish upgrading %(fqdn)s, cost time: %(diff).2f\n" %
+                   {'fqdn': node.fqdn, 'diff': node.time_diff})
+        q.task_done()
 
 def worker_setup_node(q):
     while True:
@@ -143,14 +171,59 @@ def verify_node_setup(q):
         q.task_done()
 
 
+def upgrade_bcf(node_dic):
+    #TODO
+    for hostname, node in node_dic.iteritems():
+        if node.skip:
+            safe_print("skip node %(fqdn)s due to %(error)s\n" %
+                      {'fqdn': node.fqdn, 'error': node.error})
+            continue
+        if node.tag != node.env_tag:
+            safe_print("skip node %(fqdn)s due to mismatched tag\n" %
+                      {'fqdn': node.fqdn})
+            continue
+
+        if node.os == const.CENTOS:
+            Helper.generate_upgrade_scripts_for_centos(node)
+        elif node.os == const.UBUNTU:
+            Helper.generate_upgrade_scripts_for_ubuntu(node)
+        elif node.os == const.REDHAT:
+            Helper.generate_upgrade_scripts_for_redhat(node)
+
+        node_q.put(node)
+
+    with open(const.LOG_FILE, "a") as log_file:
+        for hostname, node in node_dic.iteritems():
+            log_file.write(str(node))
+
+    # Use multiple threads to setup compute nodes
+    for i in range(const.MAX_WORKERS):
+        t = threading.Thread(target=worker_upgrade_node, args=(node_q,))
+        t.daemon = True
+        t.start()
+    node_q.join()
+
+    sorted_time_dict = OrderedDict(sorted(time_dict.items(),
+                                          key=lambda x: x[1]))
+    for fqdn, h_time in sorted_time_dict.items():
+        safe_print("node: %(fqdn)s, time: %(time).2f, "
+                   "last_log: %(log)s\n" %
+                   {'fqdn': fqdn, 'time': h_time,
+                    'log': node_dict[fqdn].last_log})
+
+    safe_print("Big Cloud Fabric deployment finished! "
+               "Check %(log)s on each node for details.\n" %
+              {'log': const.LOG_FILE})
+
+
 def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
                verify, verify_only, skip_ivs_version_check,
                certificate_dir, certificate_only, generate_csr,
-               support):
+               support, upgrade_tarball_path):
     # Deploy setup node
     safe_print("Start to prepare setup node\n")
     env = Environment(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
-                      skip_ivs_version_check, certificate_dir)
+                      skip_ivs_version_check, certificate_dir, upgrade_tarball_path)
     Helper.common_setup_node_preparation(env)
     controller_nodes = []
 
@@ -158,6 +231,9 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
     safe_print("Start to setup Big Cloud Fabric\n")
     nodes_yaml_config = config['nodes'] if 'nodes' in config else None
     node_dic = Helper.load_nodes(nodes_yaml_config, env)
+
+    if upgrade_tarball_path:
+        upgrade_bcf(node_dic)
 
     if generate_csr:
         safe_print("Start to generate csr for virtual switches.\n")
@@ -361,6 +437,9 @@ def main():
                               "--certificate-dir to specify the certificate directory."))
     parser.add_argument('--support', action='store_true', default=False,
                         help=("Collect openstack logs."))
+    parser.add_argument('--upgrade-tarball-path', required=False,
+                        help=("The tar.gz path that has the packages for upgrade."))
+
 
     args = parser.parse_args()
     if args.fuel_cluster_id and args.rhosp:
@@ -370,13 +449,6 @@ def main():
         safe_print("--certificate-only requires the existence of --certificate-dir.\n")
         return
 
-    # Check if network is working properly
-    code = subprocess.call("wget www.bigswitch.com --timeout=5", shell=True)
-    if code != 0:
-        safe_print("Network is not working properly, quit deployment\n")
-        exit(1)
-    subprocess.call("rm -f index.html*", shell=True)
-
     with open(args.config_file, 'r') as config_file:
         config = yaml.load(config_file)
     deploy_bcf(config, args.deploy_mode, args.fuel_cluster_id, args.rhosp,
@@ -384,7 +456,8 @@ def main():
                args.verify, args.verifyonly,
                args.skip_ivs_version_check,
                args.certificate_dir, args.certificate_only,
-               args.generate_csr, args.support)
+               args.generate_csr, args.support,
+               args.upgrade_tarball_path)
 
 
 if __name__ == '__main__':

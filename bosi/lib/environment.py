@@ -7,7 +7,12 @@ from rest import RestLib
 
 class Environment(object):
     def __init__(self, config, mode, fuel_cluster_id, rhosp, tag,
-                 cleanup, skip_ivs_version_check, certificate_dir):
+                 cleanup, skip_ivs_version_check, certificate_dir,
+                 upgrade_tarball_path):
+        # tarball for upgrade
+        self.upgrade_tarball_dir = os.path.dirname(upgrade_tarball_path)
+        self.upgrade_tarball = os.path.basename(upgrade_tarball_path)
+
         # certificate directory
         self.certificate_dir = certificate_dir
 

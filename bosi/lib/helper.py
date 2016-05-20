@@ -1272,6 +1272,11 @@ class Helper(object):
                            'generated_script': const.GENERATED_SCRIPT_DIR},
                         shell=True)
 
+        if env.upgrade_tarball:
+            # TODO move tar ball to setup_node_dir
+            # don't need other preparation for upgrade
+            return
+
         # wget ivs packages
         if env.deploy_mode == const.T6:
             code_web = 1
@@ -1321,25 +1326,6 @@ class Helper(object):
                              'pkg': pkg},
                             shell=True)
 
-        # prepare for rhosp7
-        if env.rhosp:
-            subprocess.call("sudo sysctl -w net.ipv4.ip_forward=1", shell=True)
-            subprocess.call(
-                r'''sudo iptables -t nat -A POSTROUTING -o '''
-                '''%(external)s -j MASQUERADE''' %
-                {'external': env.rhosp_installer_management_interface},
-                shell=True)
-            subprocess.call(
-                r'''sudo iptables -A FORWARD -i %(external)s '''
-                '''-o %(internal)s -m state --state RELATED,ESTABLISHED '''
-                '''-j ACCEPT''' %
-                {'external': env.rhosp_installer_management_interface,
-                 'internal': env.rhosp_installer_pxe_interface}, shell=True)
-            subprocess.call(
-                r'''sudo iptables -A FORWARD -i %(internal)s -o '''
-                '''%(external)s -j ACCEPT''' %
-                {'external': env.rhosp_installer_management_interface,
-                 'internal': env.rhosp_installer_pxe_interface}, shell=True)
 
     @staticmethod
     def update_last_log(node):
@@ -1629,6 +1615,25 @@ class Helper(object):
 
     @staticmethod
     def copy_pkg_scripts_to_remote(node):
+
+        # copy script and tarball to node for upgrade
+        if node.upgrade_tarball:
+            # copy bash script to node
+            safe_print("Copy bash script to %(hostname)s\n" %
+                      {'hostname': node.fqdn})
+            Helper.copy_file_to_remote(
+                node, node.bash_script_path, node.dst_dir,
+                "%(hostname)s_upgrade.sh" % {'hostname': node.hostname})
+
+            safe_print("Copy %(tarball)s to %(hostname)s\n" %
+                       {'tarball': node.upgrade_tarball, 'hostname': node.fqdn})
+            Helper.copy_file_to_remote(
+                node,
+                (r'''%(src_dir)s/%(tarball)s''' %
+                 {'src_dir': node.setup_node_dir,
+                  'tarball': node.upgrade_tarball}),
+                node.dst_dir, node.upgrade_tarball)
+            return
 
         # copy neutron, metadata, dhcp config to node
         if node.install_bsnstacklib:
