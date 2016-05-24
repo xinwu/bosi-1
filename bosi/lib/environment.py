@@ -1,6 +1,9 @@
 import constants as const
 from helper import Helper
 import os
+from os import listdir
+from os.path import isfile
+from os.path import join
 import re
 from rest import RestLib
 
@@ -8,10 +11,19 @@ from rest import RestLib
 class Environment(object):
     def __init__(self, config, mode, fuel_cluster_id, rhosp, tag,
                  cleanup, skip_ivs_version_check, certificate_dir,
-                 upgrade_tarball_path):
-        # tarball for upgrade
-        self.upgrade_tarball_dir = os.path.dirname(upgrade_tarball_path)
-        self.upgrade_tarball = os.path.basename(upgrade_tarball_path)
+                 upgrade_dir):
+        # directory for upgrade
+        self.upgrade_dir = upgrade_dir
+        upgrade_pkgs = [f for f in listdir(upgrade_dir) if isfile(join(upgrade_dir, f))]
+        self.upgrade_pkgs = []
+        if rhosp:
+            for pkg in upgrade_pkgs:
+                for key in const.UPGRADE_RPM:
+                    self.upgrade_pkgs.append(pkg)
+        else:
+            for pkg in upgrade_pkgs:
+                for key in const.UPGRADE_PYPI:
+                    self.upgrade_pkgs.append(pkg)
 
         # certificate directory
         self.certificate_dir = certificate_dir

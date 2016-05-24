@@ -801,60 +801,6 @@ class Helper(object):
         node_config['hostname'] = hostname
         node_config['role'] = role
 
-        #parse /etc/os-net-config/config.json
-        node = Node(node_config, env)
-        subprocess.call("rm -f /tmp/config.json", shell=True)
-        Helper.copy_file_from_remote(node, "/etc/os-net-config",
-                                     "config.json", "/tmp")
-        if not os.path.isfile("/tmp/config.json"):
-            safe_print("Error retrieving config for node %(hostname)s:\n"
-                       % {'hostname': node_config['hostname']})
-            return None
-        try:
-            data = open("/tmp/config.json").read()
-            node_json_config = json.loads(data)
-        except Exception as e:
-            safe_print("Error parsing node %(hostname)s json file:\n%(e)s\n"
-                       % {'hostname': node_config['hostname'], 'e': e})
-            return None
-
-        # get ovs bridge and bond
-        node_config['br_bond'] = str(
-            node_json_config['network_config'][0]['name'])
-        members = node_json_config['network_config'][0]['members']
-        for member in members:
-            if 'name' in member:
-                node_config['bond'] = member['name']
-                break
-
-        # get ovs uplinks
-        uplink_cmd = (r'''sudo ovs-appctl bond/list | grep -v slaves '''
-                      '''| grep %(bond)s''' %
-                      {'bond': node_config['bond']})
-        output, error = Helper.run_command_on_remote_without_timeout(
-            node, uplink_cmd)
-        if error:
-            safe_print("Error getting node %(hostname)s uplinks:\n%(error)s\n"
-                       % {'hostname': node_config['hostname'],
-                          'error': error})
-            return None
-        elif output:
-            node_config['uplink_interfaces'] = (
-                output.replace(',', ' ').split()[3:])
-        else:
-            # ovs bond has been removed, not the first time running this script
-            uplink_cmd = (r'''sudo cat /proc/net/bonding/%(bond)s | '''
-                          '''grep Slave | grep Interface | cut -c18-''' %
-                          {'bond': node_config['bond']})
-            output, error = Helper.run_command_on_remote_without_timeout(
-                node, uplink_cmd)
-            if error:
-                safe_print(
-                    "Error getting node %(hostname)s uplinks:\n%(error)s\n"
-                    % {'hostname': node_config['hostname'], 'error': error})
-                return None
-            node_config['uplink_interfaces'] = output.split()
-
         # get uname
         uname = Helper.get_uname(node, node_config)
         if uname:
@@ -1187,17 +1133,6 @@ class Helper(object):
                 if (not node) or (not node.hostname):
                     continue
                 node_dic[node.hostname] = node
-
-                # get node bridges
-                if node.deploy_mode == const.T5:
-                    continue
-                for br in node.bridges:
-                    if (not br.br_vlan) or (br.br_key == const.BR_KEY_PRIVATE):
-                        continue
-                    rule = MembershipRule(br.br_key, br.br_vlan,
-                                          node.bcf_openstack_management_tenant,
-                                          node.fuel_cluster_id)
-                    membership_rules[rule.segment] = rule
         except IndexError:
             raise Exception("Could not parse node list:\n%(node_list)s\n"
                             % {'node_list': node_list})
@@ -1232,14 +1167,8 @@ class Helper(object):
                     env.bcf_openstack_management_tenant)
             return node_dic
         elif env.rhosp:
-            # TODO: no longer supported after BCF 3.5. We moved to
-            # the integrated solution with RHOSP8
             node_dic, membership_rules = Helper.load_nodes_from_rhosp(
                 node_yaml_config_map, env)
-            for br_key, rule in membership_rules.iteritems():
-                RestLib.program_segment_and_membership_rule(
-                    env.bcf_master, env.bcf_cookie, rule,
-                    env.bcf_openstack_management_tenant)
             return node_dic
 
     @staticmethod
@@ -1272,8 +1201,7 @@ class Helper(object):
                            'generated_script': const.GENERATED_SCRIPT_DIR},
                         shell=True)
 
-        if env.upgrade_tarball:
-            # TODO move tar ball to setup_node_dir
+        if env.upgrade_dir:
             # don't need other preparation for upgrade
             return
 
@@ -1616,8 +1544,8 @@ class Helper(object):
     @staticmethod
     def copy_pkg_scripts_to_remote(node):
 
-        # copy script and tarball to node for upgrade
-        if node.upgrade_tarball:
+        # copy script and packages to node for upgrade
+        if node.upgrade_dir:
             # copy bash script to node
             safe_print("Copy bash script to %(hostname)s\n" %
                       {'hostname': node.fqdn})
@@ -1625,14 +1553,16 @@ class Helper(object):
                 node, node.bash_script_path, node.dst_dir,
                 "%(hostname)s_upgrade.sh" % {'hostname': node.hostname})
 
-            safe_print("Copy %(tarball)s to %(hostname)s\n" %
-                       {'tarball': node.upgrade_tarball, 'hostname': node.fqdn})
-            Helper.copy_file_to_remote(
-                node,
-                (r'''%(src_dir)s/%(tarball)s''' %
-                 {'src_dir': node.setup_node_dir,
-                  'tarball': node.upgrade_tarball}),
-                node.dst_dir, node.upgrade_tarball)
+            for pkg in node.upgrade_pkgs:
+                safe_print("Copy %(pkg)s to %(hostname)s\n" %
+                          {'pkg': pkg, 'hostname': node.fqdn})
+                dst_dir = "%s/upgrade"
+                Helper.copy_file_to_remote(
+                    node,
+                    (r'''%(src_dir)s/%(pkg)s''' %
+                    {'src_dir': node.upgrade_dir,
+                     'pkg': pkg}),
+                     dst_dir, pkg)
             return
 
         # copy neutron, metadata, dhcp config to node

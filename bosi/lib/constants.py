@@ -124,3 +124,8 @@ CSR_SUB = r'''/C=US/ST=California/L=Santa Clara/O=BSN/CN=%(cn)s'''
 
 # support constants
 SUPPORT_DIR = "/tmp/support"
+
+# upgrade pkg key words
+UPGRADE_PYPI = ["ivs", "horizon-bsn", "bsnstacklib"]
+UPGRADE_RPM = ["ivs", "python-networking-bigswitch", "openstack-neutron-bigswitch-agent", "openstack-neutron-bigswitch-lldp", "horizon-bsn"]
+

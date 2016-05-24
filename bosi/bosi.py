@@ -219,11 +219,11 @@ def upgrade_bcf(node_dic):
 def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
                verify, verify_only, skip_ivs_version_check,
                certificate_dir, certificate_only, generate_csr,
-               support, upgrade_tarball_path):
+               support, upgrade_dir):
     # Deploy setup node
     safe_print("Start to prepare setup node\n")
     env = Environment(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
-                      skip_ivs_version_check, certificate_dir, upgrade_tarball_path)
+                      skip_ivs_version_check, certificate_dir, upgrade_dir)
     Helper.common_setup_node_preparation(env)
     controller_nodes = []
 
@@ -232,7 +232,7 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
     nodes_yaml_config = config['nodes'] if 'nodes' in config else None
     node_dic = Helper.load_nodes(nodes_yaml_config, env)
 
-    if upgrade_tarball_path:
+    if upgrade_dir:
         upgrade_bcf(node_dic)
 
     if generate_csr:
@@ -437,8 +437,8 @@ def main():
                               "--certificate-dir to specify the certificate directory."))
     parser.add_argument('--support', action='store_true', default=False,
                         help=("Collect openstack logs."))
-    parser.add_argument('--upgrade-tarball-path', required=False,
-                        help=("The tar.gz path that has the packages for upgrade."))
+    parser.add_argument('--upgrade-dir', required=False,
+                        help=("The directory that has the packages for upgrade."))
 
 
     args = parser.parse_args()
@@ -457,7 +457,7 @@ def main():
                args.skip_ivs_version_check,
                args.certificate_dir, args.certificate_only,
                args.generate_csr, args.support,
-               args.upgrade_tarball_path)
+               args.upgrade_dir)
 
 
 if __name__ == '__main__':

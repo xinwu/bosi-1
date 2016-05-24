@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # This template deletes all network related resources for fresh installation.
-# We are not using it anywhere for now, but keep it hear for future uses.
 
 source %(openrc)s
 keystone tenant-list
