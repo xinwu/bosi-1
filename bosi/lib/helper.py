@@ -314,6 +314,52 @@ class Helper(object):
         node.set_ospurge_script_path(ospurge_script_path)
 
     @staticmethod
+    def generate_upgrade_scripts(node, bash_template):
+        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/'''
+                   '''%(bash_template_dir)s/%(bash_template)s_'''
+                   '''%(os_version)s_upgrade.sh''' %
+                   {'setup_node_dir': node.setup_node_dir,
+                    'deploy_mode': node.deploy_mode,
+                    'bash_template_dir': const.BASH_TEMPLATE_DIR,
+                    'bash_template': bash_template,
+                    'os_version': node.os_version}),
+                  "r") as bash_template_file:
+            bash_template = bash_template_file.read()
+            is_controller = False
+            if node.role == const.ROLE_NEUTRON_SERVER:
+                is_controller = True
+            bash = (
+                bash_template %
+                {'dst_dir': node.dst_dir,
+                 'is_controller': str(is_controller).lower(),
+                 'is_ceph' : str(is_ceph).lower(),
+                 'is_cinder': str(is_cinder).lower(),
+                 'is_mongo': str(is_mongo).lower(),
+                })
+        bash_script_path = (
+            r'''%(setup_node_dir)s/%(generated_script_dir)s'''
+            '''/%(hostname)s_upgrade.sh''' %
+            {'setup_node_dir': node.setup_node_dir,
+             'generated_script_dir': const.GENERATED_SCRIPT_DIR,
+             'hostname': node.hostname})
+        with open(bash_script_path, "w") as bash_file:
+            bash_file.write(bash)
+        node.set_bash_script_path(bash_script_path)
+        return
+
+    @staticmethod
+    def generate_upgrade_scripts_for_redhat(node):
+        return generate_upgrade_scripts(node, const.REDHAT)
+
+    @staticmethod
+    def generate_upgrade_scripts_for_centos(node):
+        return generate_upgrade_scripts(node, const.CENTOS)
+
+    @staticmethod
+    def generate_upgrade_scripts_for_ubuntu(node):
+        return generate_upgrade_scripts(node, const.UBUNTU)
+
+    @staticmethod
     def generate_scripts_for_redhat(node):
         # generate bash script
         with open((r'''%(setup_node_dir)s/%(deploy_mode)s/'''
