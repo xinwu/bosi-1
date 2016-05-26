@@ -1,13 +1,21 @@
 import constants as const
 from helper import Helper
 import os
+from os import listdir
+from os.path import isfile
+from os.path import join
 import re
 from rest import RestLib
 
 
 class Environment(object):
     def __init__(self, config, mode, fuel_cluster_id, rhosp, tag,
-                 cleanup, skip_ivs_version_check, certificate_dir):
+                 cleanup, skip_ivs_version_check, certificate_dir,
+                 upgrade_dir):
+        # directory for upgrade
+        self.upgrade_dir = upgrade_dir
+        self.upgrade_pkgs = [f for f in listdir(upgrade_dir) if isfile(join(upgrade_dir, f))]
+
         # certificate directory
         self.certificate_dir = certificate_dir
 
@@ -135,6 +143,10 @@ class Environment(object):
         self.os_version = config.get('default_os_version')
         self.role = config.get('default_role')
         self.user = config.get('default_user')
+        if rhosp:
+            self.user = "heat-admin"
+        elif fuel_cluster_id:
+            self.user = "root"
         self.passwd = config.get('default_passwd')
         self.uplink_interfaces = config.get('default_uplink_interfaces')
         self.uplink_mtu = config.get('default_uplink_mtu')

@@ -119,7 +119,7 @@ class Helper(object):
         local_cmd = (r'''sshpass -p %(pwd)s ssh -t '''
                      '''-oStrictHostKeyChecking=no -o LogLevel=quiet '''
                      '''%(user)s@%(hostname)s "echo %(pwd)s | '''
-                     '''sudo -S %(remote_cmd)s | tee %(log)s 2>&1"''' %
+                     '''sudo -S %(remote_cmd)s"''' %
                      {'user': node.user, 'hostname': node.hostname,
                       'pwd': node.passwd, 'log': node.log,
                       'remote_cmd': command})
@@ -201,7 +201,7 @@ class Helper(object):
         """
         local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o '''
                      '''LogLevel=quiet %(user)s@%(hostname)s '''
-                     '''"%(remote_cmd)s | tee %(log)s 2>&1"''' %
+                     '''"%(remote_cmd)s"''' %
                      {'hostname': node.hostname, 'log': node.log,
                       'remote_cmd': command, 'user': node.user})
         return Helper.run_command_on_local(local_cmd, timeout)
@@ -312,6 +312,61 @@ class Helper(object):
         with open(ospurge_script_path, "w") as ospurge_file:
             ospurge_file.write(ospurge)
         node.set_ospurge_script_path(ospurge_script_path)
+
+    @staticmethod
+    def generate_upgrade_scripts(node, bash_template):
+        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/'''
+                   '''%(bash_template_dir)s/%(bash_template)s_'''
+                   '''%(os_version)s_upgrade.sh''' %
+                   {'setup_node_dir': node.setup_node_dir,
+                    'deploy_mode': node.deploy_mode,
+                    'bash_template_dir': const.BASH_TEMPLATE_DIR,
+                    'bash_template': bash_template,
+                    'os_version': node.os_version}),
+                  "r") as bash_template_file:
+            bash_template = bash_template_file.read()
+            is_controller = False
+            is_ceph = False
+            is_cinder = False
+            is_mongo = False
+            if node.role == const.ROLE_NEUTRON_SERVER:
+                is_controller = True
+            if node.role == const.ROLE_CEPH:
+                is_ceph = True
+            if const.ROLE_CINDER in node.role.lower():
+                is_cinder = True
+            if node.role == const.ROLE_MONGO:
+                is_mongo = True
+            bash = (
+                bash_template %
+                {'dst_dir': node.dst_dir,
+                 'is_controller': str(is_controller).lower(),
+                 'is_ceph' : str(is_ceph).lower(),
+                 'is_cinder': str(is_cinder).lower(),
+                 'is_mongo': str(is_mongo).lower(),
+                })
+        bash_script_path = (
+            r'''%(setup_node_dir)s/%(generated_script_dir)s'''
+            '''/%(hostname)s_upgrade.sh''' %
+            {'setup_node_dir': node.setup_node_dir,
+             'generated_script_dir': const.GENERATED_SCRIPT_DIR,
+             'hostname': node.hostname})
+        with open(bash_script_path, "w") as bash_file:
+            bash_file.write(bash)
+        node.set_bash_script_path(bash_script_path)
+        return
+
+    @staticmethod
+    def generate_upgrade_scripts_for_redhat(node):
+        return Helper.generate_upgrade_scripts(node, const.REDHAT)
+
+    @staticmethod
+    def generate_upgrade_scripts_for_centos(node):
+        return Helper.generate_upgrade_scripts(node, const.CENTOS)
+
+    @staticmethod
+    def generate_upgrade_scripts_for_ubuntu(node):
+        return Helper.generate_upgrade_scripts(node, const.UBUNTU)
 
     @staticmethod
     def generate_scripts_for_redhat(node):
@@ -800,60 +855,9 @@ class Helper(object):
             return None
         node_config['hostname'] = hostname
         node_config['role'] = role
-
-        #parse /etc/os-net-config/config.json
         node = Node(node_config, env)
-        subprocess.call("rm -f /tmp/config.json", shell=True)
-        Helper.copy_file_from_remote(node, "/etc/os-net-config",
-                                     "config.json", "/tmp")
-        if not os.path.isfile("/tmp/config.json"):
-            safe_print("Error retrieving config for node %(hostname)s:\n"
-                       % {'hostname': node_config['hostname']})
+        if node.skip:
             return None
-        try:
-            data = open("/tmp/config.json").read()
-            node_json_config = json.loads(data)
-        except Exception as e:
-            safe_print("Error parsing node %(hostname)s json file:\n%(e)s\n"
-                       % {'hostname': node_config['hostname'], 'e': e})
-            return None
-
-        # get ovs bridge and bond
-        node_config['br_bond'] = str(
-            node_json_config['network_config'][0]['name'])
-        members = node_json_config['network_config'][0]['members']
-        for member in members:
-            if 'name' in member:
-                node_config['bond'] = member['name']
-                break
-
-        # get ovs uplinks
-        uplink_cmd = (r'''sudo ovs-appctl bond/list | grep -v slaves '''
-                      '''| grep %(bond)s''' %
-                      {'bond': node_config['bond']})
-        output, error = Helper.run_command_on_remote_without_timeout(
-            node, uplink_cmd)
-        if error:
-            safe_print("Error getting node %(hostname)s uplinks:\n%(error)s\n"
-                       % {'hostname': node_config['hostname'],
-                          'error': error})
-            return None
-        elif output:
-            node_config['uplink_interfaces'] = (
-                output.replace(',', ' ').split()[3:])
-        else:
-            # ovs bond has been removed, not the first time running this script
-            uplink_cmd = (r'''sudo cat /proc/net/bonding/%(bond)s | '''
-                          '''grep Slave | grep Interface | cut -c18-''' %
-                          {'bond': node_config['bond']})
-            output, error = Helper.run_command_on_remote_without_timeout(
-                node, uplink_cmd)
-            if error:
-                safe_print(
-                    "Error getting node %(hostname)s uplinks:\n%(error)s\n"
-                    % {'hostname': node_config['hostname'], 'error': error})
-                return None
-            node_config['uplink_interfaces'] = output.split()
 
         # get uname
         uname = Helper.get_uname(node, node_config)
@@ -1187,17 +1191,6 @@ class Helper(object):
                 if (not node) or (not node.hostname):
                     continue
                 node_dic[node.hostname] = node
-
-                # get node bridges
-                if node.deploy_mode == const.T5:
-                    continue
-                for br in node.bridges:
-                    if (not br.br_vlan) or (br.br_key == const.BR_KEY_PRIVATE):
-                        continue
-                    rule = MembershipRule(br.br_key, br.br_vlan,
-                                          node.bcf_openstack_management_tenant,
-                                          node.fuel_cluster_id)
-                    membership_rules[rule.segment] = rule
         except IndexError:
             raise Exception("Could not parse node list:\n%(node_list)s\n"
                             % {'node_list': node_list})
@@ -1232,14 +1225,8 @@ class Helper(object):
                     env.bcf_openstack_management_tenant)
             return node_dic
         elif env.rhosp:
-            # TODO: no longer supported after BCF 3.5. We moved to
-            # the integrated solution with RHOSP8
             node_dic, membership_rules = Helper.load_nodes_from_rhosp(
                 node_yaml_config_map, env)
-            for br_key, rule in membership_rules.iteritems():
-                RestLib.program_segment_and_membership_rule(
-                    env.bcf_master, env.bcf_cookie, rule,
-                    env.bcf_openstack_management_tenant)
             return node_dic
 
     @staticmethod
@@ -1271,6 +1258,10 @@ class Helper(object):
                         % {'setup_node_dir': setup_node_dir,
                            'generated_script': const.GENERATED_SCRIPT_DIR},
                         shell=True)
+
+        if env.upgrade_dir:
+            # don't need other preparation for upgrade
+            return
 
         # wget ivs packages
         if env.deploy_mode == const.T6:
@@ -1321,25 +1312,6 @@ class Helper(object):
                              'pkg': pkg},
                             shell=True)
 
-        # prepare for rhosp7
-        if env.rhosp:
-            subprocess.call("sudo sysctl -w net.ipv4.ip_forward=1", shell=True)
-            subprocess.call(
-                r'''sudo iptables -t nat -A POSTROUTING -o '''
-                '''%(external)s -j MASQUERADE''' %
-                {'external': env.rhosp_installer_management_interface},
-                shell=True)
-            subprocess.call(
-                r'''sudo iptables -A FORWARD -i %(external)s '''
-                '''-o %(internal)s -m state --state RELATED,ESTABLISHED '''
-                '''-j ACCEPT''' %
-                {'external': env.rhosp_installer_management_interface,
-                 'internal': env.rhosp_installer_pxe_interface}, shell=True)
-            subprocess.call(
-                r'''sudo iptables -A FORWARD -i %(internal)s -o '''
-                '''%(external)s -j ACCEPT''' %
-                {'external': env.rhosp_installer_management_interface,
-                 'internal': env.rhosp_installer_pxe_interface}, shell=True)
 
     @staticmethod
     def update_last_log(node):
@@ -1629,6 +1601,27 @@ class Helper(object):
 
     @staticmethod
     def copy_pkg_scripts_to_remote(node):
+
+        # copy script and packages to node for upgrade
+        if node.upgrade_dir:
+            # copy bash script to node
+            safe_print("Copy bash script to %(hostname)s\n" %
+                      {'hostname': node.fqdn})
+            Helper.copy_file_to_remote(
+                node, node.bash_script_path, node.dst_dir,
+                "%(hostname)s_upgrade.sh" % {'hostname': node.hostname})
+
+            for pkg in node.upgrade_pkgs:
+                safe_print("Copy %(pkg)s to %(hostname)s\n" %
+                          {'pkg': pkg, 'hostname': node.fqdn})
+                dst_dir = "%s/upgrade" % node.dst_dir
+                Helper.copy_file_to_remote(
+                    node,
+                    (r'''%(src_dir)s/%(pkg)s''' %
+                    {'src_dir': node.upgrade_dir,
+                     'pkg': pkg}),
+                     dst_dir, pkg)
+            return
 
         # copy neutron, metadata, dhcp config to node
         if node.install_bsnstacklib:

@@ -54,6 +54,8 @@ class Node(object):
         if not env.pip_proxy:
             self.pip_proxy = "false"
         self.certificate_dir = env.certificate_dir
+        self.upgrade_dir = env.upgrade_dir
+        self.upgrade_pkgs = env.upgrade_pkgs
         self.cleanup = env.cleanup
         self.skip_ivs_version_check = env.skip_ivs_version_check
         self.rabbit_hosts = None
@@ -382,6 +384,8 @@ class Node(object):
             env_tag: %(env_tag)s,
             pip_proxy: %(pip_proxy)s,
             certificate_dir: %(certificate_dir)s,
+            upgrade_dir: %(upgrade_dir)s,
+            upgrade_pkgs: %(upgrade_pkgs)s,
             cleanup: %(cleanup)s,
             rabbit_hosts: %(rabbit_hosts)s,
             keystone_auth_url: %(keystone_auth_url)s,
@@ -463,6 +467,8 @@ class Node(object):
             'env_tag': self.env_tag,
             'pip_proxy': self.pip_proxy,
             'certificate_dir': self.certificate_dir,
+            'upgrade_dir': self.upgrade_dir,
+            'upgrade_pkgs': self.upgrade_pkgs,
             'cleanup': self.cleanup,
             'rabbit_hosts': self.rabbit_hosts,
             'keystone_auth_url': self.keystone_auth_url,

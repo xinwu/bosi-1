@@ -12,7 +12,7 @@ fi
 python -mplatform | grep centos
 if [[ $? == 0 ]]; then
     yum groupinstall -y 'Development Tools'
-    sudo rpm -ivh ftp://ftp.muug.mb.ca/mirror/fedora/epel/6/x86_64/sshpass-1.05-1.el6.x86_64.rpm
+    sudo rpm -ivh ftp://rpmfind.net/linux/fedora/linux/releases/23/Everything/x86_64/os/Packages/s/sshpass-1.05-8.fc23.x86_64.rpm
     yum install -y python-devel python-yaml python-pip wget
     pip install --upgrade subprocess32 futures
     exit 0
