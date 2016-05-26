@@ -6,7 +6,7 @@ install_pkg {
     pkg=$1
     cd %(dst_dir)s/upgrade
     tar -xzf $pkg
-    dir=${pkg%.tar.gz}
+    dir=${pkg::-7}
     cd $dir
     python setup.py build
     python setup.py install

@@ -324,7 +324,7 @@ class Helper(object):
                     'bash_template': bash_template,
                     'os_version': node.os_version}),
                   "r") as bash_template_file:
-            bash_template = bash_template_file.read()
+            bash_template_content = bash_template_file.read()
             is_controller = False
             is_ceph = False
             is_cinder = False
@@ -338,13 +338,12 @@ class Helper(object):
             if node.role == const.ROLE_MONGO:
                 is_mongo = True
             bash = (
-                bash_template %
+                bash_template_content %
                 {'dst_dir': node.dst_dir,
                  'is_controller': str(is_controller).lower(),
                  'is_ceph' : str(is_ceph).lower(),
                  'is_cinder': str(is_cinder).lower(),
-                 'is_mongo': str(is_mongo).lower(),
-                })
+                 'is_mongo': str(is_mongo).lower()})
         bash_script_path = (
             r'''%(setup_node_dir)s/%(generated_script_dir)s'''
             '''/%(hostname)s_upgrade.sh''' %
