@@ -119,7 +119,7 @@ class Helper(object):
         local_cmd = (r'''sshpass -p %(pwd)s ssh -t '''
                      '''-oStrictHostKeyChecking=no -o LogLevel=quiet '''
                      '''%(user)s@%(hostname)s "echo %(pwd)s | '''
-                     '''sudo -S %(remote_cmd)s | tee %(log)s 2>&1"''' %
+                     '''sudo -S %(remote_cmd)s"''' %
                      {'user': node.user, 'hostname': node.hostname,
                       'pwd': node.passwd, 'log': node.log,
                       'remote_cmd': command})
@@ -201,7 +201,7 @@ class Helper(object):
         """
         local_cmd = (r'''ssh -t -oStrictHostKeyChecking=no -o '''
                      '''LogLevel=quiet %(user)s@%(hostname)s '''
-                     '''"%(remote_cmd)s | tee %(log)s 2>&1"''' %
+                     '''"%(remote_cmd)s"''' %
                      {'hostname': node.hostname, 'log': node.log,
                       'remote_cmd': command, 'user': node.user})
         return Helper.run_command_on_local(local_cmd, timeout)
@@ -326,8 +326,17 @@ class Helper(object):
                   "r") as bash_template_file:
             bash_template = bash_template_file.read()
             is_controller = False
+            is_ceph = False
+            is_cinder = False
+            is_mongo = False
             if node.role == const.ROLE_NEUTRON_SERVER:
                 is_controller = True
+            if node.role == const.ROLE_CEPH:
+                is_ceph = True
+            if const.ROLE_CINDER in node.role.lower():
+                is_cinder = True
+            if node.role == const.ROLE_MONGO:
+                is_mongo = True
             bash = (
                 bash_template %
                 {'dst_dir': node.dst_dir,
@@ -349,15 +358,15 @@ class Helper(object):
 
     @staticmethod
     def generate_upgrade_scripts_for_redhat(node):
-        return generate_upgrade_scripts(node, const.REDHAT)
+        return Helper.generate_upgrade_scripts(node, const.REDHAT)
 
     @staticmethod
     def generate_upgrade_scripts_for_centos(node):
-        return generate_upgrade_scripts(node, const.CENTOS)
+        return Helper.generate_upgrade_scripts(node, const.CENTOS)
 
     @staticmethod
     def generate_upgrade_scripts_for_ubuntu(node):
-        return generate_upgrade_scripts(node, const.UBUNTU)
+        return Helper.generate_upgrade_scripts(node, const.UBUNTU)
 
     @staticmethod
     def generate_scripts_for_redhat(node):
@@ -846,6 +855,9 @@ class Helper(object):
             return None
         node_config['hostname'] = hostname
         node_config['role'] = role
+        node = Node(node_config, env)
+        if node.skip:
+            return None
 
         # get uname
         uname = Helper.get_uname(node, node_config)
@@ -1602,7 +1614,7 @@ class Helper(object):
             for pkg in node.upgrade_pkgs:
                 safe_print("Copy %(pkg)s to %(hostname)s\n" %
                           {'pkg': pkg, 'hostname': node.fqdn})
-                dst_dir = "%s/upgrade"
+                dst_dir = "%s/upgrade" % node.dst_dir
                 Helper.copy_file_to_remote(
                     node,
                     (r'''%(src_dir)s/%(pkg)s''' %

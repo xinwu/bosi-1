@@ -16,10 +16,6 @@ controller() {
             rpm -ivh --force $pkg
             systemctl restart httpd
         fi
-        if [[ $pkg == *"openstack-neutron-bigswitch-lldp"* ]]; then
-            rpm -ivh --force $pkg
-            systemctl restart neutron-bsn-lldp
-        fi
     done
 }
 

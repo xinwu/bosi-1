@@ -152,6 +152,10 @@ class Environment(object):
         self.os_version = config.get('default_os_version')
         self.role = config.get('default_role')
         self.user = config.get('default_user')
+        if rhosp:
+            self.user = "heat-admin"
+        elif fuel_cluster_id:
+            self.user = "root"
         self.passwd = config.get('default_passwd')
         self.uplink_interfaces = config.get('default_uplink_interfaces')
         self.uplink_mtu = config.get('default_uplink_mtu')

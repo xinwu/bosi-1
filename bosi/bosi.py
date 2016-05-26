@@ -172,7 +172,6 @@ def verify_node_setup(q):
 
 
 def upgrade_bcf(node_dic):
-    #TODO
     for hostname, node in node_dic.iteritems():
         if node.skip:
             safe_print("skip node %(fqdn)s due to %(error)s\n" %
@@ -206,10 +205,8 @@ def upgrade_bcf(node_dic):
     sorted_time_dict = OrderedDict(sorted(time_dict.items(),
                                           key=lambda x: x[1]))
     for fqdn, h_time in sorted_time_dict.items():
-        safe_print("node: %(fqdn)s, time: %(time).2f, "
-                   "last_log: %(log)s\n" %
-                   {'fqdn': fqdn, 'time': h_time,
-                    'log': node_dict[fqdn].last_log})
+        safe_print("node: %(fqdn)s, time: %(time).2f\n" %
+                   {'fqdn': fqdn, 'time': h_time})
 
     safe_print("Big Cloud Fabric deployment finished! "
                "Check %(log)s on each node for details.\n" %
@@ -233,7 +230,7 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
     node_dic = Helper.load_nodes(nodes_yaml_config, env)
 
     if upgrade_dir:
-        upgrade_bcf(node_dic)
+        return upgrade_bcf(node_dic)
 
     if generate_csr:
         safe_print("Start to generate csr for virtual switches.\n")
@@ -354,10 +351,8 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
         sorted_time_dict = OrderedDict(sorted(time_dict.items(),
                                               key=lambda x: x[1]))
         for fqdn, h_time in sorted_time_dict.items():
-            safe_print("node: %(fqdn)s, time: %(time).2f, "
-                       "last_log: %(log)s\n" %
-                       {'fqdn': fqdn, 'time': h_time,
-                        'log': node_dict[fqdn].last_log})
+            safe_print("node: %(fqdn)s, time: %(time).2f\n" %
+                       {'fqdn': fqdn, 'time': h_time})
 
         safe_print("Big Cloud Fabric deployment finished! "
                    "Check %(log)s on each node for details.\n" %
