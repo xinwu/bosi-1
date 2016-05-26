@@ -75,6 +75,7 @@ compute() {
     do
         if [[ $pkg == *"ivs-debuginfo"* ]]; then
             yum install -y $pkg
+            yum reinstall -y $pkg
             break
         fi
     done
@@ -83,6 +84,7 @@ compute() {
     do
         if [[ $pkg == *"ivs"* ]]; then
             yum install -y $pkg
+            yum reinstall -y $pkg
             systemctl restart ivs
             break
         fi
