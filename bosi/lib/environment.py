@@ -13,8 +13,11 @@ class Environment(object):
                  cleanup, skip_ivs_version_check, certificate_dir,
                  upgrade_dir):
         # directory for upgrade
-        self.upgrade_dir = upgrade_dir
-        self.upgrade_pkgs = [f for f in listdir(upgrade_dir) if isfile(join(upgrade_dir, f))]
+        self.upgrade_dir = None
+        self.upgrade_pkgs = []
+        if upgrade_dir:
+            self.upgrade_dir = upgrade_dir
+            self.upgrade_pkgs = [f for f in listdir(upgrade_dir) if isfile(join(upgrade_dir, f))]
 
         # certificate directory
         self.certificate_dir = certificate_dir
