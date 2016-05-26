@@ -141,6 +141,9 @@ class Environment(object):
             self.skip = config['default_skip']
         self.os = config.get('default_os')
         self.os_version = config.get('default_os_version')
+        if rhosp:
+            self.os = const.REDHAT
+            self.os_version = const.REDHAT_VERSIONS[0]
         self.role = config.get('default_role')
         self.user = config.get('default_user')
         if rhosp:
