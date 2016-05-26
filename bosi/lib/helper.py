@@ -1611,6 +1611,8 @@ class Helper(object):
                 "%(hostname)s_upgrade.sh" % {'hostname': node.hostname})
 
             for pkg in node.upgrade_pkgs:
+                if (node.role != const.ROLE_COMPUTE) and ("ivs" in pkg):
+                    continue
                 safe_print("Copy %(pkg)s to %(hostname)s\n" %
                           {'pkg': pkg, 'hostname': node.fqdn})
                 dst_dir = "%s/upgrade" % node.dst_dir
