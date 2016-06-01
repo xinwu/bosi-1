@@ -141,6 +141,8 @@ class Helper(object):
     def copy_dir_to_remote_with_passwd(node, src_dir, dst_dir):
         mkdir_cmd = (r'''mkdir -p %(dst_dir)s''' % {'dst_dir': dst_dir})
         Helper.run_command_on_remote_with_passwd(node, mkdir_cmd)
+        clear_dir_cmd = (r'''rm -rf %(dst_dir)s/*''' % {'dst_dir': dst_dir})
+        Helper.run_command_on_remote_with_passwd(node, clear_dir_cmd)
         scp_cmd = (r'''sshpass -p %(pwd)s scp -oStrictHostKeyChecking=no '''
                    '''-o LogLevel=quiet -r %(src_dir)s  '''
                    '''%(user)s@%(hostname)s:%(dst_dir)s/ >> %(log)s 2>&1''' %
@@ -210,6 +212,8 @@ class Helper(object):
     def copy_dir_to_remote_with_key(node, src_dir, dst_dir):
         mkdir_cmd = (r'''mkdir -p %(dst_dir)s''' % {'dst_dir': dst_dir})
         Helper.run_command_on_remote_with_key(node, mkdir_cmd)
+        clear_dir_cmd = (r'''rm -rf %(dst_dir)s/*''' % {'dst_dir': dst_dir})
+        Helper.run_command_on_remote_with_key(node, clear_dir_cmd)
         scp_cmd = (r'''scp -oStrictHostKeyChecking=no -o LogLevel=quiet '''
                    '''-r %(src_dir)s %(user)s@%(hostname)s:%(dst_dir)s/ '''
                    '''>> %(log)s 2>&1''' %
@@ -1610,12 +1614,14 @@ class Helper(object):
                 node, node.bash_script_path, node.dst_dir,
                 "%(hostname)s_upgrade.sh" % {'hostname': node.hostname})
 
+            dst_dir = "%s/upgrade" % node.dst_dir
+            clear_dir_cmd = (r'''rm -rf %(dst_dir)s/*''' % {'dst_dir': dst_dir})
+            Helper.run_command_on_remote_without_timeout(node, clear_dir_cmd)
             for pkg in node.upgrade_pkgs:
                 if (node.role != const.ROLE_COMPUTE) and ("ivs" in pkg):
                     continue
                 safe_print("Copy %(pkg)s to %(hostname)s\n" %
                           {'pkg': pkg, 'hostname': node.fqdn})
-                dst_dir = "%s/upgrade" % node.dst_dir
                 Helper.copy_file_to_remote(
                     node,
                     (r'''%(src_dir)s/%(pkg)s''' %
