@@ -1182,13 +1182,13 @@ class Helper(object):
             lines = [l for l in node_list.splitlines()
                      if '----' not in l and 'Status' not in l]
             for line in lines:
+                online = str(line.split('|')[3].strip())
+                if online.lower() != 'active':
+                    continue
                 hostname = str(
                     netaddr.IPAddress(line.split('|')[6].strip()
                     .split('=')[1]))
                 role = str(line.split('|')[2].strip().split('-')[1]).lower()
-                online = str(line.split('|')[3].strip())
-                if online.lower() != 'active':
-                    continue
                 node = Helper.__load_rhosp_node__(
                     hostname, role, node_yaml_config_map, env)
                 if (not node) or (not node.hostname):
