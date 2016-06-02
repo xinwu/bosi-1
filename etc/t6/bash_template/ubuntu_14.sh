@@ -59,10 +59,10 @@ controller() {
     cp /usr/local/lib/python2.7/dist-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
 
     # schedule cron job to reschedule network in case dhcp agent fails
-    chmod a+x /bin/dhcp_reschedule.sh
-    crontab -r
-    (crontab -l; echo "*/30 * * * * /usr/bin/fuel-logrotate") | crontab -
-    (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
+    #chmod a+x /bin/dhcp_reschedule.sh
+    #crontab -r
+    #(crontab -l; echo "*/30 * * * * /usr/bin/fuel-logrotate") | crontab -
+    #(crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
 
     echo 'Restart neutron-server'
     rm -rf /etc/neutron/plugins/ml2/host_certs/*
@@ -224,8 +224,7 @@ compute() {
         service neutron-dhcp-agent restart
     fi
 
-    echo 'Restart openstack-nova-compute and neutron-bsn-agent'
-    service nova-compute restart
+    echo 'Restart neutron-bsn-agent'
     service neutron-bsn-agent restart
 }
 
@@ -265,7 +264,7 @@ if [[ $? != 0 ]]; then
     release=$(lsb_release -sc)
     echo -e "\ndeb http://archive.ubuntu.com/ubuntu $release main\n" >> /etc/apt/sources.list
 fi
-apt-get install ubuntu-cloud-keyring
+apt-get install -y ubuntu-cloud-keyring
 if [[ $openstack_release == 'juno' ]]; then
     echo "deb http://ubuntu-cloud.archive.canonical.com/ubuntu" \
     "trusty-updates/juno main" > /etc/apt/sources.list.d/cloudarchive-juno.list
