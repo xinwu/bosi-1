@@ -43,20 +43,6 @@ controller() {
     cp /usr/lib/python2.7/site-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
     systemctl restart httpd
 
-    # restart keystone and horizon
-    #systemctl restart httpd
-
-    # schedule cron job to reschedule network in case dhcp agent fails
-    chmod a+x /bin/dhcp_reschedule.sh
-    crontab -r
-    (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
-
-    echo "Restart nova"
-    systemctl restart openstack-nova-consoleauth
-    systemctl restart openstack-nova-scheduler
-    systemctl restart openstack-nova-conductor
-    systemctl restart openstack-nova-cert
-
     echo 'Restart neutron-server'
     rm -rf /etc/neutron/plugins/ml2/host_certs/*
     systemctl restart neutron-server
@@ -178,12 +164,7 @@ compute() {
 
     systemctl restart ivs
 
-    # restart libvirtd and nova compute on compute node
-    echo 'Restart libvirtd, openstack-nova-compute and neutron-bsn-agent'
-    systemctl restart libvirtd
-    systemctl enable libvirtd
-    systemctl restart openstack-nova-compute
-    systemctl enable openstack-nova-compute
+    echo 'Restart neutron-bsn-agent'
     systemctl restart neutron-bsn-agent
 }
 
@@ -197,6 +178,10 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 # prepare dependencies
+yum install -y wget
+wget http://cbs.centos.org/kojifiles/packages/python-oslo-config/3.9.0/1.el7/noarch/python2-oslo-config-3.9.0-1.el7.noarch.rpm
+yum install -y python2-oslo-config-3.9.0-1.el7.noarch.rpm
+
 wget -r --no-parent --no-directories --timestamping --accept 'epel-release-7-*.rpm' 'http://dl.fedoraproject.org/pub/epel/7/x86_64/e/'
 rpm -iUvh epel-release-7-*.rpm
 rpm -ivh https://yum.puppetlabs.com/el/7/products/x86_64/puppetlabs-release-7-10.noarch.rpm

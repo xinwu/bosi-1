@@ -4,6 +4,9 @@ bsnstacklib_version="2015.3.14"
 horizon_bsn_version="2015.3.7"
 ivs_version="3.6.0"
 
+yum remove -y openstack-neutron-bigswitch-agent
+yum remove -y openstack-neutron-bigswitch-lldp
+yum remove -y python-networking-bigswitch
 rpm -ivh --force /root/python-networking-bigswitch-${bsnstacklib_version}-1.el7.centos.noarch.rpm
 rpm -ivh --force /root/openstack-neutron-bigswitch-agent-${bsnstacklib_version}-1.el7.centos.noarch.rpm
 rpm -ivh --force /root/openstack-neutron-bigswitch-lldp-${bsnstacklib_version}-1.el7.centos.noarch.rpm
