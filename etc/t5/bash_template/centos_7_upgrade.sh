@@ -22,6 +22,8 @@ controller() {
             neutron-db-manage upgrade heads
             systemctl enable neutron-server
             systemctl restart neutron-server
+            systemctl enable neutron-bsn-lldp
+            systemctl restart neutron-bsn-lldp
         fi
         if [[ $pkg == *"horizon-bsn"* ]]; then
             install_pkg $pkg
@@ -37,13 +39,8 @@ compute() {
     do
         if [[ $pkg == *"bsnstacklib"* ]]; then
             install_pkg $pkg
-            systemctl enable neutron-bsn-agent
-            systemctl restart neutron-bsn-agent
-        fi
-        if [[ $pkg == *"ivs"* ]]; then
-            rpm -ivh --force $pkg
-            systemctl enable  ivs
-            systemctl restart ivs
+            systemctl enable neutron-bsn-lldp
+            systemctl restart neutron-bsn-lldp
         fi
     done
 }
