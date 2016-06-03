@@ -68,26 +68,19 @@ compute() {
         if [[ $pkg == *"openstack-neutron-bigswitch-agent"* ]]; then
             yum remove -y openstack-neutron-bigswitch-agent
             rpm -ivh $pkg
-            systemctl enable neutron-bsn-agent
-            systemctl restart neutron-bsn-agent
+            systemctl stop neutron-bsn-agent
+            systemctl disable neutron-bsn-agent
             break
         fi
     done
 
     for pkg in $PKGS
     do
-        if [[ $pkg == *"ivs-debuginfo"* ]]; then
+        if [[ $pkg == *"openstack-neutron-bigswitch-lldp"* ]]; then
+            yum remove -y openstack-neutron-bigswitch-lldp
             rpm -ivh $pkg
-            break
-        fi
-    done
-
-    for pkg in $PKGS
-    do
-        if [[ $pkg == *"ivs"* ]]; then
-            rpm -ivh $pkg
-            systemctl enable ivs
-            systemctl restart ivs
+            systemctl enable neutron-bsn-lldp
+            systemctl restart neutron-bsn-lldp
             break
         fi
     done

@@ -1,6 +1,9 @@
 #!/bin/bash
 
 is_controller=%(is_controller)s
+is_ceph=%(is_ceph)s
+is_cinder=%(is_cinder)s
+is_mongo=%(is_mongo)s
 
 install_pkg {
     pkg=$1
@@ -20,12 +23,12 @@ controller() {
         if [[ $pkg == *"bsnstacklib"* ]]; then
             install_pkg $pkg
             neutron-db-manage upgrade heads
-            systemctl enable neutron-server
-            systemctl restart neutron-server
+            service neutron-server restart
+            service neutron-bsn-lldp restart
         fi
         if [[ $pkg == *"horizon-bsn"* ]]; then
             install_pkg $pkg
-            systemctl restart httpd
+            service apache2 restart
         fi
     done
 }
@@ -37,28 +40,37 @@ compute() {
     do
         if [[ $pkg == *"bsnstacklib"* ]]; then
             install_pkg $pkg
-            systemctl enable neutron-bsn-agent
-            systemctl restart neutron-bsn-agent
-        fi
-        if [[ $pkg == *"ivs"* ]]; then
-            rpm -ivh --force $pkg
-            systemctl enable  ivs
-            systemctl restart ivs
+            service neutron-bsn-lldp restart
         fi
     done
+}
+
+ceph() {
+}
+
+cinder() {
+}
+
+mongo() {
 }
 
 
 set +e
 
 # Make sure only root can run this script
-if [ "$(id -u)" != "0" ]; then
-    echo -e "Please run as root"
-    exit 1
+if [[ "$(id -u)" != "0" ]]; then
+   echo -e "Please run as root"
+   exit 1
 fi
 
 if [[ $is_controller == true ]]; then
     controller
+elif [[ $is_ceph == true ]]; then
+    ceph
+elif [[ $is_cinder == true ]]; then
+    cinder
+elif [[ $is_mongo == true ]]; then
+    mongo
 else
     compute
 fi

@@ -224,7 +224,8 @@ compute() {
         service neutron-dhcp-agent restart
     fi
 
-    echo 'Restart neutron-bsn-agent'
+    echo 'Restart ivs, neutron-bsn-agent'
+    service ivs restart
     service neutron-bsn-agent restart
 }
 
