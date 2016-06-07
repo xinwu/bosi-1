@@ -9,7 +9,7 @@ controller() {
     do
         if [[ $pkg == *"python-networking-bigswitch"* ]]; then
             yum remove -y python-networking-bigswitch
-            rpm -ivh $pkg
+            rpm -ivh $pkg --force
             neutron-db-manage upgrade heads
             systemctl enable neutron-server
             systemctl restart neutron-server
@@ -21,7 +21,7 @@ controller() {
     do
         if [[ $pkg == *"openstack-neutron-bigswitch-lldp"* ]]; then
             yum remove -y openstack-neutron-bigswitch-lldp
-            rpm -ivh $pkg
+            rpm -ivh $pkg --force
             systemctl enable  neutron-bsn-lldp
             systemctl restart neutron-bsn-lldp
             break
@@ -32,7 +32,7 @@ controller() {
     do
         if [[ $pkg == *"openstack-neutron-bigswitch-agent"* ]]; then
             yum remove -y openstack-neutron-bigswitch-agent
-            rpm -ivh $pkg
+            rpm -ivh $pkg --force
             systemctl stop neutron-bsn-agent
             systemctl disable neutron-bsn-agent
             break
@@ -43,7 +43,7 @@ controller() {
     do
         if [[ $pkg == *"python-horizon-bsn"* ]]; then
             yum remove -y python-horizon-bsn
-            rpm -ivh $pkg
+            rpm -ivh $pkg --force
             systemctl restart httpd
             break
         fi
@@ -58,7 +58,7 @@ compute() {
     do
         if [[ $pkg == *"python-networking-bigswitch"* ]]; then
             yum remove -y python-networking-bigswitch
-            rpm -ivh $pkg
+            rpm -ivh $pkg --force
             break
         fi
     done
@@ -67,7 +67,7 @@ compute() {
     do
         if [[ $pkg == *"openstack-neutron-bigswitch-agent"* ]]; then
             yum remove -y openstack-neutron-bigswitch-agent
-            rpm -ivh $pkg
+            rpm -ivh $pkg --force
             systemctl enable neutron-bsn-agent
             systemctl restart neutron-bsn-agent
             break
@@ -77,7 +77,7 @@ compute() {
     for pkg in $PKGS
     do
         if [[ $pkg == *"ivs-debuginfo"* ]]; then
-            rpm -ivh $pkg
+            rpm -ivh $pkg --force
             break
         fi
     done
@@ -85,7 +85,7 @@ compute() {
     for pkg in $PKGS
     do
         if [[ $pkg == *"ivs"* ]]; then
-            rpm -ivh $pkg
+            rpm -ivh $pkg --force
             systemctl enable ivs
             systemctl restart ivs
             break
