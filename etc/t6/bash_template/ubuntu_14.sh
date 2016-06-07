@@ -142,6 +142,10 @@ compute() {
             cp /etc/init/neutron-plugin-openvswitch-agent.override /etc/init/neutron-bsn-agent.override
         fi
 
+        # stop neutron-l3-agent
+        pkill neutron-l3-agent
+        service neutron-l3-agent stop
+
         # stop ovs agent, otherwise, ovs bridges cannot be removed
         pkill neutron-openvswitch-agent
         service neutron-plugin-openvswitch-agent stop

@@ -169,6 +169,12 @@ ini_setting { "neutron.conf notification driver":
 }
 
 # config neutron-bsn-agent conf
+file { '/etc/neutron/conf.d':
+    ensure => 'directory',
+}->
+file { '/etc/neutron/conf.d/common':
+    ensure => 'directory',
+}
 file { '/etc/init/neutron-bsn-agent.conf':
     ensure => present,
     content => "
@@ -191,14 +197,7 @@ service {'neutron-bsn-agent':
     provider   => 'upstart',
     hasrestart => 'true',
     hasstatus  => 'true',
-    subscribe  => [File['/etc/init/neutron-bsn-agent.conf'], File['/etc/init.d/neutron-bsn-agent']],
-}
-
-# stop and disable neutron-plugin-openvswitch-agent
-service { 'neutron-plugin-openvswitch-agent':
-  ensure   => 'stopped',
-  enable   => false,
-  provider => 'upstart',
+    subscribe  => [File['/etc/neutron/conf.d/common'], File['/etc/init/neutron-bsn-agent.conf'], File['/etc/init.d/neutron-bsn-agent']],
 }
 
 # disable l3 agent
