@@ -83,6 +83,15 @@ class RestLib(object):
         return ret
 
     @staticmethod
+    def use_port_group(server, cookie,
+                       port=const.BCF_CONTROLLER_PORT):
+        url = (r'''core/version/appliance''')
+        res = RestLib.get(cookie, url, server, port)[2]
+        if '3.5' in res:
+            return True
+        return False
+
+    @staticmethod
     def get_active_bcf_controller(servers, username, password,
                                   port=const.BCF_CONTROLLER_PORT):
         for server in servers:
@@ -115,6 +124,12 @@ class RestLib(object):
     @staticmethod
     def program_segment_and_membership_rule(server, cookie, rule, tenant,
                                             port=const.BCF_CONTROLLER_PORT):
+
+        use_port_group = RestLib.use_port_group(server, cookie)
+        pg_key='interface'
+        if use_port_group:
+            pg_key='port'
+        
         if rule.segment not in const.IVS_INTERNAL_PORT_DIC:
             return
 
@@ -172,13 +187,14 @@ class RestLib(object):
 
         pg_rule_url = (r'''applications/bcf/tenant[name="%(tenant)s"]/'''
                        '''segment[name="%(segment)s"]/'''
-                       '''interface-group-membership-rule''' %
+                       '''%(pg_key)s-group-membership-rule''' %
                        {'tenant': tenant,
+                        'pg_key': pg_key,
                         'segment': rule.segment})
-        rule_data = {"interface-group": const.ANY, "vlan": vlan}
+        rule_data = {"%s-group" % pg_key: const.ANY, "vlan": vlan}
         safe_print("Configuring BCF Segment rule: Tenant %s, "
-                   "Segment %s Rule: member interface-group any vlan %d\n"
-                   % (tenant, rule.segment, vlan))
+                   "Segment %s Rule: member %s-group any vlan %d\n"
+                   % (tenant, rule.segment, pg_key, vlan))
         try:
             ret = RestLib.post(cookie, pg_rule_url, server, port,
                                json.dumps(rule_data))
