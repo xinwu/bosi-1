@@ -10,6 +10,7 @@ controller() {
         if [[ $pkg == *"python-networking-bigswitch"* ]]; then
             yum remove -y python-networking-bigswitch
             rpm -ivh $pkg --force
+            systemctl daemon-reload
             neutron-db-manage upgrade heads
             systemctl enable neutron-server
             systemctl restart neutron-server
@@ -22,6 +23,7 @@ controller() {
         if [[ $pkg == *"openstack-neutron-bigswitch-lldp"* ]]; then
             yum remove -y openstack-neutron-bigswitch-lldp
             rpm -ivh $pkg --force
+            systemctl daemon-reload
             systemctl enable  neutron-bsn-lldp
             systemctl restart neutron-bsn-lldp
             break
@@ -68,6 +70,7 @@ compute() {
         if [[ $pkg == *"openstack-neutron-bigswitch-agent"* ]]; then
             yum remove -y openstack-neutron-bigswitch-agent
             rpm -ivh $pkg --force
+            systemctl daemon-reload
             systemctl stop neutron-bsn-agent
             systemctl disable neutron-bsn-agent
             break
@@ -79,6 +82,7 @@ compute() {
         if [[ $pkg == *"openstack-neutron-bigswitch-lldp"* ]]; then
             yum remove -y openstack-neutron-bigswitch-lldp
             rpm -ivh $pkg --force
+            systemctl daemon-reload
             systemctl enable neutron-bsn-lldp
             systemctl restart neutron-bsn-lldp
             break
