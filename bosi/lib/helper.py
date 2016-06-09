@@ -436,8 +436,11 @@ class Helper(object):
         node.set_bash_script_path(bash_script_path)
 
         # generate puppet script
+        ivs_daemon_args = const.IVS_DAEMON_ARGS_CERT
+        if node.ivs_version and "3.5" in node.ivs_version:
+            ivs_daemon_args = const.IVS_DAEMON_ARGS
         ivs_daemon_args = (
-            const.IVS_DAEMON_ARGS %
+            ivs_daemon_args %
             {'inband_vlan': const.INBAND_VLAN,
              'internal_ports': node.get_ivs_internal_ports(),
              'uplink_interfaces': node.get_uplink_intfs_for_ivs()})
@@ -556,8 +559,11 @@ class Helper(object):
         node.set_bash_script_path(bash_script_path)
 
         # generate puppet script
+        ivs_daemon_args = const.IVS_DAEMON_ARGS_CERT
+        if node.ivs_version and "3.5" in node.ivs_version:
+            ivs_daemon_args = const.IVS_DAEMON_ARGS
         ivs_daemon_args = (
-            const.IVS_DAEMON_ARGS %
+            ivs_daemon_args %
             {'inband_vlan': const.INBAND_VLAN,
              'internal_ports': node.get_ivs_internal_ports(),
              'uplink_interfaces': node.get_uplink_intfs_for_ivs()})
@@ -662,8 +668,11 @@ class Helper(object):
         node.set_bash_script_path(bash_script_path)
 
         # generate puppet script
+        ivs_daemon_args = const.IVS_DAEMON_ARGS_CERT
+        if node.ivs_version and "3.5" in node.ivs_version:
+            ivs_daemon_args = const.IVS_DAEMON_ARGS
         ivs_daemon_args = (
-            const.IVS_DAEMON_ARGS %
+            ivs_daemon_args %
             {'inband_vlan': const.INBAND_VLAN,
              'internal_ports': node.get_ivs_internal_ports(),
              'uplink_interfaces': node.get_uplink_intfs_for_ivs()})
