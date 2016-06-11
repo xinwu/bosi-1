@@ -7,7 +7,6 @@ class Node(object):
         self.dst_dir = const.DST_DIR
         self.bash_script_path = None
         self.puppet_script_path = None
-        self.selinux_script_path = None
         self.ospurge_script_path = None
         self.dhcp_reschedule_script_path = None
         self.dhcp_agent_scheduler_dir = None
@@ -97,7 +96,6 @@ class Node(object):
         self.upper_vlan = env.upper_vlan
         self.setup_node_ip = env.setup_node_ip
         self.setup_node_dir = env.setup_node_dir
-        self.selinux_mode = env.selinux_mode
         self.fuel_cluster_id = env.fuel_cluster_id
         self.rhosp = env.rhosp
         self.ivs_pkg_map = env.ivs_pkg_map
@@ -176,9 +174,6 @@ class Node(object):
 
     def set_puppet_script_path(self, puppet_script_path):
         self.puppet_script_path = puppet_script_path
-
-    def set_selinux_script_path(self, selinux_script_path):
-        self.selinux_script_path = selinux_script_path
 
     def set_ospurge_script_path(self, ospurge_script_path):
         self.ospurge_script_path = ospurge_script_path
@@ -349,7 +344,6 @@ class Node(object):
             dst_dir: %(dst_dir)s,
             bash_script_path: %(bash_script_path)s,
             puppet_script_path: %(puppet_script_path)s,
-            selinux_script_path: %(selinux_script_path)s,
             ospurge_script_path: %(ospurge_script_path)s,
             dhcp_reschedule_script_path: %(dhcp_reschedule_script_path)s,
             dhcp_agent_scheduler_dir: %(dhcp_agent_scheduler_dir)s,
@@ -420,7 +414,6 @@ class Node(object):
             upper_vlan: %(upper_vlan)s,
             setup_node_ip: %(setup_node_ip)s,
             setup_node_dir: %(setup_node_dir)s,
-            selinux_mode: %(selinux_mode)s,
             fuel_cluster_id: %(fuel_cluster_id)s,
             rhosp: %(rhosp)s,
             ivs_pkg: %(ivs_pkg)s,
@@ -432,7 +425,6 @@ class Node(object):
             {'dst_dir': self.dst_dir,
             'bash_script_path': self.bash_script_path,
             'puppet_script_path': self.puppet_script_path,
-            'selinux_script_path': self.selinux_script_path,
             'ospurge_script_path': self.ospurge_script_path,
             'dhcp_reschedule_script_path': self.dhcp_reschedule_script_path,
             'dhcp_agent_scheduler_dir': self.dhcp_agent_scheduler_dir,
@@ -503,7 +495,6 @@ class Node(object):
             'upper_vlan': self.upper_vlan,
             'setup_node_ip': self.setup_node_ip,
             'setup_node_dir': self.setup_node_dir,
-            'selinux_mode': self.selinux_mode,
             'fuel_cluster_id': self.fuel_cluster_id,
             'rhosp': self.rhosp,
             'ivs_pkg': self.ivs_pkg,

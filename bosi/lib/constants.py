@@ -54,7 +54,6 @@ GENERATED_SCRIPT_DIR = 'generated_script'
 BASH_TEMPLATE_DIR = 'bash_template'
 PYTHON_TEMPLATE_DIR = 'python_template'
 PUPPET_TEMPLATE_DIR = 'puppet_template'
-SELINUX_TEMPLATE_DIR = 'selinux_template'
 OSPURGE_TEMPLATE_DIR = 'ospurge_template'
 LOG_FILE = "/var/log/bcf_setup.log"
 
@@ -84,9 +83,6 @@ EXISTING_NETWORK_VLAN_RANGE_EXPRESSION = (
     '^\s*network_vlan_ranges\s*=\s*(\S*)\s*:\s*(\S*)\s*:\s*(\S*)\s*$')
 NETWORK_VLAN_RANGE_EXPRESSION = '^\s*(\S*)\s*:\s*(\S*)\s*:\s*(\S*)\s*$'
 VLAN_RANGE_CONFIG_PATH = '/etc/neutron/plugins/ml2/ml2_conf.ini'
-SELINUX_MODE_EXPRESSION = '^\s*SELINUX\s*=\s*(\S*)\s*$'
-SELINUX_CONFIG_PATH = '/etc/selinux/config'
-
 
 # openrc
 FUEL_OPENRC = '/root/openrc'

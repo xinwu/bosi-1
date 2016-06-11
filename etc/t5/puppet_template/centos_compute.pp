@@ -1,19 +1,6 @@
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 $uplinks = [%(uplinks)s]
 
-# install selinux policies
-$selinux_enabled = generate('/bin/sh', '-c', "sestatus | grep 'enabled' | tr -d '\n'")
-if $selinux_enabled {
-    Package { allow_virtual => true }
-    class { selinux:
-      mode => '%(selinux_mode)s',
-    }
-    selinux::module { 'selinux-bcf':
-      ensure => 'present',
-      source => 'puppet:///modules/selinux/centos.te',
-    }
-}
-
 # uplink mtu
 define uplink_mtu {
     file_line { "ifconfig $name mtu %(mtu)s":

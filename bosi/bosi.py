@@ -257,8 +257,6 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
         if node.role == const.ROLE_NEUTRON_SERVER:
             controller_nodes.append(node)
     Helper.copy_neutron_config_from_controllers(controller_nodes)
-    if env.openstack_release == const.OS_RELEASE_JUNO:
-        Helper.copy_dhcp_scheduler_from_controllers(controller_nodes)
 
     # check if vlan is the tenant network type for fuel environment
     if not Helper.check_if_vlan_is_used(controller_nodes):

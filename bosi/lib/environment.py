@@ -80,19 +80,6 @@ class Environment(object):
         if not self.deploy_mode:
             self.deploy_mode = const.T5
 
-        # selinux configuration
-        self.selinux_mode = None
-        if os.path.isfile(const.SELINUX_CONFIG_PATH):
-            with open(const.SELINUX_CONFIG_PATH, "r") as selinux_config_file:
-                selinux_mode_match = re.compile(const.SELINUX_MODE_EXPRESSION,
-                                                re.IGNORECASE)
-                lines = selinux_config_file.readlines()
-                for line in lines:
-                    match = selinux_mode_match.match(line)
-                    if match:
-                        self.selinux_mode = match.group(1)
-                        break
-
         # neutron vlan ranges
         self.network_vlan_ranges = config.get('network_vlan_ranges')
         network_vlan_range_pattern = re.compile(

@@ -1,65 +1,6 @@
 
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 
-# comment out heat domain related configurations
-$heat_config = file('/etc/heat/heat.conf','/dev/null')
-if($heat_config != '') {
-    ini_setting { "heat paste":
-        ensure            => present,
-        path              => '/etc/heat/heat.conf',
-        section           => 'paste_deploy',
-        key_val_separator => '=',
-        setting           => 'api_paste_config',
-        value             => '/usr/share/heat/api-paste-dist.ini',
-    }
-    ini_setting { "heat debug":
-        ensure            => present,
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'debug',
-        value             => 'True',
-        notify            => Service['openstack-heat-engine'],
-    }
-    #ini_setting { "heat stack_domain_admin_password":
-    #    ensure            => absent,
-    #    path              => '/etc/heat/heat.conf',
-    #    section           => 'DEFAULT',
-    #    key_val_separator => '=',
-    #    setting           => 'stack_domain_admin_password',
-    #    notify            => Service['openstack-heat-engine'],
-    #}
-    #ini_setting { "heat stack_domain_admin":
-    #    ensure            => absent,
-    #    path              => '/etc/heat/heat.conf',
-    #    section           => 'DEFAULT',
-    #    key_val_separator => '=',
-    #    setting           => 'stack_domain_admin',
-    #    notify            => Service['openstack-heat-engine'],
-    #}
-    #ini_setting { "heat stack_user_domain":
-    #    ensure            => absent,
-    #    path              => '/etc/heat/heat.conf',
-    #    section           => 'DEFAULT',
-    #    key_val_separator => '=',
-    #    setting           => 'stack_user_domain',
-    #    notify            => Service['openstack-heat-engine'],
-    #}
-    ini_setting {"heat_deferred_auth_method":
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        setting           => 'deferred_auth_method',
-        value             => 'password',
-        ensure            => present,
-        notify            => Service['openstack-heat-engine'],
-    }
-    service { 'openstack-heat-engine':
-        ensure            => running,
-        enable            => true,
-        path              => $binpath,
-    }
-}
-
 # uplink mtu
 define uplink_mtu {
     file_line { "ifconfig $name mtu %(mtu)s":
@@ -177,26 +118,6 @@ exec { "load 8021q":
     command => "modprobe 8021q",
     path    => $binpath,
 }
-
-# install selinux policies
-$selinux_enabled = generate('/bin/sh', '-c', "sestatus | grep 'enabled' | tr -d '\n'")
-if $selinux_enabled {
-    Package { allow_virtual => true }
-    class { selinux:
-      mode => '%(selinux_mode)s',
-    }
-    selinux::module { 'selinux-bcf':
-      ensure => 'present',
-      source => 'puppet:///modules/selinux/centos.te',
-    }
-}
-
-# disable neutron-bsn-agent service
-#service {'neutron-bsn-agent':
-#    ensure  => stopped,
-#    enable  => false,
-#    path    => $binpath,
-#}
 
 # purge bcf controller public key
 exec { 'purge bcf key':
