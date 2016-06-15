@@ -1,11 +1,5 @@
 #!/bin/bash -eux
-# install twine, to be added to infra puppet script
-sudo -H pip install twine
 CURR_VERSION=$(awk '/^version/{print $3}' setup.cfg)
-
-# get pypi and gpg creds in place
-mv $PYPIRC_FILE ~/.pypirc
-tar -zxvf $GNUPG_TAR -C ~/
 
 echo 'CURR_VERSION=' $CURR_VERSION
 git tag -f -s $CURR_VERSION -m $CURR_VERSION -u "Big Switch Networks"
@@ -25,7 +19,3 @@ else
 fi
 # remove the package
 sudo -H pip uninstall -y bosi
-
-# remove pypi and gpg creds
-rm ~/.pypirc
-rm -rf ~/.gnupg
