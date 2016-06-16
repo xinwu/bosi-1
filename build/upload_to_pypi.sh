@@ -1,5 +1,11 @@
 #!/bin/bash -eux
 
+# RPM runs as root and doesn't like source files owned by a random UID
+OUTER_UID=$(stat -c '%u' /bosi)
+OUTER_GID=$(stat -c '%g' /bosi)
+trap "chown -R $OUTER_UID:$OUTER_GID /bosi" EXIT
+chown -R root:root /bosi
+
 cd /bosi
 git config --global user.name "Big Switch Networks"
 git config --global user.email "support@bigswitch.com"
@@ -24,3 +30,6 @@ else
 fi
 # remove the package
 sudo -H pip uninstall -y bosi
+
+# revert the permissions
+chown -R $OUTER_UID:$OUTER_GID /bosi
