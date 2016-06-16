@@ -1,4 +1,9 @@
 #!/bin/bash -eux
+
+cd /bosi
+git config --global user.name "Big Switch Networks"
+git config --global user.email "support@bigswitch.com"
+
 CURR_VERSION=$(awk '/^version/{print $3}' setup.cfg)
 
 echo 'CURR_VERSION=' $CURR_VERSION
