@@ -31,5 +31,14 @@ fi
 # remove the package
 sudo -H pip uninstall -y bosi
 
+# Prepare packages for rsync
+OUTDIR=$(readlink -m "/bosi/dist/$GIT_BRANCH/$CURR_VERSION")
+rm -rf "$OUTDIR" && mkdir -p "$OUTDIR"
+mv /bosi/dist/*.tar.gz "$OUTDIR"
+mv /bosi/dist/*.tar.gz.asc "$OUTDIR"
+git log > "$OUTDIR/gitlog.txt"
+touch "$OUTDIR/build-$CURR_VERSION"
+ln -snf $(basename $OUTDIR) $OUTDIR/../latest
+
 # revert the permissions
 chown -R $OUTER_UID:$OUTER_GID /bosi
