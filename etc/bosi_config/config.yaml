@@ -1,7 +1,7 @@
 # configuration won't be overrided by any openstack installer
 
 # mandatory, openstack release, supporting juno, kilo and liberty
-openstack_release: kilo
+openstack_release: liberty
 
 # mandatory, skip all nodes if true
 default_skip: false
@@ -21,6 +21,9 @@ default_deploy_l3_agent: true
 # mandatory for p+v fabric, the Switch Light VX tar file
 ivs_packages:
 - /root/BCF-SL-VX-master-2016-03-09.tar.gz
+
+# mandatory, bcf version
+bcf_version: 3.6.0
 
 # mandatory, bcf controller ip:port
 bcf_controllers:

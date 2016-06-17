@@ -106,6 +106,7 @@ class Environment(object):
         self.upper_vlan = match.group(3)
 
         # bcf controller information
+        self.bcf_version = config['bcf_version']
         self.bcf_controllers = config['bcf_controllers']
         self.bcf_controller_ips = []
         for controller in self.bcf_controllers:
@@ -159,10 +160,14 @@ class Environment(object):
 
         # openstack bsnstacklib version - applies to horizon plugin too
         self.openstack_release = str(config['openstack_release']).lower()
+        array = self.bcf_version.split('.')
+        if len(array) == 3:
+            array = array[:-1]
+        version = '.'.join(array)
         self.bsnstacklib_version_lower = (
-            const.OS_RELEASE_TO_BSN_LIB_LOWER[self.openstack_release])
+            const.BCF_RELEASE_TO_BSN_LIB_LOWER[version])
         self.bsnstacklib_version_upper = (
-            const.OS_RELEASE_TO_BSN_LIB_UPPER[self.openstack_release])
+            const.BCF_RELEASE_TO_BSN_LIB_UPPER[version])
 
         # master bcf controller and cookie
         self.bcf_master = None
