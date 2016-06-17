@@ -1,0 +1,39 @@
+This directory contains the rpm packages of Big Switch
+openstack plugins, switch light virtual rpm and a few
+helper scripts. RHOSP and BCF have different release
+schedules. As a result, the Big Switch openstack plugins
+in RHOSP overcloud image may not always be compatable
+with a particular BCF release. The rpm packages in this
+directory is verified to work with BCF 3.6 and RHOSP8.0.
+Please refer to BCF deployment guide for the steps to
+patch RHOSP overcloud images.
+
+python-networking-bigswitch-${bsnstacklib_version}-1.el7.centos.noarch.rpm
+contains the Big Switch ml2 plugin and l3 service plugin
+
+openstack-neutron-bigswitch-lldp-${bsnstacklib_version}-1.el7.centos.noarch.rpm
+contains the Big Switch lldp service
+
+openstack-neutron-bigswitch-agent-${bsnstacklib_version}-1.el7.centos.noarch.rpm
+contains the Big Switch virtual switch agent
+
+python-horizon-bsn-${horizon_bsn_version}-1.el7.centos.noarch.rpm
+contains the Big Switch horizon plugin
+
+ivs-${ivs_version}-1.el7.centos.x86_64.rpm
+contains the Big Switch switch light virtual
+
+ivs-debuginfo-${ivs_version}-1.el7.centos.x86_64.rpm
+contains the Big Switch switch light virtual debugging tools
+
+ifup-ivs
+is the script to bring up interfaces on switch light virtual
+
+ifdown-ivs
+is the script to bring down interfaces on switch light virtual
+
+assign-ivs-ip
+is the script to assign ip address to interfaces on switch light virtual
+
+startup.sh
+is the script needs to be run on undercloud node first boot
