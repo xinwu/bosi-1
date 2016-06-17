@@ -1,9 +1,5 @@
 #!/bin/bash
 
-bsnstacklib_version="2015.3.14"
-horizon_bsn_version="2015.3.7"
-ivs_version="3.6.0"
-
 yum remove -y openstack-neutron-bigswitch-agent
 yum remove -y openstack-neutron-bigswitch-lldp
 yum remove -y python-networking-bigswitch
