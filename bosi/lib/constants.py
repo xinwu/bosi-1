@@ -21,6 +21,9 @@ T5 = 't5'
 MODE_DICT = {'pfabric': T5,
              'pvfabric': T6}
 
+OS_RELEASE_TO_BSN_LIB = {'kilo': '20151',
+                         'liberty': '20153'}
+
 #BCF release
 BCF_RELEASE_TO_BSN_LIB_LOWER = {'3.6': '20153.36.0'}
 BCF_RELEASE_TO_BSN_LIB_UPPER = {'3.6': '20153.37.0'}
