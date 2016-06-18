@@ -21,20 +21,12 @@ T5 = 't5'
 MODE_DICT = {'pfabric': T5,
              'pvfabric': T6}
 
-OS_RELEASE_JUNO = 'juno'
-OS_RELEASE_KILO = 'kilo'
-OS_RELEASE_KILO_V2 = 'kilo_v2'
-OS_RELEASE_LIBERTY = 'liberty'
+OS_RELEASE_TO_BSN_LIB = {'kilo': '20151',
+                         'liberty': '20153'}
 
-# openstack release to bsnstacklib version
-OS_RELEASE_TO_BSN_LIB_LOWER = {OS_RELEASE_JUNO: '2014.2',
-                               OS_RELEASE_KILO_V2: '2015.1',
-                               OS_RELEASE_KILO: '2015.2',
-                               OS_RELEASE_LIBERTY: '2015.3'}
-OS_RELEASE_TO_BSN_LIB_UPPER = {OS_RELEASE_JUNO: '2015.1',
-                               OS_RELEASE_KILO_V2: '2015.2',
-                               OS_RELEASE_KILO: '2015.3',
-                               OS_RELEASE_LIBERTY: '2015.4'}
+#BCF release
+BCF_RELEASE_TO_BSN_LIB_LOWER = {'3.6': '36.0'}
+BCF_RELEASE_TO_BSN_LIB_UPPER = {'3.6': '37.0'}
 
 # Since kilo and BCF 3.5, we use tenant name
 # instead of tenant uuid to configure tenants,
