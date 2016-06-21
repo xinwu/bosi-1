@@ -18,4 +18,5 @@ virt-customize -a ${image_dir}/overcloud-full.qcow2 --run-command 'chmod a+x /et
 virt-customize -a ${image_dir}/overcloud-full.qcow2 --upload assign-ivs-ip:/etc/sysconfig/network-scripts/assign-ivs-ip
 virt-customize -a ${image_dir}/overcloud-full.qcow2 --run-command 'chmod a+x /etc/sysconfig/network-scripts/assign-ivs-ip'
 
+virt-customize -a ${image_dir}/overcloud-full.qcow2 --firstboot startup.sh
 
