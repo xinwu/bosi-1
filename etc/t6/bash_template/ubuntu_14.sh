@@ -114,7 +114,7 @@ compute() {
                 if [[ $? == 0 ]]; then
                     apt-get remove -y openvswitch-datapath-dkms && rmmod openvswitch && modprobe openvswitch
                 fi
-                apt-get install -y libnl-3-200=3.2.21-1 libnl-genl-3-200=3.2.21-1 libnl-route-3-200=3.2.21-1
+                apt-get install -y --force-yes libnl-3-200=3.2.21-1 libnl-genl-3-200=3.2.21-1 libnl-route-3-200=3.2.21-1
                 apt-get -f install -y
                 dpkg --force-all -i %(dst_dir)s/%(ivs_debug_pkg)s
                 apt-get install -y apport
@@ -126,7 +126,7 @@ compute() {
                 if [[ $? == 0 ]]; then
                     apt-get remove -y openvswitch-datapath-dkms && rmmod openvswitch && modprobe openvswitch
                 fi
-                apt-get install -y libnl-3-200=3.2.21-1 libnl-genl-3-200=3.2.21-1 libnl-route-3-200=3.2.21-1
+                apt-get install -y --force-yes libnl-3-200=3.2.21-1 libnl-genl-3-200=3.2.21-1 libnl-route-3-200=3.2.21-1
                 apt-get -f install -y
                 dpkg --force-all -i %(dst_dir)s/%(ivs_debug_pkg)s
                 apt-get install -y apport
@@ -280,7 +280,7 @@ apt-get install -y python-dev python-setuptools
 apt-get install -y puppet dpkg
 apt-get install -y vlan ethtool
 apt-get install -y libssl-dev libffi6 libffi-dev
-apt-get install -y libnl-3-200=3.2.21-1 libnl-genl-3-200=3.2.21-1 libnl-route-3-200=3.2.21-1
+apt-get install -y --force-yes libnl-3-200=3.2.21-1 libnl-genl-3-200=3.2.21-1 libnl-route-3-200=3.2.21-1
 apt-get -f install -y
 apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y neutron-common
 easy_install pip
