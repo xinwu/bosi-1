@@ -60,7 +60,7 @@ LOG_FILE = "/var/log/bcf_setup.log"
 
 # constants for ivs config
 INBAND_VLAN = 4092
-IVS_DAEMON_ARGS_CERT = (r'''DAEMON_ARGS=\"--hitless --verbose --certificate /etc/ivs '''
+IVS_DAEMON_ARGS_CERT = (r'''DAEMON_ARGS=\"--hitless --certificate /etc/ivs '''
                         '''--inband-vlan %(inband_vlan)d'''
                         '''%(uplink_interfaces)s%(internal_ports)s\\"''')
 IVS_DAEMON_ARGS = (r'''DAEMON_ARGS=\"--hitless '''
