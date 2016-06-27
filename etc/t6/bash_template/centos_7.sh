@@ -187,7 +187,6 @@ rpm -iUvh epel-release-7-*.rpm
 rpm -ivh https://yum.puppetlabs.com/el/7/products/x86_64/puppetlabs-release-7-10.noarch.rpm
 yum groupinstall -y 'Development Tools'
 yum install -y python-devel puppet python-pip wget libffi-devel openssl-devel
-yum update -y
 easy_install pip
 pip install --upgrade funcsigs
 puppet module install --force puppetlabs-inifile
