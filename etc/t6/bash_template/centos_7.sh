@@ -179,8 +179,6 @@ fi
 
 # prepare dependencies
 yum install -y wget
-wget http://cbs.centos.org/kojifiles/packages/python-oslo-config/3.9.0/1.el7/noarch/python2-oslo-config-3.9.0-1.el7.noarch.rpm
-yum install -y python2-oslo-config-3.9.0-1.el7.noarch.rpm
 
 wget -r --no-parent --no-directories --timestamping --accept 'epel-release-7-*.rpm' 'http://dl.fedoraproject.org/pub/epel/7/x86_64/e/'
 rpm -iUvh epel-release-7-*.rpm
