@@ -43,9 +43,7 @@ class Environment(object):
         self.neutron_id = config.get('neutron_id')
 
         # tenant api version
-        self.tenant_api_version = config.get('tenant_api_version')
-        if not self.tenant_api_version:
-            self.tenant_api_version = const.TENANT_NAME_API_VERSION
+        self.tenant_api_version = const.TENANT_NAME_API_VERSION
 
         # installer pxe interface ip
         self.installer_pxe_interface_ip = config.get(
@@ -56,15 +54,9 @@ class Environment(object):
             'deploy_to_specified_nodes_only')
 
         # flags for upgrade
-        self.install_ivs = config.get('default_install_ivs')
-        self.install_bsnstacklib = config.get('default_install_bsnstacklib')
+        self.install_ivs = True
+        self.install_bsnstacklib = True
         self.install_all = True
-
-        # flags for dhcp and metadata agent
-        self.deploy_dhcp_agent = config.get('default_deploy_dhcp_agent')
-
-        # flags for l3 agent
-        self.deploy_l3_agent = config.get('default_deploy_l3_agent')
 
         # setup node ip and directory
         self.setup_node_ip = Helper.get_setup_node_ip()
@@ -79,6 +71,16 @@ class Environment(object):
         self.deploy_mode = const.MODE_DICT.get(mode)
         if not self.deploy_mode:
             self.deploy_mode = const.T5
+
+        # flags for l3 agent
+        self.deploy_l3_agent = False
+        if self.deploy_mode == const.T5 and not fuel_cluster_id:
+            self.deploy_l3_agent = True
+
+        # flags for dhcp and metadata agent
+        self.deploy_dhcp_agent = False
+        if self.deploy_mode == const.T5 and not fuel_cluster_id:
+            self.deploy_dhcp_agent = True
 
         # selinux configuration
         self.selinux_mode = None
