@@ -718,24 +718,6 @@ class Helper(object):
             puppet_file.write(puppet)
         node.set_puppet_script_path(puppet_script_path)
 
-        # generate selinux script
-        selinux_script_path = (
-            r'''%(setup_node_dir)s/%(generated_script_dir)s'''
-            '''/%(hostname)s.te''' %
-            {'setup_node_dir': node.setup_node_dir,
-             'generated_script_dir': const.GENERATED_SCRIPT_DIR,
-             'hostname': node.hostname})
-        subprocess.call(r'''cp %(setup_node_dir)s/%(deploy_mode)s/'''
-                        '''%(selinux_template_dir)s/%(selinux_template)s.'''
-                        '''te %(selinux_script_path)s''' %
-                        {'setup_node_dir': node.setup_node_dir,
-                         'deploy_mode': node.deploy_mode,
-                         'selinux_template_dir': const.SELINUX_TEMPLATE_DIR,
-                         'selinux_template': const.CENTOS,
-                         'selinux_script_path': selinux_script_path},
-                        shell=True)
-        node.set_selinux_script_path(selinux_script_path)
-
         # generate ospurge script
         if node.role != const.ROLE_NEUTRON_SERVER:
             return
@@ -1725,15 +1707,6 @@ class Helper(object):
            node.puppet_script_path,
            node.dst_dir,
            "%(hostname)s.pp" % {'hostname': node.hostname})
-
-        # copy selinux script to node
-        if node.os in const.RPM_OS_SET:
-            safe_print("Copy bsn selinux policy to %(hostname)s\n" %
-                       {'hostname': node.fqdn})
-            Helper.copy_file_to_remote(node,
-               node.selinux_script_path,
-               node.dst_dir,
-               "%(hostname)s.te" % {'hostname': node.hostname})
 
         if node.role == const.ROLE_NEUTRON_SERVER:
             # copy ospurge script to node
