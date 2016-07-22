@@ -14,6 +14,10 @@ openstack_release=%(openstack_release)s
 pip_proxy=%(pip_proxy)s
 
 controller() {
+    # copy send_lldp to /bin
+    sudo cp %(dst_dir)s/send_lldp /bin/
+    sudo chmod 777 /bin/send_lldp
+
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
@@ -25,33 +29,11 @@ controller() {
         neutron-db-manage upgrade heads
     fi
 
-    echo 'Stop and disable neutron-metadata-agent, neutron-dhcp-agent and neutron-l3-agent'
-    if [[ ${fuel_cluster_id} != 'None' ]]; then
-        crm resource stop p_neutron-dhcp-agent
-        crm resource stop p_neutron-metadata-agent
-        crm resource stop p_neutron-l3-agent
-        sleep 10
-        crm resource cleanup p_neutron-dhcp-agent
-        crm resource cleanup p_neutron-metadata-agent
-        crm resource cleanup p_neutron-l3-agent
-        sleep 10
-        crm configure delete p_neutron-dhcp-agent
-        crm configure delete p_neutron-metadata-agent
-        crm configure delete p_neutron-l3-agent
-    fi
-    service neutron-metadata-agent stop
-    mv /etc/init/neutron-metadata-agent.conf /etc/init/neutron-metadata-agent.conf.disabled
-    service neutron-dhcp-agent stop
-    mv /etc/init/neutron-dhcp-agent.conf /etc/init/neutron-dhcp-agent.conf.disabled
-    service neutron-l3-agent stop
-    mv /etc/init/neutron-l3-agent.conf /etc/init/neutron-l3-agent.conf.disabled
-
-
     # deploy horizon plugin
     cp /usr/local/lib/python2.7/dist-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
 
     echo 'Restart neutron-server'
-    rm -rf /etc/neutron/plugins/ml2/host_certs/*
+    rm -rf /var/lib/neutron/host_certs/*
     #service keystone restart
     service apache2 restart
     service neutron-server restart
@@ -124,25 +106,6 @@ if [[ "$(id -u)" != "0" ]]; then
 fi
 
 # prepare dependencies
-cat /etc/apt/sources.list | grep "http://archive.ubuntu.com/ubuntu"
-if [[ $? != 0 ]]; then
-    release=$(lsb_release -sc)
-    echo -e "\ndeb http://archive.ubuntu.com/ubuntu $release main\n" >> /etc/apt/sources.list
-fi
-apt-get install ubuntu-cloud-keyring
-if [[ $openstack_release == 'juno' ]]; then
-    echo "deb http://ubuntu-cloud.archive.canonical.com/ubuntu" \
-    "trusty-updates/juno main" > /etc/apt/sources.list.d/cloudarchive-juno.list
-fi
-apt-get update -y
-apt-get install -y linux-headers-$(uname -r) build-essential
-apt-get install -y python-dev python-setuptools
-apt-get install -y puppet dpkg
-apt-get install -y vlan ethtool
-apt-get install -y libssl-dev libffi6 libffi-dev
-apt-get install -y libnl-genl-3-200
-apt-get -f install -y
-apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y neutron-common
 easy_install pip
 puppet module install --force puppetlabs-inifile
 puppet module install --force puppetlabs-stdlib

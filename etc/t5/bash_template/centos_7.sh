@@ -39,15 +39,6 @@ controller() {
     cp /usr/lib/python2.7/site-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
     systemctl restart httpd
 
-    # restart keystone and httpd
-    #systemctl restart httpd
-
-    echo "Restart nova"
-    systemctl restart openstack-nova-consoleauth
-    systemctl restart openstack-nova-scheduler
-    systemctl restart openstack-nova-conductor
-    systemctl restart openstack-nova-cert
-
     echo "Restart neutron-server"
     rm -rf /var/lib/neutron/host_certs/*
     systemctl restart neutron-server
@@ -128,13 +119,6 @@ compute() {
         systemctl enable neutron-l3-agent
         systemctl restart neutron-l3-agent
     fi
-
-    # restart libvirtd and nova compute on compute node
-    echo 'Restart libvirtd and openstack-nova-compute'
-    systemctl enable libvirtd
-    systemctl restart libvirtd
-    systemctl enable openstack-nova-compute
-    systemctl restart openstack-nova-compute
 }
 
 
@@ -152,7 +136,6 @@ rpm -iUvh epel-release-7-*.rpm
 rpm -ivh https://yum.puppetlabs.com/el/7/products/x86_64/puppetlabs-release-7-10.noarch.rpm
 yum groupinstall -y 'Development Tools'
 yum install -y python-devel puppet python-pip wget libffi-devel openssl-devel
-yum update -y
 easy_install pip
 pip install --upgrade funcsigs
 puppet module install --force puppetlabs-inifile

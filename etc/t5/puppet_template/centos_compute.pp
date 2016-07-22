@@ -1,32 +1,6 @@
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 $uplinks = [%(uplinks)s]
 
-# uplink mtu
-define uplink_mtu {
-    file_line { "ifconfig $name mtu %(mtu)s":
-        path  => '/etc/rc.d/rc.local',
-        line  => "ifconfig $name mtu %(mtu)s",
-        match => "^ifconfig $name mtu %(mtu)s",
-    }
-}
-
-# edit rc.local for default gw
-file { "/etc/rc.d/rc.local":
-    ensure  => file,
-    mode    => 0777,
-}->
-file_line { "remove touch /var/lock/subsys/local":
-    path    => '/etc/rc.d/rc.local',
-    ensure  => absent,
-    line    => "touch /var/lock/subsys/local",
-}->
-uplink_mtu { $uplinks:
-}->
-file_line { "touch /var/lock/subsys/local":
-    path    => '/etc/rc.d/rc.local',
-    line    => "touch /var/lock/subsys/local",
-}
-
 # install and enable ntp
 package { "ntp":
     ensure  => installed,

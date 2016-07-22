@@ -15,6 +15,9 @@ skip_ivs_version_check=%(skip_ivs_version_check)s
 pip_proxy=%(pip_proxy)s
 
 controller() {
+    # copy send_lldp to /bin
+    sudo cp %(dst_dir)s/send_lldp /bin/
+    sudo chmod 777 /bin/send_lldp
 
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
@@ -29,22 +32,12 @@ controller() {
 
     echo 'Stop and disable neutron-metadata-agent and neutron-dhcp-agent'
     if [[ ${fuel_cluster_id} != 'None' ]]; then
-        crm resource stop p_neutron-dhcp-agent
-        crm resource stop p_neutron-metadata-agent
         crm resource stop p_neutron-l3-agent
         sleep 10
-        crm resource cleanup p_neutron-dhcp-agent
-        crm resource cleanup p_neutron-metadata-agent
         crm resource cleanup p_neutron-l3-agent
         sleep 10
-        crm configure delete p_neutron-dhcp-agent
-        crm configure delete p_neutron-metadata-agent
         crm configure delete p_neutron-l3-agent
     fi
-    service neutron-metadata-agent stop
-    rm -f /etc/init/neutron-metadata-agent.conf
-    service neutron-dhcp-agent stop
-    rm -f /etc/init/neutron-dhcp-agent.conf
     service neutron-l3-agent stop
     rm -f /etc/init/neutron-l3-agent.conf
     service neutron-bsn-agent stop
@@ -55,23 +48,13 @@ controller() {
     cp /usr/local/lib/python2.7/dist-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
 
     echo 'Restart neutron-server'
-    rm -rf /etc/neutron/plugins/ml2/host_certs/*
+    rm -rf /var/lib/neutron/host_certs/*
     #service keystone restart
     service apache2 restart
     service neutron-server restart
 }
 
 compute() {
-    if [[ $deploy_dhcp_agent == true ]]; then
-        dpkg -l neutron-dhcp-agent
-        if [[ $? != 0 ]]; then
-            apt-get install -o Dpkg::Options::="--force-confold" -y neutron-metadata-agent
-            apt-get install -o Dpkg::Options::="--force-confold" -y neutron-dhcp-agent
-            service neutron-metadata-agent stop
-            service neutron-dhcp-agent stop
-        fi
-    fi
-
     # install ivs
     if [[ $install_ivs == true ]]; then
         # check ivs version compatability
@@ -97,7 +80,6 @@ compute() {
                 if [[ $? == 0 ]]; then
                     apt-get remove -y openvswitch-datapath-dkms && rmmod openvswitch && modprobe openvswitch
                 fi
-                apt-get install -y --force-yes libnl-3-200=3.2.21-1 libnl-genl-3-200=3.2.21-1 libnl-route-3-200=3.2.21-1
                 apt-get -f install -y
                 dpkg --force-all -i %(dst_dir)s/%(ivs_debug_pkg)s
                 apt-get install -y apport
@@ -109,7 +91,6 @@ compute() {
                 if [[ $? == 0 ]]; then
                     apt-get remove -y openvswitch-datapath-dkms && rmmod openvswitch && modprobe openvswitch
                 fi
-                apt-get install -y --force-yes libnl-3-200=3.2.21-1 libnl-genl-3-200=3.2.21-1 libnl-route-3-200=3.2.21-1
                 apt-get -f install -y
                 dpkg --force-all -i %(dst_dir)s/%(ivs_debug_pkg)s
                 apt-get install -y apport
@@ -205,12 +186,6 @@ compute() {
         bash /etc/rc.local
     fi
 
-    if [[ $deploy_dhcp_agent == true ]]; then
-        echo 'Restart neutron-metadata-agent and neutron-dhcp-agent'
-        service neutron-metadata-agent restart
-        service neutron-dhcp-agent restart
-    fi
-
     echo 'Restart ivs, neutron-bsn-agent'
     service ivs restart
     service neutron-bsn-agent restart
@@ -247,25 +222,6 @@ if [[ "$(id -u)" != "0" ]]; then
 fi
 
 # prepare dependencies
-cat /etc/apt/sources.list | grep "http://archive.ubuntu.com/ubuntu"
-if [[ $? != 0 ]]; then
-    release=$(lsb_release -sc)
-    echo -e "\ndeb http://archive.ubuntu.com/ubuntu $release main\n" >> /etc/apt/sources.list
-fi
-apt-get install -y ubuntu-cloud-keyring
-if [[ $openstack_release == 'juno' ]]; then
-    echo "deb http://ubuntu-cloud.archive.canonical.com/ubuntu" \
-    "trusty-updates/juno main" > /etc/apt/sources.list.d/cloudarchive-juno.list
-fi
-apt-get update -y
-apt-get install -y linux-headers-$(uname -r) build-essential
-apt-get install -y python-dev python-setuptools
-apt-get install -y puppet dpkg
-apt-get install -y vlan ethtool
-apt-get install -y libssl-dev libffi6 libffi-dev
-apt-get install -y --force-yes libnl-3-200=3.2.21-1 libnl-genl-3-200=3.2.21-1 libnl-route-3-200=3.2.21-1
-apt-get -f install -y
-apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y neutron-common
 easy_install pip
 puppet module install --force puppetlabs-inifile
 puppet module install --force puppetlabs-stdlib

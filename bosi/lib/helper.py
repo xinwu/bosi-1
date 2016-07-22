@@ -1564,10 +1564,11 @@ class Helper(object):
                       'ivs_debug_pkg': node.ivs_debug_pkg}),
                     node.dst_dir, node.ivs_debug_pkg)
 
-        if (node.role == const.ROLE_CEPH or
-                const.ROLE_CINDER in node.role.lower() or
-                node.role == const.ROLE_MONGO or
-                node.deploy_mode == const.T5):
+        if (const.ROLE_CEPH in node.role.lower() or
+            const.ROLE_CINDER in node.role.lower() or
+            const.ROLE_MONGO in node.role.lower() or
+            const.ROLE_NEUTRON_SERVER in node.role.lower() or
+            const.T5 in node.deploy_mode.lower()):
             # copy send_lldp to t5 compute nodes
             safe_print("Copy send_lldp to %(hostname)s\n" %
                        {'hostname': node.fqdn})

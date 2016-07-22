@@ -2,75 +2,27 @@
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 $uplinks = [%(uplinks)s]
 
-# uplink mtu
-define uplink_mtu {
-    file_line { "ifconfig $name mtu %(mtu)s":
-        path  => '/etc/rc.local',
-        line  => "ifconfig $name mtu %(mtu)s",
-        match => "^ifconfig $name mtu %(mtu)s",
-    }
-}
-
-# edit rc.local for cron job and default gw
-file { "/etc/rc.local":
+# lldp
+file { "/bin/send_lldp":
     ensure  => file,
     mode    => 0777,
-}->
-file_line { "remove exit 0":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "exit 0",
-}->
-uplink_mtu { $uplinks:
-}->
-file_line { "remove crontab -r":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "crontab -r",
-}->
-file_line { "remove fuel-logrotate":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "(crontab -l; echo \"*/30 * * * * /usr/bin/fuel-logrotate\") | crontab -",
-}->
-file_line { "remove dhcp_reschedule.sh":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
-}->
-file_line { "remove clear default gw":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "ip route del default",
-}->
-file_line { "remove ip route add default":
-    path    => '/etc/rc.local',
-    ensure  => absent,
-    line    => "ip route add default via %(default_gw)s",
-}->
-file_line { "clear default gw":
-    path    => '/etc/rc.local',
-    line    => "ip route del default",
-}->
-file_line { "add default gw":
-    path    => '/etc/rc.local',
-    line    => "ip route add default via %(default_gw)s",
-}->
-file_line { "clean up cron job":
-    path    => '/etc/rc.local',
-    line    => "crontab -r",
-}->
-file_line { "add cron job to rotate log":
-    path    => '/etc/rc.local',
-    line    => "(crontab -l; echo \"*/30 * * * * /usr/bin/fuel-logrotate\") | crontab -",
-}->
-file_line { "add cron job to reschedule dhcp":
-    path    => '/etc/rc.local',
-    line    => "(crontab -l; echo \"*/30 * * * * /bin/dhcp_reschedule.sh\") | crontab -",
-}->
-file_line { "add exit 0":
-    path    => '/etc/rc.local',
-    line    => "exit 0",
+}
+file { "/etc/init/send_lldp.conf":
+    ensure  => file,
+    content => "
+description \"BCF LLDP\"
+start on runlevel [2345]
+stop on runlevel [!2345]
+respawn
+script
+    exec /bin/send_lldp --system-desc 5c:16:c7:00:00:04 --system-name $(uname -n) -i 10 --network_interface %(uplinks)s
+end script
+",
+}
+service { "send_lldp":
+    ensure  => running,
+    enable  => true,
+    require => [File['/bin/send_lldp'], File['/etc/init/send_lldp.conf']],
 }
 
 # make sure known_hosts is cleaned up
@@ -88,27 +40,9 @@ ini_setting { "keystone paste config":
     value             => '/etc/keystone/keystone-paste.ini',
 }
 
-# reserve keystone ephemeral port
-exec { "reserve keystone port":
-    command => "sysctl -w 'net.ipv4.ip_local_reserved_ports=49000,35357,41055,58882'",
-    path    => $binpath,
-}
-file_line { "reserve keystone port":
-    path  => '/etc/sysctl.conf',
-    line  => 'net.ipv4.ip_local_reserved_ports=49000,35357,41055,58882',
-    match => '^net.ipv4.ip_local_reserved_ports.*$',
-}
-
-# load bonding module
-file_line {'load bonding on boot':
-    path    => '/etc/modules',
-    line    => 'bonding',
-    match   => '^bonding$',
-}
-
 # purge bcf controller public key
 exec { 'purge bcf key':
-    command => "rm -rf /etc/neutron/plugins/ml2/host_certs/*",
+    command => "rm -rf /var/lib/neutron/host_certs/*",
     path    => $binpath,
     notify  => Service['neutron-server'],
 }
@@ -175,7 +109,6 @@ ini_setting { "keystone.conf notification driver":
   key_val_separator => '=',
   setting           => 'notification_driver',
   value             => 'messaging',
-  notify            => Service['keystone'],
 }
 
 # config /etc/neutron/plugin.ini
@@ -220,16 +153,6 @@ ini_setting { "l3 agent external network bridge":
   value             => '',
 }
 
-# config /etc/neutron/plugins/ml2/ml2_conf.ini
-#ini_setting { "ml2 extension_drivers":
-#  ensure            => present,
-#  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-#  section           => 'ml2',
-#  key_val_separator => '=',
-#  setting           => 'extension_drivers',
-#  value             => 'port_security',
-#  notify            => Service['neutron-server'],
-#}
 ini_setting { "ml2 type dirvers":
   ensure            => present,
   path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
@@ -329,42 +252,6 @@ ini_setting { "ml2 restproxy neutron_id":
   value             => '%(neutron_id)s',
   notify            => Service['neutron-server'],
 }
-ini_setting { "ml2 restproxy keystone_auth_url":
-  ensure            => present,
-  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-  section           => 'restproxy',
-  key_val_separator => '=',
-  setting           => 'auth_url',
-  value             => '%(keystone_auth_url)s',
-  notify            => Service['neutron-server'],
-}
-ini_setting { "ml2 restproxy keystone_auth_user":
-  ensure            => present,
-  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-  section           => 'restproxy',
-  key_val_separator => '=',
-  setting           => 'auth_user',
-  value             => '%(keystone_auth_user)s',
-  notify            => Service['neutron-server'],
-}
-ini_setting { "ml2 restproxy keystone_password":
-  ensure            => present,
-  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-  section           => 'restproxy',
-  key_val_separator => '=',
-  setting           => 'auth_password',
-  value             => '%(keystone_password)s',
-  notify            => Service['neutron-server'],
-}
-ini_setting { "ml2 restproxy keystone_auth_tenant":
-  ensure            => present,
-  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-  section           => 'restproxy',
-  key_val_separator => '=',
-  setting           => 'auth_tenant',
-  value             => '%(keystone_auth_tenant)s',
-  notify            => Service['neutron-server'],
-}
 
 # change ml2 ownership
 file { '/etc/neutron/plugins/ml2':
@@ -374,16 +261,7 @@ file { '/etc/neutron/plugins/ml2':
   notify  => Service['neutron-server'],
 }
 
-# heat-engine, neutron-server, neutron-dhcp-agent and neutron-metadata-agent
-service { 'heat-engine':
-  ensure  => running,
-  enable  => true,
-}
 service { 'neutron-server':
-  ensure  => running,
-  enable  => true,
-}
-service { 'keystone':
   ensure  => running,
   enable  => true,
 }
@@ -395,8 +273,4 @@ service { 'neutron-metadata-agent':
   ensure  => stopped,
   enable  => false,
 }
-#service {'neutron-bsn-agent':
-#  ensure  => stopped,
-#  enable  => false,
-#}
 

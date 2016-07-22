@@ -21,15 +21,6 @@ define ivs_internal_port_ip {
     }
 }
 
-# uplink mtu
-define uplink_mtu {
-    file_line { "ifconfig $name mtu %(mtu)s":
-        path  => '/etc/rc.d/rc.local',
-        line  => "ifconfig $name mtu %(mtu)s",
-        match => "^ifconfig $name mtu %(mtu)s",
-    }
-}
-
 # example ['storage,192.168.1.1/24', 'ex,192.168.2.1/24', 'management,192.168.3.1/24']
 class ivs_internal_port_ips {
     $uplinks = [%(uplinks)s]
@@ -67,13 +58,7 @@ file{'/etc/sysconfig/ivs':
     ensure  => file,
     mode    => 0644,
     content => "%(ivs_daemon_args)s",
-    #notify  => Service['ivs'],
 } 
-#service{'ivs':
-#    ensure  => running,
-#    enable  => true,
-#    path    => $binpath,
-#}
 
 # fix centos symbolic link problem for ivs debug logging
 file { '/usr/lib64/debug':
@@ -123,7 +108,7 @@ ini_setting { "neutron.conf service_plugins":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'service_plugins',
-  value             => 'bsn_l3',
+  value             => 'bsn_l3,bsn_service_plugin',
 }
 ini_setting { "neutron.conf dhcp_agents_per_network":
   ensure            => present,
@@ -215,65 +200,5 @@ ini_setting { "l3 agent disable metadata proxy":
 file { '/etc/neutron/dnsmasq-neutron.conf':
   ensure            => file,
   content           => 'dhcp-option-force=26,1400',
-}
-
-# dhcp configuration
-if %(deploy_dhcp_agent)s {
-    ini_setting { "dhcp agent resync_interval":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'resync_interval',
-        value             => '60',
-    }
-    ini_setting { "dhcp agent interface driver":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'interface_driver',
-        value             => 'neutron.agent.linux.interface.IVSInterfaceDriver',
-    }
-    ini_setting { "dhcp agent dhcp driver":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'dhcp_driver',
-        value             => 'bsnstacklib.plugins.bigswitch.dhcp_driver.DnsmasqWithMetaData',
-    }
-    ini_setting { "force to use dhcp for metadata":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'force_metadata',
-        value             => 'True',
-    }
-    ini_setting { "dhcp agent enable isolated metadata":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'enable_isolated_metadata',
-        value             => 'True',
-    }
-    ini_setting { "dhcp agent disable metadata network":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'enable_metadata_network',
-        value             => 'False',
-    }
-    ini_setting { "dhcp agent disable dhcp_delete_namespaces":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'dhcp_delete_namespaces',
-        value             => 'False',
-    }
 }
 
