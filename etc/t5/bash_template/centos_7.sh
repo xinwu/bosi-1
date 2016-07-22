@@ -24,10 +24,6 @@ controller() {
     systemctl stop neutron-bsn-agent
     systemctl disable neutron-bsn-agent
 
-    # copy dhcp_reschedule.sh to /bin
-    cp %(dst_dir)s/dhcp_reschedule.sh /bin/
-    chmod 777 /bin/dhcp_reschedule.sh
-
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
@@ -45,11 +41,6 @@ controller() {
 
     # restart keystone and httpd
     #systemctl restart httpd
-
-    # schedule cron job to reschedule network in case dhcp agent fails
-    chmod a+x /bin/dhcp_reschedule.sh
-    crontab -r
-    (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
 
     echo "Restart nova"
     systemctl restart openstack-nova-consoleauth
@@ -70,13 +61,6 @@ compute() {
         systemctl disable neutron-dhcp-agent
         systemctl stop neutron-metadata-agent
         systemctl disable neutron-metadata-agent
-
-        # patch linux/dhcp.py to make sure static host route is pushed to instances
-        dhcp_py=$(find /usr -name dhcp.py | grep linux)
-        dhcp_dir=$(dirname "${dhcp_py}")
-        sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
-        find $dhcp_dir -name "*.pyc" | xargs rm
-        find $dhcp_dir -name "*.pyo" | xargs rm
     fi
 
     if [[ $deploy_l3_agent == true ]]; then

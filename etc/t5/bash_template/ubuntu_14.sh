@@ -50,12 +50,6 @@ controller() {
     # deploy horizon plugin
     cp /usr/local/lib/python2.7/dist-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
 
-    # schedule cron job to reschedule network in case dhcp agent fails
-    chmod a+x /bin/dhcp_reschedule.sh
-    crontab -r
-    (crontab -l; echo "*/30 * * * * /usr/bin/fuel-logrotate") | crontab -
-    (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
-
     echo 'Restart neutron-server'
     rm -rf /etc/neutron/plugins/ml2/host_certs/*
     #service keystone restart
@@ -80,13 +74,6 @@ compute() {
         mv /etc/init/neutron-metadata-agent.conf /etc/init/neutron-metadata-agent.conf.disabled
         service neutron-dhcp-agent stop
         mv /etc/init/neutron-dhcp-agent.conf /etc/init/neutron-dhcp-agent.conf.disabled
-
-        # patch linux/dhcp.py to make sure static host route is pushed to instances
-        dhcp_py=$(find /usr -name dhcp.py | grep linux)
-        dhcp_dir=$(dirname "${dhcp_py}")
-        sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
-        find $dhcp_dir -name "*.pyc" | xargs rm
-        find $dhcp_dir -name "*.pyo" | xargs rm
     fi
 
     if [[ $deploy_l3_agent == true ]]; then
