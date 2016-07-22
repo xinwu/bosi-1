@@ -274,3 +274,5 @@ file { '/etc/neutron/plugins/ml2':
 service { 'neutron-server':
   ensure  => running,
   enable  => true,
+}
+

@@ -398,8 +398,6 @@ def main():
                         help=("Fuel cluster ID. Fuel settings may override "
                               "YAML configuration. "
                               "Please refer to config.yaml"))
-    parser.add_argument('-r', "--rhosp", action='store_true', default=False,
-                        help="red hat openstack director is the installer.")
     parser.add_argument('-t', "--tag", required=False,
                         help="Deploy to tagged nodes only.")
     parser.add_argument('--cleanup', action='store_true', default=False,
@@ -434,16 +432,15 @@ def main():
 
 
     args = parser.parse_args()
-    if args.fuel_cluster_id and args.rhosp:
-        safe_print("Cannot have both fuel and rhosp as openstack installer.\n")
-        return
     if args.certificate_only and (not args.certificate_dir):
         safe_print("--certificate-only requires the existence of --certificate-dir.\n")
         return
 
     with open(args.config_file, 'r') as config_file:
         config = yaml.load(config_file)
-    deploy_bcf(config, args.deploy_mode, args.fuel_cluster_id, args.rhosp,
+    # bosi is not used for redhat any more since 3.6
+    rhosp = False
+    deploy_bcf(config, args.deploy_mode, args.fuel_cluster_id, rhosp,
                args.tag, args.cleanup,
                args.verify, args.verifyonly,
                args.skip_ivs_version_check,

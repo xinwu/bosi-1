@@ -35,8 +35,6 @@ class ivs_internal_port_ips {
         ensure  => absent,
         line    => "exit 0",
     }->
-    uplink_mtu { $uplinks:
-    }->
     file_line { "restart ivs":
         path    => '/etc/rc.local',
         line    => "service ivs restart",
