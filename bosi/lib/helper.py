@@ -268,34 +268,6 @@ class Helper(object):
         Helper.run_command_on_local(chmod_cmd)
 
     @staticmethod
-    def generate_dhcp_reschedule_script(node):
-        openrc = const.PACKSTACK_OPENRC
-        if node.rhosp:
-            openrc = const.RHOSP_OVERCLOUD_OPENRC
-        elif node.fuel_cluster_id:
-            openrc = const.FUEL_OPENRC
-        dhcp_reschedule_script_path = (
-            r'''%(setup_node_dir)s/%(generated_script_dir)s/'''
-            '''dhcp_reschedule.sh''' %
-            {'setup_node_dir': node.setup_node_dir,
-             'generated_script_dir': const.GENERATED_SCRIPT_DIR})
-        node.set_dhcp_reschedule_script_path(dhcp_reschedule_script_path)
-        if os.path.isfile(dhcp_reschedule_script_path):
-            return
-        with open((r'''%(setup_node_dir)s/%(deploy_mode)s/'''
-                   '''%(bash_template_dir)s/dhcp_reschedule.sh''' %
-                   {'setup_node_dir': node.setup_node_dir,
-                   'deploy_mode': node.deploy_mode,
-                   'bash_template_dir': const.BASH_TEMPLATE_DIR}),
-                  "r") as dhcp_reschedule_template_file:
-            dhcp_reschedule_template = dhcp_reschedule_template_file.read()
-            dhcp_reschedule = (dhcp_reschedule_template %
-                               {'openrc': openrc,
-                                'openstack_release': node.openstack_release})
-        with open(dhcp_reschedule_script_path, "w") as dhcp_reschedule_file:
-            dhcp_reschedule_file.write(dhcp_reschedule)
-
-    @staticmethod
     def generate_ospurge_script(node):
         openrc = const.PACKSTACK_OPENRC
         if node.rhosp:
@@ -488,7 +460,6 @@ class Helper(object):
             return
 
         Helper.generate_ospurge_script(node)
-        Helper.generate_dhcp_reschedule_script(node)
 
     @staticmethod
     def generate_scripts_for_ubuntu(node):
@@ -609,7 +580,6 @@ class Helper(object):
             return
 
         Helper.generate_ospurge_script(node)
-        Helper.generate_dhcp_reschedule_script(node)
 
     @staticmethod
     def generate_scripts_for_centos(node):
@@ -718,30 +688,11 @@ class Helper(object):
             puppet_file.write(puppet)
         node.set_puppet_script_path(puppet_script_path)
 
-        # generate selinux script
-        selinux_script_path = (
-            r'''%(setup_node_dir)s/%(generated_script_dir)s'''
-            '''/%(hostname)s.te''' %
-            {'setup_node_dir': node.setup_node_dir,
-             'generated_script_dir': const.GENERATED_SCRIPT_DIR,
-             'hostname': node.hostname})
-        subprocess.call(r'''cp %(setup_node_dir)s/%(deploy_mode)s/'''
-                        '''%(selinux_template_dir)s/%(selinux_template)s.'''
-                        '''te %(selinux_script_path)s''' %
-                        {'setup_node_dir': node.setup_node_dir,
-                         'deploy_mode': node.deploy_mode,
-                         'selinux_template_dir': const.SELINUX_TEMPLATE_DIR,
-                         'selinux_template': const.CENTOS,
-                         'selinux_script_path': selinux_script_path},
-                        shell=True)
-        node.set_selinux_script_path(selinux_script_path)
-
         # generate ospurge script
         if node.role != const.ROLE_NEUTRON_SERVER:
             return
 
         Helper.generate_ospurge_script(node)
-        Helper.generate_dhcp_reschedule_script(node)
 
     @staticmethod
     def __load_node_yaml_config__(node_config, env):
@@ -1394,88 +1345,6 @@ class Helper(object):
                 node, src_file, dst_dir, dst_file, mode)
 
     @staticmethod
-    def copy_dhcp_scheduler_from_controllers(controller_nodes):
-        if len(controller_nodes) == 0:
-            return
-        controller_node = controller_nodes[0]
-        if controller_node.openstack_release != 'juno':
-            # we only patch juno
-            return
-        dhcp_py = "dhcp_agent_scheduler.py"
-        src_path, error = Helper.run_command_on_remote_without_timeout(
-            controller_node, "find /usr/lib -name %s" % dhcp_py)
-        if error or (not src_path):
-            safe_print(r'''Failed to locate %(dhcp_py)s on %(node)s,
-                       output = %(src_path)s, error = %(error)s\n''' %
-                       {'dhcp_py': dhcp_py,
-                        'node': controller_node.hostname,
-                        'src_path': src_path,
-                        'error': error})
-            return
-        replace = r'''
-            LOG.debug(_('Before sorting dhcp agent subnets: %s'),
-                      active_dhcp_agents)
-            count_dict = {}
-            agent_dict = {}
-            for dhcp_agent in active_dhcp_agents:
-                agent_dict[dhcp_agent.id] = dhcp_agent
-                networks = plugin.list_networks_on_dhcp_agent(
-                    context, dhcp_agent.id)
-                subnets = networks['networks']
-                count = count_dict.get(dhcp_agent.id)
-                if not count:
-                    count = 0
-                count = count + len(subnets)
-                count_dict[dhcp_agent.id] = count
-            sorted_count_dict = OrderedDict(sorted(count_dict.items(),
-                                            key=lambda x: x[1]))
-            active_dhcp_agents = []
-            for id, count in sorted_count_dict.items():
-                if count < 400:
-                    active_dhcp_agents.append(agent_dict[id])
-            LOG.debug(_('After sorting dhcp agent subnets: %s'),
-                      active_dhcp_agents)
-            chosen_agents = active_dhcp_agents[:n_agents]
-            LOG.debug(_('Chose dhcp agents: %s'),
-                      chosen_agents)
-'''
-        src_dir = os.path.dirname(src_path)
-        for node in controller_nodes:
-            node.set_dhcp_agent_scheduler_dir(src_dir)
-        safe_print("%s is at %s on %s\n" %
-                   (dhcp_py, src_dir, controller_node.hostname))
-        safe_print(
-            "Copy %(dhcp_py)s from openstack controller %(controller_node)s\n"
-            % {'controller_node': controller_node.fqdn,
-               'dhcp_py': dhcp_py})
-        Helper.copy_file_from_remote(controller_node, src_dir, dhcp_py,
-                                     controller_node.setup_node_dir)
-
-        dhcp_file_new = open(
-            "%s/%s.new" % (controller_node.setup_node_dir, dhcp_py), 'w')
-        dhcp_file = open(
-            "%s/%s" % (controller_node.setup_node_dir, dhcp_py), 'r')
-        for line in dhcp_file:
-            if line.startswith("import random"):
-                dhcp_file_new.write("import random\n")
-                dhcp_file_new.write("from collections import OrderedDict\n")
-            elif line.startswith(
-                "            chosen_agents = random.sample("
-                "active_dhcp_agents, n_agents)"):
-                dhcp_file_new.write(replace)
-            elif line.startswith("from collections import OrderedDict"):
-                pass
-            else:
-                dhcp_file_new.write(line)
-        dhcp_file.close()
-        dhcp_file_new.close()
-        Helper.run_command_on_local_without_timeout(
-            r'''mv %(setup_node_dir)s/%(dhcp_py)s.new %(setup_node_dir)s'''
-            '''/%(dhcp_py)s''' %
-            {'setup_node_dir': controller_node.setup_node_dir,
-             'dhcp_py': dhcp_py})
-
-    @staticmethod
     def prepare_keystone_client(controller_nodes):
         keystone_auth_url = None
         keystone_auth_user = None
@@ -1695,10 +1564,11 @@ class Helper(object):
                       'ivs_debug_pkg': node.ivs_debug_pkg}),
                     node.dst_dir, node.ivs_debug_pkg)
 
-        if (node.role == const.ROLE_CEPH or
-                const.ROLE_CINDER in node.role.lower() or
-                node.role == const.ROLE_MONGO or
-                node.deploy_mode == const.T5):
+        if (const.ROLE_CEPH in node.role.lower() or
+            const.ROLE_CINDER in node.role.lower() or
+            const.ROLE_MONGO in node.role.lower() or
+            const.ROLE_NEUTRON_SERVER in node.role.lower() or
+            const.T5 in node.deploy_mode.lower()):
             # copy send_lldp to t5 compute nodes
             safe_print("Copy send_lldp to %(hostname)s\n" %
                        {'hostname': node.fqdn})
@@ -1726,15 +1596,6 @@ class Helper(object):
            node.dst_dir,
            "%(hostname)s.pp" % {'hostname': node.hostname})
 
-        # copy selinux script to node
-        if node.os in const.RPM_OS_SET:
-            safe_print("Copy bsn selinux policy to %(hostname)s\n" %
-                       {'hostname': node.fqdn})
-            Helper.copy_file_to_remote(node,
-               node.selinux_script_path,
-               node.dst_dir,
-               "%(hostname)s.te" % {'hostname': node.hostname})
-
         if node.role == const.ROLE_NEUTRON_SERVER:
             # copy ospurge script to node
             safe_print("Copy ospurge script to %(hostname)s\n" %
@@ -1742,23 +1603,6 @@ class Helper(object):
             Helper.copy_file_to_remote(
                 node, node.ospurge_script_path, node.dst_dir,
                 "%(hostname)s_ospurge.sh" % {'hostname': node.hostname})
-
-            # copy dhcp reschedule script to node
-            safe_print("Copy dhcp reschedule script to %(hostname)s\n" %
-                       {'hostname': node.fqdn})
-            Helper.copy_file_to_remote(
-                node, node.dhcp_reschedule_script_path, node.dst_dir,
-                'dhcp_reschedule.sh')
-
-            # patch dhcp scheduler for juno
-            if node.openstack_release == 'juno':
-                safe_print(
-                    "Copy dhcp_agent_scheduler.py to %(hostname)s\n" %
-                    {'hostname': node.fqdn})
-                Helper.copy_file_to_remote(
-                    node,
-                    "%s/dhcp_agent_scheduler.py" % node.setup_node_dir,
-                    node.dhcp_agent_scheduler_dir, 'dhcp_agent_scheduler.py')
 
         # copy rootwrap to remote
         if node.fuel_cluster_id:

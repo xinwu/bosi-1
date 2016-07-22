@@ -1,104 +1,6 @@
 $binpath = "/usr/local/bin/:/bin/:/usr/bin:/usr/sbin:/usr/local/sbin:/sbin"
 $uplinks = [%(uplinks)s]
 
-# install selinux policies
-$selinux_enabled = generate('/bin/sh', '-c', "sestatus | grep 'enabled' | tr -d '\n'")
-if $selinux_enabled {
-    Package { allow_virtual => true }
-    class { selinux:
-      mode => '%(selinux_mode)s',
-    }
-    selinux::module { 'selinux-bcf':
-      ensure => 'present',
-      source => 'puppet:///modules/selinux/centos.te',
-    }
-}
-
-# comment out heat domain related configurations
-$heat_config = file('/etc/heat/heat.conf','/dev/null')
-if($heat_config != '') {
-    ini_setting { "heat paste":
-        ensure            => present,
-        path              => '/etc/heat/heat.conf',
-        section           => 'paste_deploy',
-        key_val_separator => '=',
-        setting           => 'api_paste_config',
-        value             => '/usr/share/heat/api-paste-dist.ini',
-    }
-    ini_setting { "heat debug":
-        ensure            => present,
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'debug',
-        value             => 'True',
-        notify            => Service['openstack-heat-engine'],
-    }
-    #ini_setting { "heat stack_domain_admin_password":
-    #    ensure            => absent,
-    #    path              => '/etc/heat/heat.conf',
-    #    section           => 'DEFAULT',
-    #    key_val_separator => '=',
-    #    setting           => 'stack_domain_admin_password',
-    #    notify            => Service['openstack-heat-engine'],
-    #}
-    #ini_setting { "heat stack_domain_admin":
-    #    ensure            => absent,
-    #    path              => '/etc/heat/heat.conf',
-    #    section           => 'DEFAULT',
-    #    key_val_separator => '=',
-    #    setting           => 'stack_domain_admin',
-    #    notify            => Service['openstack-heat-engine'],
-    #}
-    #ini_setting { "heat stack_user_domain":
-    #    ensure            => absent,
-    #    path              => '/etc/heat/heat.conf',
-    #    section           => 'DEFAULT',
-    #    key_val_separator => '=',
-    #    setting           => 'stack_user_domain',
-    #    notify            => Service['openstack-heat-engine'],
-    #}
-    ini_setting {"heat_deferred_auth_method":
-        path              => '/etc/heat/heat.conf',
-        section           => 'DEFAULT',
-        setting           => 'deferred_auth_method',
-        value             => 'password',
-        ensure            => present,
-        notify            => Service['openstack-heat-engine'],
-    }
-    service { 'openstack-heat-engine':
-        ensure            => running,
-        enable            => true,
-        path              => $binpath,
-    }
-}
-
-# uplink mtu
-define uplink_mtu {
-    file_line { "ifconfig $name mtu %(mtu)s":
-        path  => '/etc/rc.d/rc.local',
-        line  => "ifconfig $name mtu %(mtu)s",
-        match => "^ifconfig $name mtu %(mtu)s",
-    }
-}
-
-# edit rc.local for default gw
-file { "/etc/rc.d/rc.local":
-    ensure  => file,
-    mode    => 0777,
-}->
-file_line { "remove touch /var/lock/subsys/local":
-    path    => '/etc/rc.d/rc.local',
-    ensure  => absent,
-    line    => "touch /var/lock/subsys/local",
-}->
-uplink_mtu { $uplinks:
-}->
-file_line { "touch /var/lock/subsys/local":
-    path    => '/etc/rc.d/rc.local',
-    line    => "touch /var/lock/subsys/local",
-}
-
 # make sure known_hosts is cleaned up
 file { "/root/.ssh/known_hosts":
     ensure => absent,
@@ -148,17 +50,6 @@ ini_setting { "keystone.conf notification driver":
   value             => 'messaging',
 }
 
-# reserve keystone ephemeral port
-exec { "reserve keystone port":
-    command => "sysctl -w 'net.ipv4.ip_local_reserved_ports=49000,35357,41055,58882'",
-    path    => $binpath,
-}
-file_line { "reserve keystone port":
-    path  => '/etc/sysctl.conf',
-    line  => 'net.ipv4.ip_local_reserved_ports=49000,35357,41055,58882',
-    match => '^net.ipv4.ip_local_reserved_ports.*$',
-}
-
 # load 8021q module on boot
 file {'/etc/sysconfig/modules/8021q.modules':
     ensure  => file,
@@ -169,13 +60,6 @@ exec { "load 8021q":
     command => "modprobe 8021q",
     path    => $binpath,
 }
-
-# disable neutron-bsn-agent service
-#service {'neutron-bsn-agent':
-#    ensure  => stopped,
-#    enable  => false,
-#    path    => $binpath,
-#}
 
 # purge bcf controller public key
 exec { 'purge bcf key':
@@ -297,16 +181,6 @@ ini_setting { "l3 agent disable metadata proxy":
   value             => 'False',
 }
 
-# config /etc/neutron/plugins/ml2/ml2_conf.ini
-#ini_setting { "ml2 extension_drivers":
-#  ensure            => present,
-#  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-#  section           => 'ml2',
-#  key_val_separator => '=',
-#  setting           => 'extension_drivers',
-#  value             => 'port_security',
-#  notify            => Service['neutron-server'],
-#}
 ini_setting { "ml2 type dirvers":
   ensure            => present,
   path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
@@ -404,42 +278,6 @@ ini_setting { "ml2 restproxy neutron_id":
   key_val_separator => '=',
   setting           => 'neutron_id',
   value             => '%(neutron_id)s',
-  notify            => Service['neutron-server'],
-}
-ini_setting { "ml2 restproxy keystone_auth_url":
-  ensure            => present,
-  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-  section           => 'restproxy',
-  key_val_separator => '=',
-  setting           => 'auth_url',
-  value             => '%(keystone_auth_url)s',
-  notify            => Service['neutron-server'],
-}
-ini_setting { "ml2 restproxy keystone_auth_user":
-  ensure            => present,
-  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-  section           => 'restproxy',
-  key_val_separator => '=',
-  setting           => 'auth_user',
-  value             => '%(keystone_auth_user)s',
-  notify            => Service['neutron-server'],
-}
-ini_setting { "ml2 restproxy keystone_password":
-  ensure            => present,
-  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-  section           => 'restproxy',
-  key_val_separator => '=',
-  setting           => 'auth_password',
-  value             => '%(keystone_password)s',
-  notify            => Service['neutron-server'],
-}
-ini_setting { "ml2 restproxy keystone_auth_tenant":
-  ensure            => present,
-  path              => '/etc/neutron/plugins/ml2/ml2_conf.ini',
-  section           => 'restproxy',
-  key_val_separator => '=',
-  setting           => 'auth_tenant',
-  value             => '%(keystone_auth_tenant)s',
   notify            => Service['neutron-server'],
 }
 
