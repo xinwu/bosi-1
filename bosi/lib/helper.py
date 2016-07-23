@@ -1513,14 +1513,22 @@ class Helper(object):
             return
 
         # copy neutron, metadata, dhcp config to node
-        if node.install_bsnstacklib:
+        is_t5 = False
+        if node.deploy_mode == CONST.T5:
+            is_t5 = True
+        is_fuel = False
+        if node.fuel_cluster_id:
+            is_fuel = True
+        require_copy_config = is_t5 or (not is_fuel)
+
+        if require_copy_config:
             safe_print("Copy neutron.conf to %(hostname)s\n" %
                        {'hostname': node.fqdn})
             Helper.copy_file_to_remote(
                 node,
                 r'''%(dir)s/neutron.conf''' % {'dir': node.setup_node_dir},
                 '/etc/neutron', 'neutron.conf', mode=644)
-        if node.deploy_dhcp_agent:
+
             safe_print("Copy dhcp_agent.ini to %(hostname)s\n" %
                        {'hostname': node.fqdn})
             Helper.copy_file_to_remote(
@@ -1534,7 +1542,7 @@ class Helper(object):
                 r'''%(dir)s/metadata_agent.ini'''
                 % {'dir': node.setup_node_dir},
                 '/etc/neutron', 'metadata_agent.ini', mode=644)
-        if node.deploy_l3_agent:
+
             safe_print("Copy l3_agent.ini to %(hostname)s\n" %
                        {'hostname': node.fqdn})
             Helper.copy_file_to_remote(
