@@ -264,7 +264,7 @@ def deploy_bcf(config, mode, fuel_cluster_id, rhosp, tag, cleanup,
         return
 
     # prepare keystone client from /etc/neutron/api-paste.ini
-    Helper.prepare_keystone_client(controller_nodes)
+    #Helper.prepare_keystone_client(controller_nodes)
 
     # Generate scripts for each node
     for hostname, node in node_dic.iteritems():
