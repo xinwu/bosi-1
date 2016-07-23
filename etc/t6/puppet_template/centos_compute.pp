@@ -35,8 +35,6 @@ class ivs_internal_port_ips {
         line    => "systemctl restart ivs",
         match   => "^systemctl restart ivs$",
     }->
-    uplink_mtu { $uplinks:
-    }->
     ivs_internal_port_ip { $port_ips:
     }
 }
