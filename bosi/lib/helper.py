@@ -1514,7 +1514,7 @@ class Helper(object):
 
         # copy neutron, metadata, dhcp config to node
         is_t5 = False
-        if node.deploy_mode == CONST.T5:
+        if node.deploy_mode == const.T5:
             is_t5 = True
         is_fuel = False
         if node.fuel_cluster_id:
