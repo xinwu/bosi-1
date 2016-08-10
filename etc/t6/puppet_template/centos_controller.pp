@@ -43,15 +43,6 @@ ini_setting { "glance-registry paste config":
     value             => '/usr/share/glance/glance-registry-dist-paste.ini',
 }
 
-# keystone paste config
-ini_setting { "keystone paste config":
-    ensure            => present,
-    path              => '/etc/keystone/keystone.conf',
-    section           => 'paste_deploy',
-    key_val_separator => '=',
-    setting           => 'config_file',
-    value             => '/usr/share/keystone/keystone-dist-paste.ini',
-}
 ini_setting { "keystone.conf notification driver":
   ensure            => present,
   path              => '/etc/keystone/keystone.conf',
