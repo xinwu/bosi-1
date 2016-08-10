@@ -35,13 +35,6 @@ package { 'binutils':
    ensure => latest,
 }
 
-# purge bcf controller public key
-exec { 'purge bcf key':
-    command => "rm -rf /var/lib/neutron/host_certs/*",
-    path    => $binpath,
-    notify  => Service['neutron-server'],
-}
-
 # config /etc/neutron/neutron.conf
 ini_setting { "neutron.conf debug":
   ensure            => present,
@@ -197,7 +190,7 @@ ini_setting { "ml2 restproxy ssl cert directory":
   section           => 'restproxy',
   key_val_separator => '=',
   setting           => 'ssl_cert_directory',
-  value             => '/etc/neutron/plugins/ml2',
+  value             => '/var/lib/neutron',
   notify            => Service['neutron-server'],
 }
 ini_setting { "ml2 restproxy servers":
