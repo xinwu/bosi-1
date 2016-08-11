@@ -43,6 +43,33 @@ ini_setting { "glance-registry paste config":
     value             => '/usr/share/glance/glance-registry-dist-paste.ini',
 }
 
+ini_setting { "keystone.conf notification driver":
+  ensure            => present,
+  path              => '/etc/keystone/keystone.conf',
+  section           => 'DEFAULT',
+  key_val_separator => '=',
+  setting           => 'notification_driver',
+  value             => 'messaging',
+}
+
+# load 8021q module on boot
+file {'/etc/sysconfig/modules/8021q.modules':
+    ensure  => file,
+    mode    => 0777,
+    content => "modprobe 8021q",
+}
+exec { "load 8021q":
+    command => "modprobe 8021q",
+    path    => $binpath,
+}
+
+# purge bcf controller public key
+exec { 'purge bcf key':
+    command => "rm -rf /var/lib/neutron/host_certs/*",
+    path    => $binpath,
+    notify  => Service['neutron-server'],
+}
+
 # config /etc/neutron/neutron.conf
 ini_setting { "neutron.conf debug":
   ensure            => present,
