@@ -155,6 +155,14 @@ compute() {
 
     echo 'Restart neutron-bsn-agent'
     systemctl restart neutron-bsn-agent
+
+    # patch nova rootwrap
+    mkdir -p /usr/share/nova
+    rm -rf /usr/share/nova/rootwrap
+    rm -rf %(dst_dir)s/rootwrap/rootwrap
+    cp -r %(dst_dir)s/rootwrap /usr/share/nova/
+    chmod -R 777 /usr/share/nova/rootwrap
+    rm -rf /usr/share/nova/rootwrap/rootwrap
 }
 
 
@@ -185,11 +193,11 @@ if [[ $install_bsnstacklib == true ]]; then
     pip uninstall -y bsnstacklib
     sleep 2
     if [[ $pip_proxy == false ]]; then
-        pip install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
-        pip install --upgrade "horizon-bsn>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+        pip install --upgrade "bsnstacklib>=%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+        pip install --upgrade "horizon-bsn>=%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
     else
-        pip --proxy $pip_proxy  install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
-        pip --proxy $pip_proxy  install --upgrade "horizon-bsn>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+        pip --proxy $pip_proxy  install --upgrade "bsnstacklib>=%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+        pip --proxy $pip_proxy  install --upgrade "horizon-bsn>=%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
     fi
 fi
 

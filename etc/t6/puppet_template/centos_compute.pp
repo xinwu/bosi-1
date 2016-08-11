@@ -200,3 +200,62 @@ file { '/etc/neutron/dnsmasq-neutron.conf':
   content           => 'dhcp-option-force=26,1400',
 }
 
+# dhcp configuration
+if %(deploy_dhcp_agent)s {
+    ini_setting { "dhcp agent resync_interval":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'resync_interval',
+        value             => '60',
+    }
+    ini_setting { "dhcp agent interface driver":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'interface_driver',
+        value             => 'neutron.agent.linux.interface.IVSInterfaceDriver',
+    }
+    ini_setting { "dhcp agent dhcp driver":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'dhcp_driver',
+        value             => 'bsnstacklib.plugins.bigswitch.dhcp_driver.DnsmasqWithMetaData',
+    }
+    ini_setting { "force to use dhcp for metadata":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'force_metadata',
+        value             => 'True',
+    }
+    ini_setting { "dhcp agent enable isolated metadata":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'enable_isolated_metadata',
+        value             => 'True',
+    }
+    ini_setting { "dhcp agent disable metadata network":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'enable_metadata_network',
+        value             => 'False',
+    }
+    ini_setting { "dhcp agent disable dhcp_delete_namespaces":
+        ensure            => present,
+        path              => '/etc/neutron/dhcp_agent.ini',
+        section           => 'DEFAULT',
+        key_val_separator => '=',
+        setting           => 'dhcp_delete_namespaces',
+        value             => 'False',
+    }
+}

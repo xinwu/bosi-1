@@ -195,7 +195,7 @@ ini_setting { "ml2 restproxy ssl cert directory":
   section           => 'restproxy',
   key_val_separator => '=',
   setting           => 'ssl_cert_directory',
-  value             => '/etc/neutron/plugins/ml2',
+  value             => '/var/lib/neutron',
   notify            => Service['neutron-server'],
 }
 ini_setting { "ml2 restproxy servers":

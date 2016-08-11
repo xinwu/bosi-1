@@ -1613,14 +1613,13 @@ class Helper(object):
                 "%(hostname)s_ospurge.sh" % {'hostname': node.hostname})
 
         # copy rootwrap to remote
-        if node.fuel_cluster_id:
-            safe_print("Copy rootwrap to %(hostname)s\n" %
-                       {'hostname': node.fqdn})
-            Helper.copy_dir_to_remote(
-                node,
-                (r'''%(src_dir)s/rootwrap''' %
-                 {'src_dir': node.setup_node_dir}),
-                node.dst_dir)
+        safe_print("Copy rootwrap to %(hostname)s\n" %
+                  {'hostname': node.fqdn})
+        Helper.copy_dir_to_remote(
+            node,
+            (r'''%(src_dir)s/rootwrap''' %
+            {'src_dir': node.setup_node_dir}),
+            node.dst_dir)
 
     @staticmethod
     def check_os_service_status(node, service_name_in):
