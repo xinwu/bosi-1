@@ -21,15 +21,6 @@ define ivs_internal_port_ip {
     }
 }
 
-# uplink mtu
-define uplink_mtu {
-    file_line { "ifconfig $name mtu %(mtu)s":
-        path  => '/etc/rc.d/rc.local',
-        line  => "ifconfig $name mtu %(mtu)s",
-        match => "^ifconfig $name mtu %(mtu)s",
-    }
-}
-
 # example ['storage,192.168.1.1/24', 'ex,192.168.2.1/24', 'management,192.168.3.1/24']
 class ivs_internal_port_ips {
     $uplinks = [%(uplinks)s]
@@ -44,25 +35,10 @@ class ivs_internal_port_ips {
         line    => "systemctl restart ivs",
         match   => "^systemctl restart ivs$",
     }->
-    uplink_mtu { $uplinks:
-    }->
     ivs_internal_port_ip { $port_ips:
     }
 }
 include ivs_internal_port_ips
-
-# install selinux policies
-$selinux_enabled = generate('/bin/sh', '-c', "sestatus | grep 'enabled' | tr -d '\n'")
-if $selinux_enabled {
-    Package { allow_virtual => true }
-    class { selinux:
-      mode => '%(selinux_mode)s',
-    }
-    selinux::module { 'selinux-bcf':
-      ensure => 'present',
-      source => 'puppet:///modules/selinux/centos.te',
-    }
-}
 
 # install and enable ntp
 package { "ntp":
@@ -80,13 +56,7 @@ file{'/etc/sysconfig/ivs':
     ensure  => file,
     mode    => 0644,
     content => "%(ivs_daemon_args)s",
-    #notify  => Service['ivs'],
 } 
-#service{'ivs':
-#    ensure  => running,
-#    enable  => true,
-#    path    => $binpath,
-#}
 
 # fix centos symbolic link problem for ivs debug logging
 file { '/usr/lib64/debug':
@@ -136,7 +106,7 @@ ini_setting { "neutron.conf service_plugins":
   section           => 'DEFAULT',
   key_val_separator => '=',
   setting           => 'service_plugins',
-  value             => 'bsn_l3',
+  value             => 'bsn_l3,bsn_service_plugin',
 }
 ini_setting { "neutron.conf dhcp_agents_per_network":
   ensure            => present,
@@ -289,4 +259,3 @@ if %(deploy_dhcp_agent)s {
         value             => 'False',
     }
 }
-

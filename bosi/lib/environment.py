@@ -43,9 +43,7 @@ class Environment(object):
         self.neutron_id = config.get('neutron_id')
 
         # tenant api version
-        self.tenant_api_version = config.get('tenant_api_version')
-        if not self.tenant_api_version:
-            self.tenant_api_version = const.TENANT_NAME_API_VERSION
+        self.tenant_api_version = const.TENANT_NAME_API_VERSION
 
         # installer pxe interface ip
         self.installer_pxe_interface_ip = config.get(
@@ -56,15 +54,9 @@ class Environment(object):
             'deploy_to_specified_nodes_only')
 
         # flags for upgrade
-        self.install_ivs = config.get('default_install_ivs')
-        self.install_bsnstacklib = config.get('default_install_bsnstacklib')
+        self.install_ivs = True
+        self.install_bsnstacklib = True
         self.install_all = True
-
-        # flags for dhcp and metadata agent
-        self.deploy_dhcp_agent = config.get('default_deploy_dhcp_agent')
-
-        # flags for l3 agent
-        self.deploy_l3_agent = config.get('default_deploy_l3_agent')
 
         # setup node ip and directory
         self.setup_node_ip = Helper.get_setup_node_ip()
@@ -80,18 +72,18 @@ class Environment(object):
         if not self.deploy_mode:
             self.deploy_mode = const.T5
 
+        # flags for l3 agent
+        self.deploy_l3_agent = False
+        if self.deploy_mode == const.T5 and not fuel_cluster_id:
+            self.deploy_l3_agent = True
+
+        # flags for dhcp and metadata agent
+        self.deploy_dhcp_agent = False
+        if self.deploy_mode == const.T5 and not fuel_cluster_id:
+            self.deploy_dhcp_agent = True
+
         # selinux configuration
         self.selinux_mode = None
-        if os.path.isfile(const.SELINUX_CONFIG_PATH):
-            with open(const.SELINUX_CONFIG_PATH, "r") as selinux_config_file:
-                selinux_mode_match = re.compile(const.SELINUX_MODE_EXPRESSION,
-                                                re.IGNORECASE)
-                lines = selinux_config_file.readlines()
-                for line in lines:
-                    match = selinux_mode_match.match(line)
-                    if match:
-                        self.selinux_mode = match.group(1)
-                        break
 
         # neutron vlan ranges
         self.network_vlan_ranges = config.get('network_vlan_ranges')
@@ -106,6 +98,7 @@ class Environment(object):
         self.upper_vlan = match.group(3)
 
         # bcf controller information
+        self.bcf_version = config['bcf_version']
         self.bcf_controllers = config['bcf_controllers']
         self.bcf_controller_ips = []
         for controller in self.bcf_controllers:
@@ -159,10 +152,15 @@ class Environment(object):
 
         # openstack bsnstacklib version - applies to horizon plugin too
         self.openstack_release = str(config['openstack_release']).lower()
-        self.bsnstacklib_version_lower = (
-            const.OS_RELEASE_TO_BSN_LIB_LOWER[self.openstack_release])
-        self.bsnstacklib_version_upper = (
-            const.OS_RELEASE_TO_BSN_LIB_UPPER[self.openstack_release])
+        prefix = const.OS_RELEASE_TO_BSN_LIB.get(self.openstack_release)
+        array = self.bcf_version.split('.')
+        if len(array) == 3:
+            array = array[:-1]
+        version = '.'.join(array)
+        self.bsnstacklib_version_lower = (prefix + '.' +
+            const.BCF_RELEASE_TO_BSN_LIB_LOWER[version])
+        self.bsnstacklib_version_upper = (prefix + '.' +
+            const.BCF_RELEASE_TO_BSN_LIB_UPPER[version])
 
         # master bcf controller and cookie
         self.bcf_master = None

@@ -24,10 +24,6 @@ controller() {
     systemctl stop neutron-bsn-agent
     systemctl disable neutron-bsn-agent
 
-    # copy dhcp_reschedule.sh to /bin
-    cp %(dst_dir)s/dhcp_reschedule.sh /bin/
-    chmod 777 /bin/dhcp_reschedule.sh
-
     # deploy bcf
     puppet apply --modulepath /etc/puppet/modules %(dst_dir)s/%(hostname)s.pp
 
@@ -43,20 +39,6 @@ controller() {
     cp /usr/lib/python2.7/site-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
     systemctl restart httpd
 
-    # restart keystone and httpd
-    #systemctl restart httpd
-
-    # schedule cron job to reschedule network in case dhcp agent fails
-    chmod a+x /bin/dhcp_reschedule.sh
-    crontab -r
-    (crontab -l; echo "*/30 * * * * /bin/dhcp_reschedule.sh") | crontab -
-
-    echo "Restart nova"
-    systemctl restart openstack-nova-consoleauth
-    systemctl restart openstack-nova-scheduler
-    systemctl restart openstack-nova-conductor
-    systemctl restart openstack-nova-cert
-
     echo "Restart neutron-server"
     rm -rf /var/lib/neutron/host_certs/*
     systemctl restart neutron-server
@@ -70,13 +52,6 @@ compute() {
         systemctl disable neutron-dhcp-agent
         systemctl stop neutron-metadata-agent
         systemctl disable neutron-metadata-agent
-
-        # patch linux/dhcp.py to make sure static host route is pushed to instances
-        dhcp_py=$(find /usr -name dhcp.py | grep linux)
-        dhcp_dir=$(dirname "${dhcp_py}")
-        sed -i 's/if (isolated_subnets\[subnet.id\] and/if (True and/g' $dhcp_py
-        find $dhcp_dir -name "*.pyc" | xargs rm
-        find $dhcp_dir -name "*.pyo" | xargs rm
     fi
 
     if [[ $deploy_l3_agent == true ]]; then
@@ -144,13 +119,6 @@ compute() {
         systemctl enable neutron-l3-agent
         systemctl restart neutron-l3-agent
     fi
-
-    # restart libvirtd and nova compute on compute node
-    echo 'Restart libvirtd and openstack-nova-compute'
-    systemctl enable libvirtd
-    systemctl restart libvirtd
-    systemctl enable openstack-nova-compute
-    systemctl restart openstack-nova-compute
 }
 
 
@@ -172,9 +140,6 @@ easy_install pip
 pip install --upgrade funcsigs
 puppet module install --force puppetlabs-inifile
 puppet module install --force puppetlabs-stdlib
-puppet module install jfryman-selinux --version 0.2.5 --force
-mkdir -p /etc/puppet/modules/selinux/files
-cp %(dst_dir)s/%(hostname)s.te /etc/puppet/modules/selinux/files/centos.te
 
 # install bsnstacklib
 if [[ $install_bsnstacklib == true ]]; then
@@ -182,11 +147,11 @@ if [[ $install_bsnstacklib == true ]]; then
     pip uninstall -y bsnstacklib
     sleep 2
     if [[ $pip_proxy == false ]]; then
-        pip install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
-        pip install --upgrade "horizon-bsn>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+        pip install --upgrade "bsnstacklib>=%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+        pip install --upgrade "horizon-bsn>=%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
     else
-        pip --proxy $pip_proxy  install --upgrade "bsnstacklib>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
-        pip --proxy $pip_proxy  install --upgrade "horizon-bsn>%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+        pip --proxy $pip_proxy  install --upgrade "bsnstacklib>=%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
+        pip --proxy $pip_proxy  install --upgrade "horizon-bsn>=%(bsnstacklib_version_lower)s,<%(bsnstacklib_version_upper)s"
     fi
 fi
 

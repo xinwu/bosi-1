@@ -21,15 +21,6 @@ define ivs_internal_port_ip {
     }
 }
 
-# uplink mtu
-define uplink_mtu {
-    file_line { "ifconfig $name mtu %(mtu)s":
-        path  => '/etc/rc.local',
-        line  => "ifconfig $name mtu %(mtu)s",
-        match => "^ifconfig $name mtu %(mtu)s",
-    }
-}
-
 # example ['storage,192.168.1.1/24', 'ex,192.168.2.1/24', 'management,192.168.3.1/24']
 class ivs_internal_port_ips {
     $uplinks = [%(uplinks)s]
@@ -43,8 +34,6 @@ class ivs_internal_port_ips {
         path    => '/etc/rc.local',
         ensure  => absent,
         line    => "exit 0",
-    }->
-    uplink_mtu { $uplinks:
     }->
     file_line { "restart ivs":
         path    => '/etc/rc.local',
@@ -212,76 +201,5 @@ ini_setting { "l3 agent disable metadata proxy":
 file { '/etc/neutron/dnsmasq-neutron.conf':
   ensure            => file,
   content           => 'dhcp-option-force=26,1400',
-}
-
-# dhcp configuration
-if %(deploy_dhcp_agent)s {
-    service { "neutron-dhcp-agent":
-        ensure            => running,
-        enable            => true,
-    }
-    ini_setting { "dhcp agent resync_interval":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'resync_interval',
-        value             => '60',
-        notify            => Service['neutron-dhcp-agent'],
-    }
-    ini_setting { "dhcp agent interface driver":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'interface_driver',
-        value             => 'neutron.agent.linux.interface.IVSInterfaceDriver',
-        notify            => Service['neutron-dhcp-agent'],
-    }
-    ini_setting { "dhcp agent dhcp driver":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'dhcp_driver',
-        value             => 'bsnstacklib.plugins.bigswitch.dhcp_driver.DnsmasqWithMetaData',
-        notify            => Service['neutron-dhcp-agent'],
-    }
-    ini_setting { "force to use dhcp for metadata":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'force_metadata',
-        value             => 'True',
-        notify            => Service['neutron-dhcp-agent'],
-    }
-    ini_setting { "dhcp agent enable isolated metadata":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'enable_isolated_metadata',
-        value             => 'True',
-        notify            => Service['neutron-dhcp-agent'],
-    }
-    ini_setting { "dhcp agent disable metadata network":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'enable_metadata_network',
-        value             => 'False',
-        notify            => Service['neutron-dhcp-agent'],
-    }
-    ini_setting { "dhcp agent disable dhcp_delete_namespaces":
-        ensure            => present,
-        path              => '/etc/neutron/dhcp_agent.ini',
-        section           => 'DEFAULT',
-        key_val_separator => '=',
-        setting           => 'dhcp_delete_namespaces',
-        value             => 'False',
-        notify            => Service['neutron-dhcp-agent'],
-    }
 }
 

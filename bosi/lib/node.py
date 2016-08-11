@@ -85,6 +85,7 @@ class Node(object):
         self.openstack_release = env.openstack_release
         self.bsnstacklib_version_lower = env.bsnstacklib_version_lower
         self.bsnstacklib_version_upper = env.bsnstacklib_version_upper
+        self.bcf_version = env.bcf_version
         self.bcf_controllers = env.bcf_controllers
         self.bcf_controller_ips = env.bcf_controller_ips
         self.bcf_controller_user = env.bcf_controller_user
@@ -324,23 +325,9 @@ class Node(object):
         return self.neutron_id
 
     def get_bsnstacklib_version_lower(self):
-        if self.openstack_release == const.OS_RELEASE_KILO:
-            if self.tenant_api_version == const.TENANT_NAME_API_VERSION:
-                return const.OS_RELEASE_TO_BSN_LIB_LOWER.get(
-                    const.OS_RELEASE_KILO_V2)
-            if self.tenant_api_version == const.TENANT_UUID_API_VERSION:
-                return const.OS_RELEASE_TO_BSN_LIB_LOWER.get(
-                    const.OS_RELEASE_KILO)
         return self.bsnstacklib_version_lower
 
     def get_bsnstacklib_version_upper(self):
-        if self.openstack_release == const.OS_RELEASE_KILO:
-            if self.tenant_api_version == const.TENANT_NAME_API_VERSION:
-                return const.OS_RELEASE_TO_BSN_LIB_UPPER.get(
-                    const.OS_RELEASE_KILO_V2)
-            if self.tenant_api_version == const.TENANT_UUID_API_VERSION:
-                return const.OS_RELEASE_TO_BSN_LIB_UPPER.get(
-                    const.OS_RELEASE_KILO)
         return self.bsnstacklib_version_upper
 
     def __str__(self):
@@ -408,6 +395,7 @@ class Node(object):
             openstack_release: %(openstack_release)s,
             bsnstacklib_version_lower: %(bsnstacklib_version_lower)s,
             bsnstacklib_version_upper: %(bsnstacklib_version_upper)s,
+            bcf_version: %(bcf_version)s,
             bcf_controllers: %(bcf_controllers)s,
             bcf_controller_ips: %(bcf_controller_ips)s,
             bcf_controller_user: %(bcf_controller_user)s,
@@ -491,6 +479,7 @@ class Node(object):
             'openstack_release': self.openstack_release,
             'bsnstacklib_version_lower': self.get_bsnstacklib_version_lower(),
             'bsnstacklib_version_upper': self.get_bsnstacklib_version_upper(),
+            'bcf_version': self.bcf_version,
             'bcf_controllers': self.bcf_controllers,
             'bcf_controller_ips': self.bcf_controller_ips,
             'bcf_controller_user': self.bcf_controller_user,
