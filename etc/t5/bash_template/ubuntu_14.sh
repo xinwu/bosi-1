@@ -24,6 +24,8 @@ controller() {
     # bsnstacklib installed and property files updated. now perform live db migration
     echo "Performing live DB migration for Neutron.."
     if [[ $openstack_release == 'kilo' || $openstack_release == 'kilo_v2' ]]; then
+        pip install --upgrade 'alembic<0.8.1,>=0.7.2'
+        neutron-db-manage upgrade head
         neutron-db-manage --service bsn_service_plugin upgrade head
     else
         neutron-db-manage upgrade heads
