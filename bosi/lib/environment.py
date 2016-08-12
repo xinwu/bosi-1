@@ -79,7 +79,8 @@ class Environment(object):
 
         # flags for dhcp and metadata agent
         self.deploy_dhcp_agent = False
-        if self.deploy_mode == const.T5 and not fuel_cluster_id:
+        if ((self.deploy_mode == const.T5 or self.deploy_mode == const.T6)
+            and not fuel_cluster_id):
             self.deploy_dhcp_agent = True
 
         # selinux configuration
