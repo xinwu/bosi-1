@@ -40,7 +40,7 @@ controller() {
     systemctl restart httpd
 
     echo 'Restart neutron-server'
-    rm -rf /etc/neutron/plugins/ml2/host_certs/*
+    rm -rf /var/lib/neutron/host_certs/*
     systemctl restart neutron-server
 }
 
