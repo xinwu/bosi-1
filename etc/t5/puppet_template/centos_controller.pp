@@ -33,20 +33,12 @@ ini_setting { "glance-registry paste config":
 }
 
 # keystone paste config
-ini_setting { "keystone paste config":
-    ensure            => present,
-    path              => '/etc/keystone/keystone.conf',
-    section           => 'paste_deploy',
-    key_val_separator => '=',
-    setting           => 'config_file',
-    value             => '/usr/share/keystone/keystone-dist-paste.ini',
-}
 ini_setting { "keystone.conf notification driver":
   ensure            => present,
   path              => '/etc/keystone/keystone.conf',
-  section           => 'DEFAULT',
+  section           => 'oslo_messaging_notifications',
   key_val_separator => '=',
-  setting           => 'notification_driver',
+  setting           => 'driver',
   value             => 'messaging',
 }
 

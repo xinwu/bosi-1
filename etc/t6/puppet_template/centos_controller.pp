@@ -46,9 +46,9 @@ ini_setting { "glance-registry paste config":
 ini_setting { "keystone.conf notification driver":
   ensure            => present,
   path              => '/etc/keystone/keystone.conf',
-  section           => 'DEFAULT',
+  section           => 'oslo_messaging_notifications',
   key_val_separator => '=',
-  setting           => 'notification_driver',
+  setting           => 'driver',
   value             => 'messaging',
 }
 
