@@ -38,6 +38,7 @@ controller() {
     # deploy bcf horizon patch to controller node
     cp /usr/lib/python2.7/site-packages/horizon_bsn/enabled/* /usr/share/openstack-dashboard/openstack_dashboard/enabled/
     systemctl restart httpd
+    keystone-manage token_flush
 
     echo 'Restart neutron-server'
     rm -rf /var/lib/neutron/host_certs/*
